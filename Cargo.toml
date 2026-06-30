@@ -1,0 +1,74 @@
+[package]
+name = "ruffle"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+description = "Adaptive, calibration-free fusion of heterogeneous retrieval channels into one ranking."
+repository = "https://github.com/lathrys-at/ruffle"
+readme = "README.md"
+keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
+categories = ["algorithms"]
+# Ship the design document the API docs' section references (§4, §5, ...) point into,
+# alongside the sources; test/bench trees stay out of the published artifact.
+include = [
+    "src/**",
+    "docs/derivation.md",
+    "docs/tuning.md",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = []
+# The CLI binary builds only under this feature, so the default library build pulls in
+# neither clap nor serde_json. The `ruffle` bin is gated with `required-features` below.
+cli = ["dep:clap", "dep:serde_json"]
+
+[[bin]]
+name = "ruffle"
+path = "src/bin/ruffle.rs"
+required-features = ["cli"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+clap = { version = "4", features = ["derive"], optional = true }
+# `float_roundtrip` makes deserialization bit-exact: serde_json's default float parser
+# can drop 1 ULP, breaking the §8 exact-round-trip + content-addressing invariant
+# (a save/load/save cycle could otherwise drift accumulated baselines).
+serde_json = { version = "1", features = ["float_roundtrip"], optional = true }
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1"
+rand = "0.8"
+rand_chacha = "0.3"
+rand_distr = "0.4"
+approx = "0.5"
+# State-merge tests assert byte-identical serialization (content-addressing, §8).
+# serde_json is also an optional runtime dep behind `cli`; here it is dev-only.
+# `float_roundtrip` keeps the serde round-trip property bit-exact (see [dependencies]).
+serde_json = { version = "1", features = ["float_roundtrip"] }
+# Temp files for the CLI's reconcile/rekey round-trip and refusal tests.
+tempfile = "3"
+
+[[bench]]
+name = "fusion"
+harness = false
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+
+[lints.rust]
+# The crate is pure safe Rust; forbidding rather than denying makes that a promise no
+# inner `allow` can quietly revoke.
+unsafe_code = "forbid"
+unsafe_op_in_unsafe_fn = "deny"
+# Every public item carries documentation; a new undocumented item is a build error.
+missing_docs = "deny"

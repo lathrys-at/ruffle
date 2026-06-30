@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 69f5cdd292fc173cf798f98603107e76e493d0ef7668905da77cec60bbb8ad3f # shrinks to chans = [(0, [834.8005097722045, 983.5434158837168], [], 0)], pairs = [], format_version = 0

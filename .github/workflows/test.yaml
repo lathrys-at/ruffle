@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  lint:
+    name: fmt / clippy / doc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Doc
+        run: cargo doc --no-deps --all-features
+        env:
+          RUSTDOCFLAGS: "-D warnings"
+
+  # Build + test in both profiles: debug keeps debug-assertions and integer-overflow
+  # checks on; release runs the optimizer with them off, catching the other class of
+  # bug. Always --all-features: the `cli` feature gates the binary and its process
+  # tests, and a default-features run leaves that half of the crate untested.
+  test:
+    name: test (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { profile: debug, flags: "" }
+          - { profile: release, flags: "--release" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --verbose --all-features ${{ matrix.flags }}
+      - name: Test
+        run: cargo test --verbose --all-features ${{ matrix.flags }}
+
+  msrv:
+    name: msrv (1.85)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Build on MSRV
+        run: cargo build --verbose --all-features
+
+  deny:
+    name: cargo-deny (licenses + advisories)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses bans sources
+
+  # Single aggregating check for the `main` branch protection rule: require only
+  # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
+  # cancelled, or skipped job blocks the merge — while the protection rule stays one
+  # stable check name (no need to re-list jobs or matrix legs as CI grows).
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [lint, test, msrv, deny]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all CI jobs to have succeeded
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}
+        run: |
+          echo "::error::a required CI job did not succeed: ${{ join(needs.*.result, ', ') }}"
+          exit 1

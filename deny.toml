@@ -1,0 +1,34 @@
+# cargo-deny configuration. The license gate is load-bearing: ruffle ships dual
+# MIT OR Apache-2.0 and must stay free of copyleft transitive dependencies, so the
+# allowlist is strictly permissive — a new dependency under any other license fails
+# CI rather than silently shipping an incompatible obligation.
+
+[licenses]
+# SPDX identifiers, permissive only. The Unicode entries cover the UCD tables that
+# unicode-normalization / unicode-ident embed (the crate itself is MIT/Apache, but
+# the data carries its own permissive, attribution-only license).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+
+[advisories]
+yanked = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
