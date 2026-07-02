@@ -150,6 +150,8 @@
 //! - Advanced building blocks: the per-stage functions [`Fuser`] composes internally are
 //!   re-exported under [`components`].
 
+#![warn(missing_docs)]
+
 mod config;
 mod error;
 mod fuser;

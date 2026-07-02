@@ -1,16 +1,16 @@
 [package]
 name = "ruffle"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
-description = "Adaptive, calibration-free fusion of heterogeneous retrieval channels into one ranking."
+description = "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF) of heterogeneous retrieval channels."
 repository = "https://github.com/lathrys-at/ruffle"
 readme = "README.md"
 keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
 categories = ["algorithms"]
-# Ship the design document the API docs' section references (§4, §5, ...) point into,
-# alongside the sources; test/bench trees stay out of the published artifact.
+# Ship the design document and tuning guide the front-page docs reference, alongside
+# the sources; test/bench trees stay out of the published artifact.
 include = [
     "src/**",
     "docs/derivation.md",

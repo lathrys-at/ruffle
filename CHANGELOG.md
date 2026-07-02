@@ -7,6 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-02
+
+Documentation release; no code changes.
+
+### Changed
+
+- The docs.rs front page mirrors the README quick start (score newtypes, a declared
+  good-score prior, a rank-only channel) and is compile-tested as a doctest.
+- API documentation rewritten throughout: descriptive prose on every public item, with
+  design-document section references replaced by links to the relevant types and
+  methods.
+- The README quick start imports `GoodScore`, which it uses.
+
 ## [0.1.0] - 2026-07-02
 
 Initial release: calibration-free fusion of heterogeneous retrieval channels into one
@@ -50,5 +63,6 @@ it. Section references (§4, §5, …) point into the design document,
 - Dual-licensed under MIT OR Apache-2.0. See [`LICENSE-MIT`](LICENSE-MIT) and
   [`LICENSE-APACHE`](LICENSE-APACHE).
 
-[Unreleased]: https://github.com/lathrys-at/ruffle/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/lathrys-at/ruffle/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/lathrys-at/ruffle/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lathrys-at/ruffle/releases/tag/v0.1.0
