@@ -1,6 +1,6 @@
-//! Persistent state: the single mergeable object (§8).
+//! Persistent state: the single mergeable object.
 //!
-//! Everything `ruffle` persists is a confidence-weighted summary plus the identifiers
+//! Everything Ruffle persists is a confidence-weighted summary plus the identifiers
 //! needed to merge it safely. This module defines the state types, their canonical
 //! (`BTreeMap`-ordered) serialization, and the one reconciliation operation that serves
 //! as streaming update, operator prior, and cross-deployment merge at once. The merge
@@ -15,7 +15,7 @@ use crate::summary::MeanVar;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-/// The finite ceiling on a per-channel divergence (§8).
+/// The finite ceiling on a per-channel divergence.
 ///
 /// A standardized distance is unbounded when the pooled spread collapses to zero while
 /// the means still differ (an infinite z-distance). The metric caps at this value so
@@ -23,7 +23,7 @@ use std::collections::BTreeMap;
 /// "very large" against the single-digit distances ordinary drift produces.
 const DIVERGENCE_CAP: f64 = 1.0e6;
 
-/// The persistent statistics ruffle keeps for one channel: the baseline that
+/// The persistent statistics Ruffle keeps for one channel: the baseline that
 /// standardizes how well the channel separates its top results from the rest, the
 /// reference used to judge absolute score quality, and the model-version tag that gates
 /// merging.
@@ -42,8 +42,8 @@ pub struct ChannelSummary {
     /// The model-version tag identifying which model produced this channel's scores.
     /// [`RuffleState::merge`] checks it for equality on any channel shared between two
     /// states and refuses on a mismatch, so accumulated statistics can never silently
-    /// span a model swap. The check runs at merge time, not on write: building the
-    /// `channels` map or setting a `tag` by hand is fine, and the gate catches any
+    /// span a model swap. The check runs at merge time rather than on write: building
+    /// the `channels` map or setting a `tag` by hand is fine, and the gate catches any
     /// conflict when two states are combined.
     pub tag: String,
 }
@@ -70,7 +70,7 @@ impl ChannelSummary {
     }
 }
 
-/// The persistent statistics ruffle keeps for one pair of channels: their accumulated
+/// The persistent statistics Ruffle keeps for one pair of channels: their accumulated
 /// redundancy correlation plus how many anchor refreshes back it.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PairSummary {
@@ -84,7 +84,7 @@ pub struct PairSummary {
     /// strata is a between-refresh property, so a discount is applied only once at
     /// least [`CouplingConfig::min_refreshes`](crate::config::CouplingConfig::min_refreshes)
     /// refreshes agree; a single refresh has zero between-refresh variance by
-    /// construction and proves nothing (§5.3). Fractional to support decay.
+    /// construction and carries no evidence of stability. Fractional to support decay.
     #[serde(default)]
     pub refreshes: f64,
 }
@@ -105,7 +105,7 @@ impl Default for PairSummary {
     }
 }
 
-/// The persistent statistics ruffle accumulates: a confidence-weighted summary per
+/// The persistent statistics Ruffle accumulates: a confidence-weighted summary per
 /// channel and per channel pair, plus the versioning needed to merge two of them safely.
 ///
 /// Maps are stored ordered (`BTreeMap`), so two states with identical contents serialize
@@ -113,20 +113,20 @@ impl Default for PairSummary {
 /// diffs clean.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuffleState {
-    /// Schema version, for "can this build parse this file" (§8).
+    /// Schema version, checked to decide whether this build can parse this file.
     ///
     /// Library-managed: set by [`RuffleState::new`], by deserialization, and by
-    /// [`merge`](Self::merge), never by direct downstream mutation. A downstream caller
+    /// [`merge`](Self::merge), and not by direct downstream mutation. A downstream caller
     /// editing it in place would bypass the merge compatibility gate, so the field is
-    /// crate-private; read it through [`format_version`](Self::format_version) (§8).
+    /// crate-private and readable through [`format_version`](Self::format_version).
     pub(crate) format_version: u32,
-    /// Statistic definitions plus per-channel orientation, for "were these two states
-    /// measuring the same thing the same way" (§8).
+    /// Statistic definitions plus per-channel orientation, checked to decide whether two
+    /// states measured the same thing the same way.
     ///
     /// Library-managed: set by [`RuffleState::new`], by deserialization, and by
-    /// [`merge`](Self::merge), never by direct downstream mutation. A downstream caller
+    /// [`merge`](Self::merge), and not by direct downstream mutation. A downstream caller
     /// editing it in place would bypass the merge compatibility gate, so the field is
-    /// crate-private; read it through [`fingerprint`](Self::fingerprint) (§8).
+    /// crate-private and readable through [`fingerprint`](Self::fingerprint).
     pub(crate) fingerprint: StatFingerprint,
     /// Per-channel summaries, keyed by the stable join handle.
     pub channels: BTreeMap<String, ChannelSummary>,
@@ -142,12 +142,12 @@ pub struct RuffleState {
 
 /// An advisory standardized distance between two states' per-channel summaries.
 ///
-/// The number is purely advisory and never gates a merge; that is the tag's job. Its use
-/// is to flag a silent model swap, where two summaries have drifted far apart while their
-/// model-version tags still match, so a caller can catch it at the reconcile boundary.
-/// Marked `#[non_exhaustive]`: a result type produced by
-/// [`RuffleState::divergence`] and [`RuffleState::merge`], read but never built by
-/// callers.
+/// The number is purely advisory and never gates a merge; gating is done by the
+/// model-version tag. It flags a silent model swap, where two summaries have drifted
+/// far apart while their model-version tags still match, so a caller can catch it at
+/// the reconcile boundary.
+/// Marked `#[non_exhaustive]`: a result type produced by [`RuffleState::divergence`]
+/// and [`RuffleState::merge`] that callers read but never construct.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Divergence {
@@ -162,7 +162,7 @@ pub struct Divergence {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum MergePolicy {
-    /// Refuse on any format, fingerprint, or tag mismatch. The only policy for now;
+    /// Refuses on any format, fingerprint, or tag mismatch. The only policy for now;
     /// the enum leaves room for future, looser policies.
     #[default]
     Strict,
@@ -210,7 +210,7 @@ impl RuffleState {
         &self.fingerprint
     }
 
-    /// Combine several states into one, returning the merged state and an advisory
+    /// Combines several states into one, returning the merged state and an advisory
     /// divergence between the inputs.
     ///
     /// The same operation serves as a streaming update, an operator prior, and
@@ -227,16 +227,17 @@ impl RuffleState {
     ///    and agree across all parts, and the fingerprint's `stat_version` must equal
     ///    this build's [`StatFingerprint::STAT_VERSION`] ([`Mismatch::FormatVersion`] /
     ///    [`Mismatch::Fingerprint`]). A state that parses under an older definition still
-    ///    measures different statistics, so "parses" is not "compatible".
+    ///    measures different statistics, so successful parsing does not imply
+    ///    compatibility.
     /// 2. The fingerprint must be compatible: equal statistic version and baseline mode
     ///    across all parts ([`Mismatch::Fingerprint`]), and no channel present in more
     ///    than one part may carry a conflicting orientation
     ///    ([`Mismatch::DirectionConflict`]). The per-channel orientation maps are
-    ///    *unioned*, not required equal, so a part that introduces a new channel does not
-    ///    block the merge.
+    ///    *unioned* rather than required to be equal, so a part that introduces a new
+    ///    channel does not block the merge.
     /// 3. A channel present in more than one part must carry the same model-version tag
     ///    in each ([`Mismatch::Tag`]). A model swap under a reused key would corrupt the
-    ///    accumulated statistics, so it is refused loudly.
+    ///    accumulated statistics, so it is refused.
     ///
     /// On success, channels and pairs are unioned by key, and any key shared across parts
     /// has its summaries merged with [`MeanVar::merge`]. An empty `parts` slice returns
@@ -424,16 +425,16 @@ impl RuffleState {
         Divergence { per_channel, max }
     }
 
-    /// Rename a channel's key from `from` to `to`, moving all of its statistics with it.
+    /// Renames a channel's key from `from` to `to`, moving all of its statistics with it.
     ///
     /// Everything keyed by `from` moves to `to`: the channel summary, every pair summary
     /// that referenced `from` (each affected [`UnorderedPair`] rebuilt around `to`), and
-    /// the channel's orientation in the fingerprint. Use it when a channel was recorded
-    /// under the wrong key and its statistics are sound but mislabeled.
+    /// the channel's orientation in the fingerprint. It covers the case where a channel
+    /// was recorded under the wrong key and its statistics are sound but mislabeled.
     ///
     /// When `to` already exists, the moved data and the existing data are *merged* with
     /// [`MeanVar::merge`], and the destination keeps its own model-version tag and
-    /// orientation — the caller is asserting that `from`'s history belongs to the channel
+    /// orientation: the caller is asserting that `from`'s history belongs to the channel
     /// already living under `to`. A no-op `from == to` leaves the state unchanged. Unlike
     /// [`merge`](Self::merge), rekey does not run the tag gate; it is a deliberate rename
     /// and cannot fail.
@@ -485,7 +486,7 @@ impl RuffleState {
         }
     }
 
-    /// Scale the confidence of every persisted summary down by `factor`.
+    /// Scales the confidence of every persisted summary down by `factor`.
     ///
     /// Applies [`MeanVar::decay`] to each channel's separation and reference baselines and
     /// to each pair's redundancy, shrinking their effective counts while leaving their
@@ -521,7 +522,7 @@ pub(crate) fn decay_factor(factor: f64) -> f64 {
 
 /// The standardized distance between two baselines: `|Δmean| / pooled_std` with
 /// `pooled_std = sqrt((var_a + var_b) / 2)`, capped at the finite divergence ceiling
-/// `1e6` (§8).
+/// `1e6`.
 ///
 /// Zero pooled spread with equal means is `0.0`; zero spread with differing means is
 /// the cap (an infinite z-distance, clamped). The result is always finite and
@@ -544,7 +545,7 @@ fn standardized_distance(a: &MeanVar, b: &MeanVar) -> f64 {
 /// `UnorderedPair<String>` derives a two-element tuple `Serialize`, which JSON
 /// cannot use as an object key (keys must be strings). Writing the map as an array
 /// keeps `RuffleState`'s field type frozen, round-trips exactly, and preserves the
-/// canonical `BTreeMap` ordering that gives content-addressing (§8). The companion
+/// canonical `BTreeMap` ordering that gives content-addressing. The companion
 /// `channels` map needs no adapter: its join-handle key is a `String` and so
 /// serializes straight to a string key.
 mod pairs_as_seq {

@@ -1,10 +1,10 @@
-//! Per-channel discrimination (§4): how well each channel ranks on this query.
+//! Per-channel discrimination: how well each channel ranks on this query.
 //!
-//! Two statistics combine into one weight. Separation asks whether the channel can rank
-//! at all: a scale-free, shift-free ratio of the extreme top's elevation to the bulk's
-//! own scale. Absolute goodness asks whether the channel found anything good: this
-//! query's top against the channel's own good-score reference. They enter a single
-//! AND-like map, so a channel earns weight only when both hold. The read is conservative
+//! Two statistics combine into one weight. Separation measures whether the channel can
+//! rank at all: a scale-free, shift-free ratio of the extreme top's elevation to the
+//! bulk's own scale. Absolute goodness measures whether the channel found anything good:
+//! this query's top against the channel's own good-score reference. They enter a single
+//! AND-like map, so the weight is high only when both hold. The read is conservative
 //! throughout: one noisy query cannot zero a channel, and a thin pool is pulled back
 //! toward the channel's own running baseline.
 
@@ -18,15 +18,15 @@ use serde::{Deserialize, Serialize};
 /// Relative threshold below which the separation denominator counts as collapsed.
 ///
 /// A denominator this small next to the bulk's own span (`q0.75 − q0.10`) carries no
-/// usable shape, so the ratio is undefined and the read is dropped (§4). The comparison
+/// usable shape, so the ratio is undefined and the read is dropped. The comparison
 /// scale is the bulk's span, not the pool's full range: the full range includes the
 /// top's elevation, so an extremely well-separated pool would otherwise be misread as
 /// degenerate exactly when it is most informative.
 const SEPARATION_SCALE_EPS: f64 = 1e-9;
 
 /// The scale of the combined weight: `1 / (0.5 · 0.5)`, so that both logistic factors at
-/// their neutral midpoint give `g = 1.0` exactly, the §6 average-channel weight. This is
-/// a fixed property of the map, deliberately independent of
+/// their neutral midpoint give `g = 1.0` exactly, the neutral weight of an average
+/// channel in the fusion. This is a fixed property of the map, deliberately independent of
 /// [`DiscriminationConfig::g_upper_bound`]: the bound is a pure cap, and tightening it
 /// must not silently move the neutral point.
 const NEUTRAL_G_SCALE: f64 = 4.0;
@@ -37,8 +37,8 @@ const NEUTRAL_FACTOR: f64 = 0.5;
 /// How well one channel ranked on one query: a combined discrimination weight plus the
 /// raw statistics behind it.
 ///
-/// Marked `#[non_exhaustive]`: a result type, read but never built by callers, and it
-/// gains fields as the read exposes more of itself. Produced by [`discriminate`].
+/// Marked `#[non_exhaustive]`: a result type that callers read but never construct, and
+/// it may gain fields over time. Produced by [`discriminate`].
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct ChannelDiscrimination {
@@ -53,9 +53,9 @@ pub struct ChannelDiscrimination {
     /// `None` for a ranks-only or empty channel, when the average is not finite, or when
     /// the pool is shallower than `top_m`: the statistic is defined as a *fixed-count*
     /// average, and a shallow pool's average over fewer items is not the same quantity,
-    /// so it must not refine the reference (§4's comparable-depth condition). The
-    /// absolute-goodness term for the current query is still read from the available
-    /// top, shrunk by how thin the pool is.
+    /// so it must not refine the reference (the statistic is only comparable at a fixed
+    /// depth). The absolute-goodness term for the current query is still read from the
+    /// available top, shrunk by how thin the pool is.
     pub top_m_average: Option<f64>,
     /// Whether the bulk had too little scale to measure separation, so the read was
     /// floored.
@@ -65,7 +65,7 @@ pub struct ChannelDiscrimination {
     pub reference_cold: bool,
 }
 
-/// Score how well a channel ranked on one query, from its scores and two running
+/// Scores how well a channel ranked on one query, from its scores and two running
 /// baselines: a `separation` baseline it standardizes its top-vs-bulk read against, and a
 /// good-score `reference` for absolute goodness.
 ///
@@ -78,7 +78,7 @@ pub struct ChannelDiscrimination {
 /// stands above the bulk, in units of the bulk's own scale, so it is invariant to any
 /// rescale or shift of the scores. Absolute goodness measures whether the channel found
 /// anything good: this query's top standardized against the reference. They enter an
-/// AND-like map, so a channel earns weight only when both hold.
+/// AND-like map, so the weight is high only when both hold.
 ///
 /// Each factor is shrunk toward its own neutral midpoint in proportion to the evidence
 /// backing *that* factor. Both are shrunk by the pool size. The separation read is
@@ -86,10 +86,9 @@ pub struct ChannelDiscrimination {
 /// [`min_count_for_z`](DiscriminationConfig::min_count_for_z) baseline observations the
 /// standardized read is neutralized outright. The absolute factor is instead graded by
 /// the reference's count, because a declared prior arrives mid-ramp with its own
-/// pseudo-count. The shrinkage is per factor, not global, so a declared good-score
-/// reference carries the channel from the very first query even while the separation
-/// baseline is still cold — the §4/§8 reason declaration is preferred over learning the
-/// reference from traffic.
+/// pseudo-count. The shrinkage is per factor rather than global, so a declared good-score
+/// reference takes effect from the very first query even while the separation baseline is
+/// still cold.
 ///
 /// A ranks-only channel has no scores to read, so it returns the neutral weight `1.0`
 /// with no statistics. A scored channel with an empty pool is treated the same way.
@@ -170,8 +169,8 @@ pub fn discriminate<Id>(
     }
 }
 
-/// The neutral read: average weight and no usable statistics. Used for a ranks-only
-/// channel and for an empty scored pool (§6).
+/// The neutral read: average weight and no usable statistics, used for a ranks-only
+/// channel and for an empty scored pool.
 fn neutral() -> ChannelDiscrimination {
     ChannelDiscrimination {
         g: NEUTRAL_WEIGHT,
@@ -182,7 +181,7 @@ fn neutral() -> ChannelDiscrimination {
     }
 }
 
-/// Compute the raw separation statistic D^sep over a sorted (ascending) pool.
+/// Computes the raw separation statistic D^sep over a sorted (ascending) pool.
 ///
 /// Returns `(Some(d_sep), floored)` when the statistic is defined, where `floored` marks
 /// that the denominator was widened by the degeneracy floor. Returns `(None, true)` when
@@ -192,7 +191,7 @@ fn neutral() -> ChannelDiscrimination {
 /// The numerator is the mean of the top `ceil(top_eps * n)` scores (at least one) minus
 /// the median. The denominator is the bulk scale `q0.5 - q0.1`, floored toward a
 /// fraction of the inter-quartile range `q0.75 - q0.25` so a near-tied lower bulk cannot
-/// blow the ratio up. The whole statistic is a ratio of score differences, so it is
+/// inflate the ratio. The whole statistic is a ratio of score differences, so it is
 /// invariant to a rescale and to a shift of every score.
 fn separation_statistic(sorted: &[f64], cfg: &DiscriminationConfig) -> (Option<f64>, bool) {
     let n = sorted.len();
@@ -235,7 +234,7 @@ fn separation_statistic(sorted: &[f64], cfg: &DiscriminationConfig) -> (Option<f
     (Some(ratio), floored)
 }
 
-/// Count distinct values in an ascending-sorted slice. The slice is never empty at any
+/// Counts distinct values in an ascending-sorted slice. The slice is never empty at any
 /// call site, so the count starts at one for the first value.
 fn count_distinct(sorted: &[f64]) -> usize {
     let mut distinct = 1usize;
@@ -273,7 +272,7 @@ fn squash(z: f64, k: f64) -> f64 {
 }
 
 /// One statistic's logistic factor, shrunk toward the neutral midpoint `0.5` by how much
-/// evidence backs the read (§4).
+/// evidence backs the read.
 ///
 /// `lambda` in `[0, 1]` is the evidence weight: at `1` the factor is the full logistic
 /// read `squash(z, k)`, at `0` it is exactly neutral, and in between it interpolates.
@@ -286,15 +285,15 @@ fn shrunk_factor(z: f64, lambda: f64, k: f64) -> f64 {
     l * squash(z, k) + (1.0 - l) * NEUTRAL_FACTOR
 }
 
-/// Combine the two evidence-shrunk factors into the channel weight (§4).
+/// Combines the two evidence-shrunk factors into the channel weight.
 ///
 /// The two factors multiply, so the weight is small whenever either input is small: a
 /// high separation cannot cover for an absolutely poor pool. The product is scaled by
 /// the fixed [`NEUTRAL_G_SCALE`] (`4 = 1 / (0.5 · 0.5)`), so both factors at their norm
 /// give exactly `1.0` and the fusion stays near plain RRF; the neutral point is a
 /// property of the map and does not move when [`DiscriminationConfig::g_upper_bound`]
-/// is tuned. The result is bounded into `[g_floor, g_upper_bound]`: a floor keeps an
-/// unsure channel voting, and the bound keeps any one channel from dominating the
+/// is tuned. The result is bounded into `[g_floor, g_upper_bound]`: the floor keeps an
+/// uncertain channel contributing, and the bound keeps any one channel from dominating the
 /// order. The bounding uses `min`/`max` rather than `clamp`, so even an inverted
 /// floor/bound pair (rejected at construction, but defended here too) resolves
 /// deterministically instead of panicking.
@@ -304,8 +303,8 @@ fn combine(sep_factor: f64, abs_factor: f64, cfg: &DiscriminationConfig) -> f64 
         .max(cfg.g_floor)
 }
 
-/// Clamp a raw separation read to the baseline mean plus or minus `winsor_z` standard
-/// deviations before it is merged into the separation baseline (§4, §7).
+/// Clamps a raw separation read to the baseline mean plus or minus `winsor_z` standard
+/// deviations before it is merged into the separation baseline.
 ///
 /// A single extreme read (a saturated cone gives a large ratio) would otherwise pull the
 /// streaming mean the standardization depends on. The clamp applies only once the

@@ -1,9 +1,9 @@
-//! A tiny symmetric-positive-definite solver for the coupling matrix (§5.4).
+//! A small symmetric-positive-definite solver for the coupling matrix.
 //!
 //! Coupling assembles a regularized dimensionless covariance and needs its inverse,
 //! or row-sums of its inverse, at `N` of a few channels (never more than ~16). That
-//! is far too small to justify a linear-algebra dependency, so this hand-rolls a
-//! Cholesky factorization: `A = L Lᵀ` with `L` lower-triangular. The factorization
+//! is too small to justify a linear-algebra dependency, so this module implements a
+//! Cholesky factorization directly: `A = L Lᵀ` with `L` lower-triangular. The factorization
 //! exists iff `A` is symmetric positive-definite, so a `None` return doubles as the
 //! positive-definiteness check the shrinkage step relies on.
 //!
@@ -58,7 +58,7 @@ pub fn cholesky(a: &[Vec<f64>]) -> Option<Vec<Vec<f64>>> {
     Some(l)
 }
 
-/// Solve `L y = b` for `y`, with `L` lower-triangular (forward substitution).
+/// Solves `L y = b` for `y`, with `L` lower-triangular (forward substitution).
 fn forward_substitution(l: &[Vec<f64>], b: &[f64]) -> Vec<f64> {
     let n = l.len();
     let mut y = vec![0.0f64; n];
@@ -72,7 +72,7 @@ fn forward_substitution(l: &[Vec<f64>], b: &[f64]) -> Vec<f64> {
     y
 }
 
-/// Solve `Lᵀ x = y` for `x`, with `L` lower-triangular (back substitution).
+/// Solves `Lᵀ x = y` for `x`, with `L` lower-triangular (back substitution).
 fn back_substitution(l: &[Vec<f64>], y: &[f64]) -> Vec<f64> {
     let n = l.len();
     let mut x = vec![0.0f64; n];
@@ -86,7 +86,7 @@ fn back_substitution(l: &[Vec<f64>], y: &[f64]) -> Vec<f64> {
     x
 }
 
-/// Solve `A x = b` for symmetric-positive-definite `A`.
+/// Solves `A x = b` for symmetric-positive-definite `A`.
 ///
 /// Returns `None` when `A` is not SPD (or not square) or when `b`'s length does not
 /// match the dimension of `A`.

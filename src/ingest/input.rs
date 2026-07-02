@@ -1,8 +1,8 @@
-//! One query's input for one channel, in canonical higher-is-better units (§7, §11).
+//! One query's input for one channel, in canonical higher-is-better units.
 //!
 //! A channel is either scored or ranks-only, a stable property of how the channel is
-//! wired, not something inferred per query. Ingest orients to higher-is-better and
-//! drops non-finite values, so everything downstream sees clean, canonical scores.
+//! wired rather than something inferred per query. Ingest orients to higher-is-better
+//! and drops non-finite values, so everything downstream sees canonical scores.
 
 use crate::config::ChannelConfig;
 use crate::score::{Score, orient, sanitize};
@@ -10,8 +10,8 @@ use crate::score::{Score, orient, sanitize};
 /// A channel's surfaced items for one query.
 ///
 /// `Scored` holds scores that have been oriented to higher-is-better and had non-finite
-/// values removed. An item the channel did not surface is simply left out, never included
-/// with a worst-rank penalty. `Ranks` is a ranks-only channel that produces no scores: it
+/// values removed. An item the channel did not surface is left out rather than charged
+/// a worst-rank penalty. `Ranks` is a ranks-only channel that produces no scores: it
 /// cannot contribute a discrimination estimate, so it is weighted at the default and
 /// flagged.
 ///
@@ -55,10 +55,10 @@ impl<Id> Items<Id> {
 /// One channel's input for one query: the channel's `key` plus its surfaced items.
 ///
 /// Building this with a struct literal skips the orientation and non-finite filtering
-/// that [`ChannelInput::scored`] and [`ChannelInput::ranked`] perform, so prefer those
-/// constructors, or supply already finite, oriented scores when filling `items` by hand.
-/// A channel is identified per query only by its `key`; its model-version tag lives in the
-/// channel's configuration and accumulated state, not in per-query input.
+/// that [`ChannelInput::scored`] and [`ChannelInput::ranked`] perform; `items` filled by
+/// hand must already be finite and oriented higher-is-better. A channel is identified
+/// per query only by its `key`; its model-version tag lives in the channel's
+/// configuration and accumulated state, not in per-query input.
 ///
 /// Precondition: each channel lists each item at most once. A repeated id within one
 /// input's `items` is counted twice by the fusion, so the ids in one input must be
@@ -72,13 +72,12 @@ pub struct ChannelInput<Id> {
 }
 
 impl<Id> ChannelInput<Id> {
-    /// Build a scored input: read each item's score, orient it to higher-is-better by the
-    /// channel's declared direction, and drop the item if the result is non-finite.
+    /// Builds a scored input: reads each item's score, orients it to higher-is-better by
+    /// the channel's declared direction, and drops the item if the result is non-finite.
     ///
-    /// The channel's `key` and direction are taken from `cfg`; the direction is always the
-    /// channel's configured one, never a per-call argument. Dropping a non-finite item
-    /// matters because such a score carries no usable magnitude and would corrupt any
-    /// baseline it reached.
+    /// The channel's `key` and direction are taken from `cfg`; the direction is the
+    /// channel's configured one and cannot be overridden per call. A non-finite score
+    /// carries no usable magnitude and would corrupt any baseline it reached.
     pub fn scored<S: Score>(cfg: &ChannelConfig, items: Vec<(Id, S)>) -> Self {
         let items = items
             .into_iter()
@@ -90,7 +89,7 @@ impl<Id> ChannelInput<Id> {
         }
     }
 
-    /// Build a ranks-only input for a channel that produces no scores.
+    /// Builds a ranks-only input for a channel that produces no scores.
     ///
     /// The channel's `key` is taken from `cfg`. The order is used as given, best first;
     /// there is nothing to orient or filter, since a rank carries no magnitude.

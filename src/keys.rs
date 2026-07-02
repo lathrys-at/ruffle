@@ -1,12 +1,10 @@
-//! Identifiers and the state fingerprint (§8).
+//! Identifiers and the state fingerprint.
 //!
-//! A channel is named by a [`ChannelId`], which carries two independent facts: a stable
-//! join handle (the `key`) so accumulation lands on the right channel across time and
-//! deployments, and a model-version `tag` that gates every merge. The two answer
-//! different questions and fail in opposite directions, so they are kept distinct (§8).
-//! Every persistent map is keyed by the `key` alone; the `tag` travels in the per-channel
-//! summary and is checked for equality on merge. A [`StatFingerprint`] answers whether two
-//! states were measuring the same thing the same way.
+//! A channel is named by a [`ChannelId`]: a stable join handle (the `key`) that keys
+//! every persistent map, and a model-version `tag` that gates every merge. The
+//! `tag` travels in the per-channel summary and is checked for equality on merge. A
+//! [`StatFingerprint`] records whether two states were measuring the same thing the
+//! same way.
 
 use crate::score::Direction;
 use serde::{Deserialize, Serialize};
@@ -15,32 +13,31 @@ use std::fmt;
 
 /// A channel's identity: a stable join handle (`key`) plus a model-version `tag`.
 ///
-/// The two fields answer different questions and fail in opposite directions, which is
-/// why they are separate and why only one of them keys the persistent maps:
+/// The two fields serve different roles:
 ///
 /// - `key` is the stable join handle. Every persistent map is keyed by it alone, so
-///   accumulation across time and deployments lands on the right channel. Keep it fixed
-///   across model versions. Changing a key mislabels statistics, which is recoverable by
-///   rekeying or a cold start, the safe failure mode.
-/// - `tag` is the model version (for example `"clip-vit-b32-rev1"`). Bump it whenever the
-///   model behind the channel changes. `ruffle` never interprets it; it only checks it
-///   for equality on every merge. Two states that share a channel's `key` but disagree on
-///   its `tag` are refused with [`Mismatch::Tag`](crate::error::Mismatch::Tag), which
-///   catches a model swapped in under a kept key before its statistics can be blended into
-///   a distribution they never came from. Falsely-separate state is recoverable;
-///   falsely-same state is corrupt, so when in doubt, bump the tag.
+///   accumulation across time and deployments lands on the right channel. It stays
+///   fixed across model versions. A changed key mislabels statistics, recoverable by
+///   rekeying or a cold start.
+/// - `tag` is the model version (for example `"clip-vit-b32-rev1"`), changed whenever
+///   the model behind the channel changes. Ruffle never interprets it; it only checks
+///   it for equality on every merge. Two states that share a channel's `key` but
+///   disagree on its `tag` are refused with
+///   [`Mismatch::Tag`](crate::error::Mismatch::Tag), catching a model swapped in under
+///   a kept key. An unnecessary tag change costs a cold start; a missed one corrupts
+///   the baseline.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ChannelId {
     /// The stable join handle. Every persistent map is keyed by this alone.
     pub key: String,
-    /// The model-version tag. `ruffle` never interprets it; it only requires that two
+    /// The model-version tag. Ruffle never interprets it; it only requires that two
     /// states agree on it before their statistics for the same channel are merged, so a
     /// model swapped under a kept key is refused rather than silently blended.
     pub tag: String,
 }
 
 impl ChannelId {
-    /// Build a channel id from a join handle and a model-version tag.
+    /// Builds a channel id from a join handle and a model-version tag.
     pub fn new(key: impl Into<String>, tag: impl Into<String>) -> Self {
         Self {
             key: key.into(),
@@ -64,7 +61,7 @@ impl fmt::Display for ChannelId {
 pub struct UnorderedPair<T>(T, T);
 
 impl<T: Ord> UnorderedPair<T> {
-    /// Build a pair, sorting the two members into canonical order.
+    /// Builds a pair, sorting the two members into canonical order.
     pub fn new(a: T, b: T) -> Self {
         if a <= b { Self(a, b) } else { Self(b, a) }
     }
@@ -84,7 +81,7 @@ impl<T: Ord> UnorderedPair<T> {
         (&self.0, &self.1)
     }
 
-    /// Consume the pair into its two members, in canonical order.
+    /// Consumes the pair into its two members, in canonical order.
     pub fn into_inner(self) -> (T, T) {
         (self.0, self.1)
     }
@@ -97,21 +94,20 @@ impl<T: Ord> UnorderedPair<T> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum BaselineMode {
-    /// Standardize each score against the channel's running mean and variance.
+    /// Standardizes each score against the channel's running mean and variance.
     #[default]
     ZScore,
 }
 
 /// A fingerprint answering whether two states were measuring the same thing the same way.
 ///
-/// Two states built with different statistic definitions, orientations, or baseline modes
-/// are numerically incompatible even when their serialization formats match, so merging
-/// them silently would be a quiet correctness bug. Reconciliation refuses on a fingerprint
-/// mismatch.
+/// Two states built with different statistic definitions, orientations, or baseline
+/// modes are numerically incompatible even when their serialization formats match.
+/// Reconciliation refuses on a fingerprint mismatch.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StatFingerprint {
-    /// Version of the discrimination/coupling statistic definitions. Bump when the
-    /// meaning of a persisted statistic changes.
+    /// Version of the discrimination/coupling statistic definitions. It increments
+    /// when the meaning of a persisted statistic changes.
     pub stat_version: u32,
     /// Which within-channel standardization the state was built with.
     pub baseline_mode: BaselineMode,
@@ -122,7 +118,7 @@ pub struct StatFingerprint {
 }
 
 impl StatFingerprint {
-    /// The statistic-definition version this build of `ruffle` writes.
+    /// The statistic-definition version this build of Ruffle writes.
     ///
     /// Version history:
     /// - `1`: Pearson anchor redundancy on raw oriented scores.

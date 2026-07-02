@@ -1,10 +1,10 @@
-//! The full-scored anchor for coupling estimation (§5.3).
+//! The full-scored anchor for coupling estimation.
 //!
 //! The anchor is a set of representative queries, each scored by every channel over a
-//! common, unselected candidate set (never any channel's top-`k`). Because it is
+//! common, unselected candidate set rather than any channel's top-`k`. Because it is
 //! full-scored, an absent score is unambiguous: the facet does not apply to that item,
 //! not that it ranked below a cutoff. The redundancy estimate is read here, away from
-//! the live pool's collider (§5.2).
+//! the live pool's selection bias.
 
 use crate::config::ChannelConfig;
 use crate::score::{Score, orient, sanitize};
@@ -14,10 +14,10 @@ use crate::score::{Score, orient, sanitize};
 ///
 /// Because every candidate is scored by every channel, a `None` entry unambiguously means
 /// the channel's facet does not apply to that item, rather than that the item was ranked
-/// below a cutoff and dropped. The candidate set must be an unselected sample (a random or
-/// whole-corpus draw), never any channel's top-`k` results; the type cannot enforce this,
-/// so it is a caller precondition. Restricting the candidates to a top-`k` pool biases the
-/// pairwise correlations and destroys the redundancy estimate.
+/// below a cutoff and dropped. The candidate set must be an unselected sample (a random
+/// or whole-corpus draw) rather than any channel's top-`k` results; the type cannot
+/// enforce this, so it is a caller precondition. Restricting the candidates to a top-`k`
+/// pool biases the pairwise correlations and destroys the redundancy estimate.
 #[derive(Debug, Clone)]
 pub struct Anchor {
     /// The channels scored (by join-handle `key`), in a fixed order shared by every
@@ -29,7 +29,7 @@ pub struct Anchor {
 }
 
 impl Anchor {
-    /// Build an anchor by scoring every `(candidate, channel)` pair.
+    /// Builds an anchor by scoring every `(candidate, channel)` pair.
     ///
     /// `score` is called once for each candidate and channel. `Some(s)` is oriented to
     /// higher-is-better by that channel's [`Direction`](crate::score::Direction); a finite
@@ -42,10 +42,10 @@ impl Anchor {
     /// address each candidate and is never stored, so the built [`Anchor`] is a plain score
     /// matrix.
     ///
-    /// # Precondition (the caller's responsibility)
+    /// # Precondition
     ///
-    /// `candidates` must be an unselected set: a random or whole-corpus draw, never any
-    /// channel's top-`k` pool. Restricting the candidates to a union of the channels'
+    /// `candidates` must be an unselected set: a random or whole-corpus draw rather
+    /// than any channel's top-`k` pool. Restricting the candidates to a union of the channels'
     /// top-`k` results conditions on a selection effect (Berkson's paradox) that pushes the
     /// channels spuriously anti-correlated and destroys the redundancy estimate. Whether a
     /// candidate set is unselected cannot be checked from the ids alone, so keeping this
@@ -83,7 +83,7 @@ mod tests {
     use crate::keys::ChannelId;
     use crate::score::Direction;
 
-    /// A caller-side newtype: the only way a bare number becomes a [`Score`] (§7).
+    /// A caller-side newtype: the only way a bare number becomes a [`Score`].
     struct Val(f64);
     impl Score for Val {
         fn value(&self) -> f64 {

@@ -1,7 +1,7 @@
 //! Error types for state reconciliation and fuser construction.
 //!
 //! The merge of two persistent states refuses on any incompatibility rather than
-//! silently blending distributions that were never measuring the same thing (§8), and
+//! silently blending distributions that were never measuring the same thing, and
 //! building a [`Fuser`](crate::Fuser) refuses an invalid configuration or an
 //! incompatible resumed state rather than fusing on top of it.
 
@@ -40,8 +40,8 @@ pub enum Mismatch {
     },
 
     /// A channel present in both states has a different model-version tag, the signature
-    /// of a model swapped in under a kept name. Falsely-same state is corrupt, so this is
-    /// a loud refusal.
+    /// of a model swapped in under a kept name. Merging across it would blend statistics
+    /// from different models.
     #[error("semantic tag mismatch for channel {channel}: {left} vs {right}")]
     Tag {
         /// The channel key whose tags disagree.
@@ -61,9 +61,8 @@ pub enum Mismatch {
 /// configuration.
 ///
 /// Every variant is a hard refusal at construction. Fusing on top of an invalid
-/// configuration would either panic mid-query (a clamp with an inverted range) or
-/// silently degrade (a rejected good-score declaration cold-starting the channel with no
-/// signal to the operator), so the problems are surfaced before any query runs.
+/// configuration would panic mid-query or silently degrade, so the problems are
+/// surfaced before any query runs.
 #[derive(Error, Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum ConfigError {
@@ -90,8 +89,7 @@ pub enum ConfigError {
     },
 
     /// Two channel registrations share one join-handle key. Both would write to the same
-    /// baseline, so the duplication is refused rather than resolved by a silent
-    /// last-wins.
+    /// baseline, so the duplication is refused.
     #[error("duplicate channel key {key} in the registrations")]
     DuplicateChannelKey {
         /// The key that appears more than once.
@@ -101,10 +99,10 @@ pub enum ConfigError {
 
 /// A reason a [`Fuser`](crate::Fuser) cannot resume from a persisted state.
 ///
-/// Resume is the live boundary a real model change always crosses (a swap happens
-/// across a restart), so it runs the same compatibility gate a state merge does: the
-/// registrations must agree with the persisted state on format, statistic definitions,
-/// per-channel orientation, and the per-channel model-version tag.
+/// A model swap happens across a restart, so resume runs the same compatibility gate
+/// as a state merge: the registrations must agree with the persisted state on format,
+/// statistic definitions, per-channel orientation, and the per-channel model-version
+/// tag.
 #[derive(Error, Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum ResumeError {

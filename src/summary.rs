@@ -1,7 +1,7 @@
-//! The single mergeable summary: confidence-weighted streaming mean and variance (§8).
+//! The single mergeable summary: confidence-weighted streaming mean and variance.
 //!
-//! Everything `ruffle` persists is one of these. Given a count-weighted, associative
-//! merge, three operations collapse into one (§8):
+//! Everything Ruffle persists is one of these. Given a count-weighted, associative
+//! merge, three operations collapse into one:
 //!
 //! ```text
 //! streaming update = prior = cross-deployment reconciliation = merge(.)
@@ -45,7 +45,7 @@ impl MeanVar {
         }
     }
 
-    /// Seed a prior summary from a mean, a population variance, and a pseudo-count.
+    /// Seeds a prior summary from a mean, a population variance, and a pseudo-count.
     ///
     /// The pseudo-count sets how much evidence the prior stands in for, and so how firmly
     /// it holds: after `n` real observations the prior's pull has shrunk to
@@ -67,7 +67,7 @@ impl MeanVar {
         }
     }
 
-    /// Fold one observation in, equivalent to merging a count-1 summary.
+    /// Folds one observation in, equivalent to merging a count-1 summary.
     ///
     /// A non-finite `x` is ignored, so a single stray value cannot corrupt the mean. This
     /// is a backstop; scores are normally already sanitized when they are ingested.
@@ -85,7 +85,7 @@ impl MeanVar {
         );
     }
 
-    /// Merge two summaries with Chan's parallel formulas.
+    /// Merges two summaries with Chan's parallel formulas.
     ///
     /// Associative and commutative, exact up to f64 rounding. With either operand
     /// empty the result equals the other operand. A combined count of zero or less
@@ -102,7 +102,7 @@ impl MeanVar {
         Self { count: n, mean, m2 }
     }
 
-    /// Fold another summary into this one in place (`self = merge(self, other)`).
+    /// Folds another summary into this one in place (`self = merge(self, other)`).
     pub fn merge_in(&mut self, other: &Self) {
         *self = Self::merge(self, other);
     }
@@ -138,7 +138,7 @@ impl MeanVar {
         self.variance().sqrt()
     }
 
-    /// Standardize `x` against this baseline: `(x - mean) / std`.
+    /// Standardizes `x` against this baseline: `(x - mean) / std`.
     ///
     /// Returns `None` when the count is non-positive, when the standard deviation is not
     /// finite and strictly positive, or when the result itself is not finite, so a
@@ -161,7 +161,7 @@ impl MeanVar {
         if z.is_finite() { Some(z) } else { None }
     }
 
-    /// Reduce confidence by scaling the count and `m2` by `factor`, leaving the mean and
+    /// Reduces confidence by scaling the count and `m2` by `factor`, leaving the mean and
     /// variance unchanged.
     ///
     /// `factor` is clamped to `[0, 1]`. Because the variance is `m2 / count` and both are

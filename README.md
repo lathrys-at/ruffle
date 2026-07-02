@@ -29,7 +29,7 @@ ruffle = "0.1"
 ```
 
 ```rust
-use ruffle::{ChannelConfig, ChannelId, ChannelInput, Direction, FuseConfig, Fuser, Score};
+use ruffle::{ChannelConfig, ChannelId, ChannelInput, Direction, FuseConfig, Fuser, GoodScore, Score};
 
 // A channel's native score becomes a `Score` only through a newtype that declares what
 // the number means.

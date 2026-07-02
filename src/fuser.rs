@@ -1,7 +1,7 @@
-//! The top-level fuser that ties discrimination, coupling, and fusion together (§11).
+//! The top-level fuser that ties discrimination, coupling, and fusion together.
 //!
-//! [`Fuser::fuse`] is the stateful entry point: orient, score, weight, fuse, then update
-//! the persistent baselines.
+//! [`Fuser::fuse`] is the stateful entry point: orientation, scoring, weighting, fusion,
+//! then an update of the persistent baselines.
 
 use crate::config::{ChannelConfig, FuseConfig};
 use crate::error::{ConfigError, Mismatch, ResumeError};
@@ -39,10 +39,9 @@ pub enum ChannelFlag {
 /// The outcome of fusing one query: the merged ranking plus the weights, flags, and
 /// diagnostics behind it.
 ///
-/// Marked `#[non_exhaustive]`: this is a result type read by callers, never built by
-/// them, and it grows fields as the fusion surfaces more of its reasoning (the
-/// `discrimination` map arrived that way). Construct rankings only through
-/// [`Fuser::fuse`]/[`Fuser::fuse_stateless`].
+/// Marked `#[non_exhaustive]`: a result type that callers read but never construct,
+/// and it grows fields as the fusion surfaces more of its reasoning. Rankings are
+/// constructed only through [`Fuser::fuse`]/[`Fuser::fuse_stateless`].
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub struct Fused<Id> {
@@ -54,8 +53,8 @@ pub struct Fused<Id> {
     /// the map was weighted on its full discrimination score.
     pub flags: BTreeMap<String, ChannelFlag>,
     /// The per-channel discrimination reads behind the weights: the raw separation, the
-    /// top-`m` reference read, and the combined `g`, per fused channel. Surfaced so
-    /// "why did this channel get this weight" is answerable from the result alone,
+    /// top-`m` reference read, and the combined `g`, per fused channel. Surfaced so the
+    /// reasoning behind each channel's weight is readable from the result alone,
     /// without recomputing through [`components`](crate::components).
     pub discrimination: BTreeMap<String, ChannelDiscrimination>,
     /// How much the discriminating channels agree on which items are relevant, as the
@@ -73,8 +72,9 @@ pub struct Fused<Id> {
 /// persistent baselines it accumulates across queries. Each [`fuse`](Self::fuse) call
 /// weights the channels by how well each is discriminating on this query and how
 /// redundant the channels are with each other, then combines them by weighted
-/// reciprocal-rank fusion. Build one with [`new`](Self::new), or [`resume`](Self::resume)
-/// from saved state; call [`fuse`](Self::fuse) per query; persist [`state`](Self::state).
+/// reciprocal-rank fusion. A fuser is built with [`new`](Self::new) or resumed from saved
+/// state with [`resume`](Self::resume); [`fuse`](Self::fuse) runs per query, and
+/// [`state`](Self::state) exposes the baselines to persist.
 #[derive(Debug, Clone)]
 pub struct Fuser {
     /// Per-channel registrations, keyed by channel.
@@ -86,15 +86,15 @@ pub struct Fuser {
 }
 
 impl Fuser {
-    /// Build a fresh fuser from channel registrations and a configuration, with empty
+    /// Builds a fresh fuser from channel registrations and a configuration, with empty
     /// starting baselines.
     ///
     /// The per-channel lookup is keyed by each config's join handle `id.key`, and the
     /// empty [`RuffleState`] is fingerprinted from `cfg.baseline_mode` and the
     /// `{id.key -> direction}` map of these configs, so the caller does not have to
     /// assemble a `BTreeMap` or a [`StatFingerprint`]/[`RuffleState`] by hand for the
-    /// fresh case. To resume from a previously persisted state, use
-    /// [`Fuser::resume`](Self::resume).
+    /// fresh case. [`Fuser::resume`](Self::resume) continues from a previously persisted
+    /// state.
     ///
     /// # Errors
     ///
@@ -141,7 +141,7 @@ impl Fuser {
         })
     }
 
-    /// Build a fuser from channel registrations, a previously persisted state, and a
+    /// Builds a fuser from channel registrations, a previously persisted state, and a
     /// configuration, continuing to accumulate from that state.
     ///
     /// Builds the same per-channel lookup as [`Fuser::new`](Self::new), but uses the
@@ -150,9 +150,9 @@ impl Fuser {
     ///
     /// Resume is the live boundary a real model change crosses (a swap happens across a
     /// restart), so it runs the same compatibility gate a state merge does before
-    /// accepting the state. Without it, a model swapped in behind a dutifully bumped
-    /// tag would silently keep accumulating into the old model's baselines, which is
-    /// exactly the falsely-same corruption the tag exists to prevent (§8).
+    /// accepting the state. Without the gate, a model swapped in behind a bumped tag
+    /// would silently keep accumulating into the old model's baselines, which is the
+    /// corruption the tag exists to prevent.
     ///
     /// # Errors
     ///
@@ -164,10 +164,10 @@ impl Fuser {
     /// - a channel whose configured direction contradicts the state fingerprint
     ///   ([`Mismatch::DirectionConflict`]);
     /// - a channel whose configured tag differs from the tag its accumulated statistics
-    ///   were measured under ([`Mismatch::Tag`]): the signature of a model swap. Bumping
-    ///   the tag was correct; the accumulated state must now be retired (start fresh) or
-    ///   the old channel's history dropped or [`rekey`](RuffleState::rekey)ed, but never
-    ///   silently blended.
+    ///   were measured under ([`Mismatch::Tag`]): the signature of a model swap. The tag
+    ///   bump itself is correct; the accumulated state must then be retired (a fresh
+    ///   start), or the old channel's history dropped or [`rekey`](RuffleState::rekey)ed,
+    ///   rather than silently blended.
     pub fn resume(
         configs: &[ChannelConfig],
         state: RuffleState,
@@ -184,8 +184,8 @@ impl Fuser {
 
     /// The persistent baseline state, for serialization and inspection.
     ///
-    /// This is the object a caller persists: serialize `fuser.state()` to save, and
-    /// restore through [`Fuser::resume`](Self::resume). Access is read-only by design.
+    /// This is the object a caller persists: it is serialized to save and restored
+    /// through [`Fuser::resume`](Self::resume). Access is read-only.
     /// Every write goes through [`fuse`](Self::fuse),
     /// [`refresh_coupling`](Self::refresh_coupling), or [`resume`](Self::resume), so a
     /// caller cannot edit the `format_version`, fingerprint, or tags the merge gate
@@ -201,28 +201,28 @@ impl Fuser {
         &self.cfg
     }
 
-    /// Fuse one query's per-channel results into a single ranking, and fold this query's
-    /// readings into the running baselines. Returns the ranking, the weights used,
-    /// per-channel flags, and two agreement diagnostics.
+    /// Fuses one query's per-channel results into a single ranking, and folds this
+    /// query's readings into the running baselines. Returns the ranking, the weights
+    /// used, per-channel flags, and two agreement diagnostics.
     ///
     /// The pipeline is:
     ///
-    /// 1. Ensure a [`ChannelSummary`] exists for every registered channel present in
+    /// 1. A [`ChannelSummary`] is ensured for every registered channel present in
     ///    `obs`. A brand-new channel is seeded from its config: the good-score reference
     ///    from a declared [`GoodScore`](crate::score::GoodScore) (else empty), an empty
     ///    separation baseline, and the channel's tag; its declared direction is recorded
     ///    in the state fingerprint.
-    /// 2. Read each channel's discrimination against its summary.
-    /// 3. Assemble redundancy-discounted weights summing to `N`, the channel count.
-    /// 4. Fuse by weighted reciprocal-rank fusion.
-    /// 5. Flag any non-standard weighting.
-    /// 6. Read the set-overlap diagnostics from the discriminating channels.
-    /// 7. Update the baselines: optionally decay, then push the winsorized separation
-    ///    read and the top-`m` reference read.
+    /// 2. Each channel's discrimination is read against its summary.
+    /// 3. Redundancy-discounted weights are assembled, summing to `N`, the channel count.
+    /// 4. The channels are fused by weighted reciprocal-rank fusion.
+    /// 5. Any non-standard weighting is flagged.
+    /// 6. The set-overlap diagnostics are read from the discriminating channels.
+    /// 7. The baselines are updated: an optional decay, then a push of the winsorized
+    ///    separation read and the top-`m` reference read.
     ///
     /// An input whose key is not a registered channel is skipped entirely: it is excluded
     /// from discrimination, weighting, fusion, flags, and diagnostics, and never seeds or
-    /// updates state. Without a registration `ruffle` has no direction, tag, or reference
+    /// updates state. Without a registration Ruffle has no direction, tag, or reference
     /// to interpret the channel safely, so it is ignored rather than fused at a guessed
     /// weight. If one channel key appears more than once in `obs`, only the first input
     /// is fused; a later duplicate is skipped rather than double-counting the channel's
@@ -305,7 +305,7 @@ impl Fuser {
         fused
     }
 
-    /// Fuse one query against the given configs and a prior state, without mutating any
+    /// Fuses one query against the given configs and a prior state, without mutating any
     /// baseline. Without a usable prior it reduces to within-query reciprocal-rank fusion.
     ///
     /// This runs the same weighting and fusion as [`fuse`](Self::fuse) but seeds nothing
@@ -321,8 +321,8 @@ impl Fuser {
     /// Runs the same gates as [`resume`](Self::resume): the registrations and
     /// configuration must be valid, and the prior must be compatible with them. A
     /// mismatched prior would standardize this query against baselines measured under a
-    /// different model or orientation; the fusion is read-only, but its weights would be
-    /// corrupt all the same.
+    /// different model or orientation; the fusion is read-only, but its weights would
+    /// still be corrupt.
     pub fn fuse_stateless<Id: Hash + Eq + Clone>(
         obs: &[ChannelInput<Id>],
         configs: &[ChannelConfig],
@@ -353,7 +353,7 @@ impl Fuser {
         Ok(fused)
     }
 
-    /// Fold a full-scored anchor's pairwise correlations into the persistent redundancy
+    /// Folds a full-scored anchor's pairwise correlations into the persistent redundancy
     /// baselines.
     ///
     /// Each pair's correlation is accumulated into its persistent redundancy summary by
@@ -384,8 +384,8 @@ impl Fuser {
     }
 }
 
-/// Validate the registrations and configuration on their own (§4, §7, §8): every knob in
-/// range, every join-handle key distinct, and every declared good score orientable to a
+/// Validates the registrations and configuration on their own: every knob in range,
+/// every join-handle key distinct, and every declared good score orientable to a
 /// usable reference.
 fn validate_registrations(configs: &[ChannelConfig], cfg: &FuseConfig) -> Result<(), ConfigError> {
     cfg.validate()?;
@@ -409,7 +409,7 @@ fn validate_registrations(configs: &[ChannelConfig], cfg: &FuseConfig) -> Result
     Ok(())
 }
 
-/// Validate the registrations against a persisted state (§8): the same compatibility
+/// Validates the registrations against a persisted state: the same compatibility
 /// gate [`RuffleState::merge`] runs, applied at the live resume boundary.
 fn validate_against_state(
     configs: &[ChannelConfig],
@@ -448,7 +448,7 @@ fn validate_against_state(
     Ok(())
 }
 
-/// Build the per-channel lookup keyed by each config's join handle `id.key` (§11).
+/// Builds the per-channel lookup keyed by each config's join handle `id.key`.
 ///
 /// Key distinctness is enforced by [`validate_registrations`] before any lookup is
 /// built, so the map is total over the registrations.
@@ -459,7 +459,7 @@ fn config_lookup(configs: &[ChannelConfig]) -> BTreeMap<String, ChannelConfig> {
         .collect()
 }
 
-/// Seed a fresh per-channel summary from its registration (§4, §8).
+/// Seeds a fresh per-channel summary from its registration.
 ///
 /// The good-score reference is seeded from a declared [`GoodScore`](crate::score::GoodScore),
 /// oriented to canonical higher-is-better, as `from_prior(mu_ref, sigma_ref², n0)`; when
@@ -481,12 +481,12 @@ fn seed_summary(cfg: &ChannelConfig) -> ChannelSummary {
     ChannelSummary::with_reference(cfg.id.tag.clone(), reference)
 }
 
-/// The pure heart of fusion shared by [`Fuser::fuse`] and [`Fuser::fuse_stateless`]
-/// (steps 2-6 of §11): read discrimination, weight, fuse, flag, and diagnose, reading
-/// baselines from `channels` and `pairs` and mutating nothing.
+/// The pure core of fusion shared by [`Fuser::fuse`] and [`Fuser::fuse_stateless`]:
+/// discrimination, weighting, fusion, flags, and diagnostics, reading baselines from
+/// `channels` and `pairs` and mutating nothing.
 ///
 /// Returns the [`Fused`] result plus the per-channel discrimination reads, which the
-/// stateful caller folds back into the baselines (step 7). An input whose key is
+/// stateful caller folds back into the baselines. An input whose key is
 /// not in `configs`, or that has no summary in `channels`, is skipped entirely.
 fn fuse_core<Id: Hash + Eq + Clone>(
     obs: &[ChannelInput<Id>],
@@ -609,8 +609,8 @@ fn fuse_core<Id: Hash + Eq + Clone>(
 
 /// The channel's top-`m` candidate ids: by descending oriented score for a `Scored`
 /// channel (ties broken by list order, a total order, so membership is deterministic),
-/// by list order for a `Ranks` channel. Used to build the diagnostic top-set overlap
-/// (§5.5), which reads membership only, so the returned order is unspecified. Selection
+/// by list order for a `Ranks` channel. Used to build the diagnostic top-set overlap,
+/// which reads membership only, so the returned order is unspecified. Selection
 /// is `O(n)` rather than a full sort.
 fn top_m_ids<Id: Clone>(items: &Items<Id>, m: usize) -> Vec<Id> {
     match items {
@@ -642,7 +642,7 @@ mod tests {
     use crate::weighting::discrimination::discriminate;
     use approx::assert_abs_diff_eq;
 
-    /// A caller-side newtype: the only way a bare number becomes a [`Score`] (§7).
+    /// A caller-side newtype: the only way a bare number becomes a [`Score`].
     struct Val(f64);
     impl Score for Val {
         fn value(&self) -> f64 {

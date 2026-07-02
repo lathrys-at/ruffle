@@ -1,4 +1,4 @@
-//! Weighted reciprocal-rank fusion (§6).
+//! Weighted reciprocal-rank fusion.
 //!
 //! The fusion stays RRF, keeping its scale-freedom and bounded, rank-shaped per-channel
 //! contribution, with per-channel weights added:
@@ -7,16 +7,16 @@
 //! score(d) = Σ_c  w_c / (η + rank_c(d))
 //! ```
 //!
-//! An item absent from a channel's list is omitted from that channel's contribution,
-//! never charged a worst-rank penalty (§6).
+//! An item absent from a channel's list is omitted from that channel's contribution
+//! rather than charged a worst-rank penalty.
 //!
 //! # Rank derivation
 //!
-//! Each channel supplies an absolute rank per item, `1` = best (§0). A `Scored`
+//! Each channel supplies an absolute rank per item, `1` = best. A `Scored`
 //! channel is ranked by descending oriented score, so the highest score is rank `1`;
 //! a `Ranks` channel is already in rank order, so list position `0` is rank `1`. Rank
-//! is absolute, never normalized by pool depth, so rank `3` contributes the same
-//! whether the pool was `5` deep or `500` (§6).
+//! is absolute rather than normalized by pool depth, so rank `3` contributes the same
+//! whether the pool was `5` deep or `500`.
 //!
 //! # Ties and determinism
 //!
@@ -33,7 +33,7 @@
 //! list, ties included. The fused order is `(score DESC, first-seen index ASC)`: the
 //! first-seen index breaks exact fused-score ties deterministically. The result is
 //! identical across runs and independent of any hash seed, because the map is only
-//! ever point-queried, never iterated.
+//! ever point-queried rather than iterated.
 
 use crate::config::RrfConfig;
 use crate::ingest::input::{ChannelInput, Items};
@@ -42,15 +42,15 @@ use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 use std::collections::{BTreeMap, HashMap};
 
-/// Fuse ranked channel outputs into one ranking by weighted reciprocal-rank fusion.
+/// Fuses ranked channel outputs into one ranking by weighted reciprocal-rank fusion.
 ///
 /// ```text
 /// score(d) = Σ_c  w_c / (η + rank_c(d))
 /// ```
 ///
 /// Each item's fused score sums `w_c / (η + rank)` over the channels that ranked it. An
-/// item a channel did not surface is omitted from that channel's sum, never charged a
-/// worst-rank penalty, because only present items are iterated. An item appearing in
+/// item a channel did not surface is omitted from that channel's sum rather than charged
+/// a worst-rank penalty, because only present items are iterated. An item appearing in
 /// several channels sums its per-channel contributions.
 ///
 /// `weights` are the per-channel weights (normalized to sum to `N` upstream); a channel
@@ -63,9 +63,9 @@ use std::collections::{BTreeMap, HashMap};
 ///
 /// Precondition: each channel's item list must contain distinct ids. A repeated id within
 /// one channel is counted once per occurrence (its contributions are double-counted),
-/// which is garbage-in for a malformed channel list, so callers must not list an id twice
-/// in a single channel. (An id appearing across different channels is the normal case and
-/// is summed as above; the precondition is per channel only.)
+/// so callers must not list an id twice in a single channel. (An id appearing across
+/// different channels is the normal case and is summed as above; the precondition is per
+/// channel only.)
 ///
 /// Returns each surfaced item paired with its fused score, sorted best first by
 /// `(score DESC, first-seen index ASC)`. Empty input yields an empty `Vec`.

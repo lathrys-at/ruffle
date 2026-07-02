@@ -1,10 +1,10 @@
-//! Channel coupling (§5): the redundancy discount that keeps the fusion from
+//! Channel coupling: the redundancy discount that keeps the fusion from
 //! double-counting channels that share a nuisance factor.
 //!
 //! Pairwise redundancy is read on the full-scored anchor, over the items both channels
-//! actually scored (§5.3), then assembled into weights through a regularized
-//! dimensionless covariance (§5.4). Two diagnostics (§5.5) are read from set membership
-//! only, so they cannot inherit the live pool's collider bias.
+//! actually scored, then assembled into weights through a regularized dimensionless
+//! covariance. Two diagnostics are read from set membership only, so they cannot
+//! inherit the live pool's collider bias.
 
 // Index-based loops are the clearest form for the small matrix arithmetic here, matching
 // the `linalg` module's convention; a single index addresses several rows at once.
@@ -22,14 +22,14 @@ use std::collections::{BTreeMap, HashSet};
 /// One channel pair's redundancy correlation measured on the anchor, with the overlap
 /// backing it.
 ///
-/// Marked `#[non_exhaustive]`: a result type produced by [`anchor_correlations`], read
-/// but never built by callers.
+/// Marked `#[non_exhaustive]`: a result type produced by [`anchor_correlations`] that
+/// callers read but never construct.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct PairObservation {
     /// The anchor redundancy correlation for this pair, over the both-scored items:
     /// Spearman's rank correlation mapped to the Gaussian-copula linear correlation
-    /// (see [`anchor_correlations`]), in `[-1, 1]`.
+    /// by [`anchor_correlations`], in `[-1, 1]`.
     pub correlation: f64,
     /// The number of items both channels scored (the overlap backing the estimate).
     pub n_both: usize,
@@ -57,20 +57,20 @@ pub struct PairBaseline {
 /// Per-channel weights after the redundancy discount, plus the effective
 /// independent-channel count.
 ///
-/// Marked `#[non_exhaustive]`: a result type produced by [`coupled_weights`], read but
-/// never built by callers.
+/// Marked `#[non_exhaustive]`: a result type produced by [`coupled_weights`] that
+/// callers read but never construct.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct CoupledWeights {
     /// The per-channel weights after the redundancy discount, normalized to sum to the
-    /// channel count `N`, so the average channel carries weight `1`. Keyed by channel.
+    /// channel count `N`, so the average channel has weight `1`. Keyed by channel.
     pub weights: BTreeMap<String, f64>,
     /// The effective number of independent channels, `1ᵀ R⁻¹ 1`: equal to `N` when the
     /// channels are uncorrelated, and fewer when they share a nuisance factor.
     pub effective_channels: f64,
 }
 
-/// Estimate each channel pair's redundancy correlation from a shared anchor, over the
+/// Estimates each channel pair's redundancy correlation from a shared anchor, over the
 /// items both channels scored.
 ///
 /// This is one of the building blocks [`Fuser`](crate::Fuser) composes: it turns an
@@ -80,10 +80,10 @@ pub struct CoupledWeights {
 ///
 /// The estimate is rank-based: Spearman's rank correlation over the both-scored items,
 /// mapped to the Gaussian-copula linear correlation through `2·sin(π·ρ_s/6)` (Pearson's
-/// exact relation between the two for a bivariate normal, so under the §5.2 simulation
-/// model the estimator recovers the same `λ²/(λ²+1)` a linear correlation would). Ranks
-/// are the right basis here because the design's own premise (§2, §7) is that a
-/// channel's scores are meaningful only up to an unknown monotone calibration: a linear
+/// exact relation between the two for a bivariate normal, so under a Gaussian
+/// shared-nuisance model with loading `λ` the estimator recovers the same `λ²/(λ²+1)` a
+/// linear correlation would). Ranks are the right basis here because Ruffle treats a
+/// channel's scores as meaningful only up to an unknown monotone calibration: a linear
 /// correlation on raw scores changes under a monotone rescaling (a compressed CLIP cone
 /// against a heavy-tailed lexical score attenuates it), while the rank-based estimate is
 /// invariant to any such rescaling and never compares one channel's raw magnitudes
@@ -98,7 +98,7 @@ pub struct CoupledWeights {
 ///
 /// A random anchor is dominated by the bulk of irrelevant items, so this measures
 /// within-bulk coupling. Using it as a stand-in for the coupling at the top of the pool
-/// is a modelling assumption, not corrected here.
+/// is a modelling assumption and is not corrected here.
 #[must_use]
 pub fn anchor_correlations(
     anchor: &Anchor,
@@ -156,8 +156,8 @@ fn copula_correlation(xs: &[f64], ys: &[f64]) -> Option<f64> {
 }
 
 /// Midranks of a sample: rank `1` = smallest, ties sharing the average of the ranks they
-/// span. The standard rank transform behind Spearman's rho, well-defined for the tied
-/// integer-count channels §4 names.
+/// span. The standard rank transform behind Spearman's rho, well-defined even for
+/// heavily tied samples such as integer-count scores.
 fn midranks(xs: &[f64]) -> Vec<f64> {
     let n = xs.len();
     let mut idx: Vec<usize> = (0..n).collect();
@@ -213,7 +213,7 @@ fn pearson(xs: &[f64], ys: &[f64]) -> Option<f64> {
     }
 }
 
-/// Turn per-channel discrimination weights into a redundancy-discounted set, so channels
+/// Turns per-channel discrimination weights into a redundancy-discounted set, so channels
 /// that share a nuisance factor are not counted twice.
 ///
 /// This is one of the building blocks [`Fuser`](crate::Fuser) composes. It takes the map
@@ -236,7 +236,7 @@ fn pearson(xs: &[f64], ys: &[f64]) -> Option<f64> {
 ///    query strata would over-discount the independent regime, so an unstable pair
 ///    degrades to independence rather than suppressing a channel. Redundancy is
 ///    non-negative, so the value is capped to `[0, discount_cap]`: a negative
-///    correlation is treated as independence, never credited. `R` is then shrunk toward
+///    correlation is treated as independence rather than credited. `R` is then shrunk toward
 ///    the identity by [`CouplingConfig::shrink_to_identity`], which keeps it
 ///    positive-definite. With coupling off, or no pair clearing the gates, `R = I`
 ///    exactly.
@@ -247,7 +247,7 @@ fn pearson(xs: &[f64], ys: &[f64]) -> Option<f64> {
 ///    to `N`; an all-zero clamp falls back to uniform weight `1`.
 ///
 /// In the decoupled limit `R = I`, this gives `Σ̂ = diag(1/g_c)`, `Σ̂⁻¹ = diag(g_c)`, and
-/// hence `w_c ∝ g_c`: with no redundancy, weight is simply proportional to discrimination.
+/// hence `w_c ∝ g_c`: with no redundancy, weight is proportional to discrimination.
 /// `effective_channels = 1ᵀ R⁻¹ 1` is read from `R` alone, so it stays a channel count and
 /// does not mix in `g`. Because the off-diagonals are non-negative, it lies in `(0, N]`
 /// and never exceeds the channel count.
@@ -256,7 +256,7 @@ fn pearson(xs: &[f64], ys: &[f64]) -> Option<f64> {
 /// redundancy it consumes rests on two assumptions: that channel redundancy is
 /// query-independent enough to amortize one pooled correlation, and that the bulk-stratum
 /// coupling the anchor measures stands in for the coupling at the top of the pool. When
-/// unsure, assuming independence is the recall-safe choice.
+/// the evidence is thin, assuming independence is the recall-safe choice.
 #[must_use]
 pub fn coupled_weights(
     g: &BTreeMap<String, f64>,
@@ -383,8 +383,8 @@ pub fn coupled_weights(
 /// The two set-overlap diagnostics returned by [`diagnostics`].
 ///
 /// Both are dimensionless and read from set membership only. The fields are named so a
-/// caller cannot silently swap the two. Marked `#[non_exhaustive]`: a result type, read
-/// but never built by callers.
+/// caller cannot silently swap the two. Marked `#[non_exhaustive]`: a result type that
+/// callers read but never construct.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct Diagnostics {
@@ -396,7 +396,7 @@ pub struct Diagnostics {
     pub conflict: f64,
 }
 
-/// Compute the two set-overlap diagnostics from top-set membership alone.
+/// Computes the two set-overlap diagnostics from top-set membership alone.
 ///
 /// This is one of the building blocks [`Fuser`](crate::Fuser) composes for its
 /// [`Fused::confidence`](crate::Fused::confidence) and
@@ -412,8 +412,8 @@ pub struct Diagnostics {
 ///   discriminating ones, disjoint top sets are a genuine disagreement.
 ///
 /// Fewer than two sets, or an empty union, yields `confidence` and `conflict` both `0.0`:
-/// there is no overlap signal, so confidence is low and no conflict is asserted. Score
-/// values are never used, only set membership.
+/// there is no overlap signal, so confidence is low and no conflict is asserted. The
+/// computation reads set membership only; score values do not enter it.
 #[must_use]
 pub fn diagnostics<Id: std::hash::Hash + Eq + Clone>(
     top_sets: &[(String, Vec<Id>)],

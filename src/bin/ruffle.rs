@@ -1,20 +1,20 @@
-//! The `ruffle` CLI: a thin wrapper over the state reconciliation API (§8, §11).
+//! The `ruffle` CLI: a thin wrapper over the state reconciliation API.
 //!
 //! Two subcommands, each a direct call into [`ruffle::RuffleState`]:
 //!
 //! - `reconcile` reads several state files, runs [`RuffleState::merge`] under
-//!   [`MergePolicy::Strict`], and writes the merged state. It REFUSES (non-zero exit,
+//!   [`MergePolicy::Strict`], and writes the merged state. It refuses (non-zero exit,
 //!   no output written) on any format / fingerprint / direction / tag mismatch, because
-//!   a model swap under a kept tag must fail loudly rather than silently blend two
-//!   distributions (§8). It WARNS, non-fatally, on a channel present in some inputs but
-//!   not all: those channels still carry through the union, and the warning only lets
+//!   a model swap under a kept tag must fail rather than silently blend two
+//!   distributions. It warns, without failing, on a channel present in some inputs but
+//!   not all: those channels still carry through the union, and the warning lets
 //!   the operator notice an asymmetric input set.
-//! - `rekey` rewrites one channel's key, the safe rename path (§8), and writes the
+//! - `rekey` rewrites one channel's key (the safe rename path) and writes the
 //!   result.
 //!
 //! All algorithmic decisions live in `RuffleState`. This binary parses arguments,
 //! moves bytes to and from disk, and reports. The divergence it prints under `--report`
-//! is advisory: it never overrides the tag gate (§8).
+//! is advisory: it never overrides the tag gate.
 
 use clap::{Args, Parser, Subcommand};
 use ruffle::{Divergence, MergePolicy, Mismatch, RuffleState};
@@ -28,7 +28,7 @@ use std::process::ExitCode;
 #[derive(Parser)]
 #[command(
     name = "ruffle",
-    about = "Reconcile and rename ruffle persistent state (§8).",
+    about = "Reconcile and rename ruffle persistent state.",
     version,
     long_about = None
 )]
@@ -39,9 +39,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Merge several state files into one, refusing on any incompatibility.
+    /// Merges several state files into one, refusing on any incompatibility.
     Reconcile(ReconcileArgs),
-    /// Rename a channel's key within a state file (the safe rename path).
+    /// Renames a channel's key within a state file (the safe rename path).
     Rekey(RekeyArgs),
 }
 
@@ -53,7 +53,7 @@ struct ReconcileArgs {
     /// Where to write the merged state (canonical JSON).
     #[arg(short = 'o', long = "output")]
     output: PathBuf,
-    /// Also print the advisory divergence and a per-channel merged/carried summary.
+    /// Also prints the advisory divergence and a per-channel merged/carried summary.
     #[arg(long)]
     report: bool,
 }
@@ -71,7 +71,7 @@ struct RekeyArgs {
     /// Where to write the rekeyed state (canonical JSON).
     #[arg(short = 'o', long = "output")]
     output: PathBuf,
-    /// Run divergence of the result against the input as a sanity check and print it.
+    /// Prints the divergence of the result against the input as a sanity check.
     #[arg(long)]
     report: bool,
 }
@@ -88,7 +88,7 @@ enum CliError {
     Write(PathBuf, io::Error),
     /// The merged state could not be serialized.
     Encode(serde_json::Error),
-    /// The merge was refused: incompatible inputs (§8). No output is written.
+    /// The merge was refused: incompatible inputs. No output is written.
     Refused(Mismatch),
 }
 
@@ -114,15 +114,15 @@ impl fmt::Display for CliError {
 
 impl std::error::Error for CliError {}
 
-/// Read and parse one state file.
+/// Reads and parses one state file.
 fn load_state(path: &Path) -> Result<RuffleState, CliError> {
     let text = fs::read_to_string(path).map_err(|e| CliError::Read(path.to_path_buf(), e))?;
     serde_json::from_str(&text).map_err(|e| CliError::Parse(path.to_path_buf(), e))
 }
 
-/// Serialize a state to canonical JSON and write it. The `BTreeMap` ordering in
+/// Serializes a state to canonical JSON and writes it. The `BTreeMap` ordering in
 /// `RuffleState` makes this output content-addressable: identical states write
-/// byte-identical files (§8).
+/// byte-identical files.
 fn write_state(state: &RuffleState, output: &Path) -> Result<(), CliError> {
     let json = serde_json::to_string(state).map_err(CliError::Encode)?;
     fs::write(output, json).map_err(|e| CliError::Write(output.to_path_buf(), e))
@@ -139,7 +139,7 @@ fn channel_input_counts(parts: &[RuffleState]) -> BTreeMap<String, usize> {
     counts
 }
 
-/// Reconcile several state files into one.
+/// Reconciles several state files into one.
 ///
 /// Refuses (returns `Err`, writes nothing) on any incompatibility. On success the merged
 /// state is written to `output`; only then are warnings and the optional report emitted,
@@ -186,7 +186,7 @@ fn reconcile(
     Ok(())
 }
 
-/// Print the advisory divergence plus which channels merged versus carried.
+/// Prints the advisory divergence plus which channels merged versus carried.
 fn write_reconcile_report(
     out: &mut dyn Write,
     divergence: &Divergence,
@@ -234,7 +234,7 @@ fn write_reconcile_report(
     Ok(())
 }
 
-/// Rename a channel key in a state file, the safe rename path (§8).
+/// Renames a channel key in a state file (the safe rename path).
 ///
 /// With `report`, divergence of the rewritten state against the input is printed as a
 /// sanity check: the renamed channel drops out of the comparison (its key no longer

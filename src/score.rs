@@ -1,9 +1,9 @@
-//! Channel scores, orientation, and sanitization (§7).
+//! Channel scores, orientation, and sanitization.
 //!
-//! A channel's native score is whatever scalar it produces. `ruffle` requires only
+//! A channel's native score is whatever scalar it produces. Ruffle requires only
 //! that it convert to a canonical [`f64`] through the [`Score`] trait. There are no
-//! blanket implementations for numeric types: a bare `f32`/`f64`/integer is not a
-//! `Score` until the caller newtypes it and thereby declares what the number means.
+//! blanket implementations for numeric types: a bare `f32`/`f64`/integer becomes a
+//! `Score` only through a caller newtype that declares what the number means.
 //!
 //! Everything downstream works in canonical higher-is-better units. Orientation is
 //! applied once at ingest by [`orient`], and non-finite values are dropped by
@@ -13,15 +13,13 @@ use serde::{Deserialize, Serialize};
 
 /// A channel's native score, convertible to a canonical [`f64`].
 ///
-/// There are deliberately no blanket implementations for numeric types. A bare
-/// `f32`, `f64`, or integer is not a `Score`; the caller must wrap it in a newtype
-/// that declares what the score means. Newtypes are cheap in Rust, and requiring one
-/// forces that declaration instead of accepting an unlabeled float.
+/// There are no blanket implementations for numeric types. A value becomes a `Score`
+/// through a caller newtype that declares what the number means.
 ///
 /// ```
 /// use ruffle::Score;
 ///
-/// // A bare f32 is NOT a Score. The caller newtypes it:
+/// // A bare f32 is not a Score; a newtype makes it one.
 /// struct Cosine(f32);
 /// impl Score for Cosine {
 ///     fn value(&self) -> f64 {
@@ -32,16 +30,15 @@ use serde::{Deserialize, Serialize};
 /// ```
 pub trait Score {
     /// This score as a canonical [`f64`], in the channel's native units and
-    /// native orientation (orientation is applied at ingest, not here).
+    /// native orientation (orientation is applied at ingest).
     fn value(&self) -> f64;
 }
 
 /// Whether a higher native score means a better match, or a lower one.
 ///
-/// Declared once per channel at configuration, never inferred from data or supplied per
-/// query. `ruffle` orients every score to higher-is-better at ingest. Orientation cannot
-/// be recovered from a score distribution, and a channel registered with the wrong
-/// direction ranks anti-relevantly and corrupts its own persistent baseline.
+/// Declared once per channel at configuration; Ruffle does not infer it from data.
+/// Every score is oriented to higher-is-better at ingest. A channel registered with
+/// the wrong direction ranks anti-relevantly and corrupts its own persistent baseline.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Direction {
     /// A higher native score is a better match (already canonical).
@@ -51,11 +48,11 @@ pub enum Direction {
 }
 
 /// An operator-declared reference for how good a channel's scores are in absolute terms,
-/// in the channel's NATIVE units (before orientation).
+/// in the channel's native units (before orientation).
 ///
 /// The discrimination stage rewards a channel whose top results score well against this
-/// reference, and not only one whose top separates from its own bulk. The operator states
-/// two interpretable anchors plus a pseudo-count:
+/// reference, complementing the separation of top from bulk. The declaration is two
+/// anchors and a pseudo-count:
 ///
 /// - `typical`: the top score a typical, unremarkable query produces. Sets the reference
 ///   location.
@@ -81,10 +78,10 @@ pub struct GoodScore {
     pub weight: f64,
 }
 
-/// The oriented reference location and scale returned by [`GoodScore::oriented`] (§4).
+/// The oriented reference location and scale returned by [`GoodScore::oriented`].
 ///
-/// Both are in canonical higher-is-better units. The fields are named so the location
-/// and scale cannot be swapped where two bare `f64`s would have passed unnoticed.
+/// Both are in canonical higher-is-better units. The named fields keep the location
+/// and scale from being swapped.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub(crate) struct OrientedReference {
     /// The oriented reference location: the oriented `typical` anchor.
@@ -95,10 +92,11 @@ pub(crate) struct OrientedReference {
 }
 
 impl GoodScore {
-    /// Build a reference from native-unit anchors and a pseudo-count.
+    /// Builds a reference from native-unit anchors and a pseudo-count.
     ///
-    /// The anchors are not checked here. `good` need only exceed `typical` after
-    /// orientation, and `ruffle` enforces that when it orients the reference at ingest.
+    /// The anchors are not validated here. The requirement that `good` exceed
+    /// `typical` after orientation is enforced when the reference is oriented at
+    /// ingest.
     pub fn new(typical: f64, good: f64, weight: f64) -> Self {
         Self {
             typical,
@@ -111,9 +109,8 @@ impl GoodScore {
     ///
     /// `mu_ref` is the oriented typical anchor and
     /// `sigma_ref = (oriented good - oriented typical) / 2`. Returns `None` when the
-    /// anchors are non-finite or when `sigma_ref <= 0` (i.e. `good` does not exceed
-    /// `typical` after orientation), which a `LowerIsBetter` channel requires to hold
-    /// only post-negation (§4, §7).
+    /// anchors are non-finite or when `sigma_ref <= 0`, i.e. when `good` does not
+    /// exceed `typical` after orientation.
     #[must_use]
     pub(crate) fn oriented(&self, dir: Direction) -> Option<OrientedReference> {
         let mu = orient(dir, sanitize(self.typical)?);
@@ -130,11 +127,11 @@ impl GoodScore {
     }
 }
 
-/// Orient a raw native score to canonical higher-is-better.
+/// Orients a raw native score to canonical higher-is-better.
 ///
 /// Passes a `HigherIsBetter` score through unchanged and negates a `LowerIsBetter`
 /// score. Negation preserves relative order and gaps, which is all the rank and
-/// separation statistics need; the good-score reference is oriented alongside (§7).
+/// separation statistics need; the good-score reference is oriented alongside.
 #[inline]
 pub(crate) fn orient(dir: Direction, raw: f64) -> f64 {
     match dir {
@@ -143,10 +140,10 @@ pub(crate) fn orient(dir: Direction, raw: f64) -> f64 {
     }
 }
 
-/// Drop a non-finite value at ingest.
+/// Drops a non-finite value at ingest.
 ///
 /// Returns `Some(x)` when `x` is finite and `None` for `NaN` or infinity. A single
-/// `NaN` would otherwise permanently corrupt the streaming mean it feeds (§7, §8).
+/// `NaN` would otherwise permanently corrupt the streaming mean it feeds.
 #[inline]
 pub(crate) fn sanitize(x: f64) -> Option<f64> {
     if x.is_finite() { Some(x) } else { None }
