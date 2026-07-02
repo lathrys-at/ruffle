@@ -93,6 +93,13 @@ jobs:
           tag="$GITHUB_REF_NAME"
           version="${tag#v}"
 
+          # Idempotent, like the crates.io publish below: a duplicate tag-push event or
+          # a job re-run must not fail on the release the first run already created.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "::notice::release $tag already exists, skipping"
+            exit 0
+          fi
+
           # A SemVer pre-release identifier (the hyphen in v0.1.0-rc.1) marks this as a
           # GitHub pre-release.
           prerelease=""
