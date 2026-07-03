@@ -212,48 +212,56 @@ def _split(qids: list) -> tuple[list, list]:
     return ordered[:cut], ordered[cut:]
 
 
+def _cached_runs(name: str, keys: tuple, k: int) -> dict | None:
+    """Runs straight from the disk cache, without building channel models;
+    ``None`` when any channel's cache is missing."""
+    out = {}
+    for key in keys:
+        path = CACHE_DIR / "runs" / name / f"{key}-k{k}.json"
+        if not path.exists():
+            return None
+        out[key] = {
+            qid: [(d, float(s)) for d, s in items]
+            for qid, items in json.loads(path.read_text()).items()
+        }
+    return out
+
+
+def _standard_bundle(name: str, group: str, dataset) -> Bundle:
+    """One BEIR bundle, building live channel models only when the runs or
+    anchor caches are missing."""
+    warm, ev = _split(list(dataset.queries))
+    bundle = Bundle(
+        name=name,
+        group=group,
+        keys=CHANNEL_KEYS,
+        configs=channel_configs(),
+        runs={},
+        qrels=dataset.qrels,
+        warm_std=warm,
+        eval_std=ev,
+    )
+    runs = _cached_runs(name, CHANNEL_KEYS, K)
+    channels = None
+    if runs is None:
+        channels = Channels.for_dataset(dataset)
+        runs = channels.runs(K)
+    bundle.runs = runs
+    _prebuild_inputs(bundle)
+    _load_anchors(
+        bundle, lambda: channels if channels is not None else Channels.for_dataset(dataset)
+    )
+    return bundle
+
+
 def _load_bundles() -> list[Bundle]:
     bundles: list[Bundle] = []
     for name in ("scifact", "nfcorpus", "fiqa", "quora"):
-        dataset = load(name)
-        warm, ev = _split(list(dataset.queries))
-        bundle = Bundle(
-            name=name,
-            group=name,
-            keys=CHANNEL_KEYS,
-            configs=channel_configs(),
-            runs={},
-            qrels=dataset.qrels,
-            warm_std=warm,
-            eval_std=ev,
-        )
-        channels = Channels.for_dataset(dataset)
-        bundle.runs = channels.runs(K)
-        _prebuild_inputs(bundle)
-        _load_anchors(bundle, lambda c=channels: c)
-        del channels
-        bundles.append(bundle)
+        bundles.append(_standard_bundle(name, name, load(name)))
         print(f"[tune] bundle {name} ready", flush=True)
     for sub in SUBFORUMS:
         name = f"cqadupstack-{sub}"
-        dataset = load_id(f"beir/cqadupstack/{sub}", name)
-        warm, ev = _split(list(dataset.queries))
-        bundle = Bundle(
-            name=name,
-            group="cqadupstack",
-            keys=CHANNEL_KEYS,
-            configs=channel_configs(),
-            runs={},
-            qrels=dataset.qrels,
-            warm_std=warm,
-            eval_std=ev,
-        )
-        channels = Channels.for_dataset(dataset)
-        bundle.runs = channels.runs(K)
-        _prebuild_inputs(bundle)
-        _load_anchors(bundle, lambda c=channels: c)
-        del channels
-        bundles.append(bundle)
+        bundles.append(_standard_bundle(name, "cqadupstack", load_id(f"beir/cqadupstack/{sub}", name)))
     print("[tune] cqadupstack bundles ready", flush=True)
 
     queries, qrels = _load_msmarco_queryset("msmarco-passage/dev/small", "dev")

@@ -1,0 +1,392 @@
+{
+  "ablation_reversed_splits": {
+    "default": {
+      "deltas": {
+        "cqadupstack": 0.004522,
+        "fiqa": -0.004201,
+        "msmarco": 0.007615,
+        "nfcorpus": 0.008676,
+        "quora": 0.004253,
+        "scifact": -0.003695
+      },
+      "floor": -0.004201,
+      "objective": 0.002862
+    },
+    "default-plus-denom_floor_frac": {
+      "deltas": {
+        "cqadupstack": 0.005338,
+        "fiqa": -0.002614,
+        "msmarco": 0.007589,
+        "nfcorpus": 0.009222,
+        "quora": 0.004559,
+        "scifact": -0.001237
+      },
+      "floor": -0.002614,
+      "objective": 0.003809
+    },
+    "default-plus-g_floor": {
+      "deltas": {
+        "cqadupstack": 0.004484,
+        "fiqa": -0.003955,
+        "msmarco": 0.007483,
+        "nfcorpus": 0.008676,
+        "quora": 0.004563,
+        "scifact": -0.003695
+      },
+      "floor": -0.003955,
+      "objective": 0.002926
+    },
+    "default-plus-min_distinct_values": {
+      "deltas": {
+        "cqadupstack": 0.004522,
+        "fiqa": -0.004201,
+        "msmarco": 0.007615,
+        "nfcorpus": 0.008371,
+        "quora": 0.004069,
+        "scifact": -0.003695
+      },
+      "floor": -0.004201,
+      "objective": 0.00278
+    },
+    "default-plus-shrink_pool_size": {
+      "deltas": {
+        "cqadupstack": 0.00447,
+        "fiqa": -0.004201,
+        "msmarco": 0.007615,
+        "nfcorpus": 0.009692,
+        "quora": 0.004253,
+        "scifact": -0.003695
+      },
+      "floor": -0.004201,
+      "objective": 0.003022
+    },
+    "default-plus-top_eps": {
+      "deltas": {
+        "cqadupstack": 0.003563,
+        "fiqa": -0.005789,
+        "msmarco": 0.007745,
+        "nfcorpus": 0.008238,
+        "quora": 0.004177,
+        "scifact": -0.005262
+      },
+      "floor": -0.005789,
+      "objective": 0.002112
+    },
+    "default-plus-top_m": {
+      "deltas": {
+        "cqadupstack": 0.005161,
+        "fiqa": -0.003576,
+        "msmarco": 0.008665,
+        "nfcorpus": 0.010032,
+        "quora": 0.0055,
+        "scifact": -0.003198
+      },
+      "floor": -0.003576,
+      "objective": 0.003764
+    },
+    "default-plus-winsor_z": {
+      "deltas": {
+        "cqadupstack": 0.004838,
+        "fiqa": -0.004836,
+        "msmarco": 0.008798,
+        "nfcorpus": 0.010145,
+        "quora": 0.004369,
+        "scifact": -0.003733
+      },
+      "floor": -0.004836,
+      "objective": 0.003264
+    },
+    "natural": {
+      "deltas": {
+        "cqadupstack": 0.006846,
+        "fiqa": -0.002601,
+        "msmarco": 0.008662,
+        "nfcorpus": 0.009705,
+        "quora": 0.005241,
+        "scifact": 0.0013
+      },
+      "floor": -0.002601,
+      "objective": 0.004859
+    },
+    "natural-without-denom_floor_frac": {
+      "deltas": {
+        "cqadupstack": 0.005379,
+        "fiqa": -0.004759,
+        "msmarco": 0.009059,
+        "nfcorpus": 0.012032,
+        "quora": 0.00555,
+        "scifact": -0.005558
+      },
+      "floor": -0.005558,
+      "objective": 0.003617
+    },
+    "natural-without-g_floor": {
+      "deltas": {
+        "cqadupstack": 0.006775,
+        "fiqa": -0.002784,
+        "msmarco": 0.009087,
+        "nfcorpus": 0.009705,
+        "quora": 0.005138,
+        "scifact": 0.001181
+      },
+      "floor": -0.002784,
+      "objective": 0.00485
+    },
+    "natural-without-min_distinct_values": {
+      "deltas": {
+        "cqadupstack": 0.006846,
+        "fiqa": -0.002601,
+        "msmarco": 0.008662,
+        "nfcorpus": 0.009721,
+        "quora": 0.005309,
+        "scifact": 0.0013
+      },
+      "floor": -0.002601,
+      "objective": 0.004873
+    },
+    "natural-without-shrink_pool_size": {
+      "deltas": {
+        "cqadupstack": 0.006846,
+        "fiqa": -0.002601,
+        "msmarco": 0.008662,
+        "nfcorpus": 0.009151,
+        "quora": 0.005241,
+        "scifact": 0.0013
+      },
+      "floor": -0.002601,
+      "objective": 0.004767
+    },
+    "natural-without-top_eps": {
+      "deltas": {
+        "cqadupstack": 0.006945,
+        "fiqa": -0.001838,
+        "msmarco": 0.008639,
+        "nfcorpus": 0.010422,
+        "quora": 0.005601,
+        "scifact": -0.00158
+      },
+      "floor": -0.001838,
+      "objective": 0.004698
+    },
+    "natural-without-top_m": {
+      "deltas": {
+        "cqadupstack": 0.005368,
+        "fiqa": -0.003857,
+        "msmarco": 0.008002,
+        "nfcorpus": 0.009868,
+        "quora": 0.004385,
+        "scifact": -0.003938
+      },
+      "floor": -0.003938,
+      "objective": 0.003305
+    },
+    "natural-without-winsor_z": {
+      "deltas": {
+        "cqadupstack": 0.006113,
+        "fiqa": -0.003897,
+        "msmarco": 0.008233,
+        "nfcorpus": 0.009724,
+        "quora": 0.004647,
+        "scifact": -0.000919
+      },
+      "floor": -0.003897,
+      "objective": 0.003983
+    }
+  },
+  "natural_profile": {
+    "coupling": "disabled (as shipped)",
+    "discrimination": {
+      "denom_floor_frac": 0.75,
+      "g_floor": 0.2,
+      "min_distinct_values": 12,
+      "shrink_pool_size": 80,
+      "top_eps": 0.1,
+      "top_m": 5,
+      "winsor_z": 2.5
+    },
+    "reverted_to_default": {
+      "g_slope": 1.0,
+      "g_upper_bound": 4.0,
+      "min_count_for_z": 5.0
+    }
+  },
+  "validation_std_direction": {
+    "cqadupstack": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.747679,
+          "RR@10": 0.35565,
+          "nDCG@10": 0.362321
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.722727,
+          "RR@10": 0.36032,
+          "nDCG@10": 0.366603
+        }
+      },
+      "ruffle-warm-natural": {
+        "metrics": {
+          "R@100": 0.718397,
+          "RR@10": 0.359364,
+          "nDCG@10": 0.366215
+        }
+      }
+    },
+    "fiqa": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.680657,
+          "RR@10": 0.368169,
+          "nDCG@10": 0.30767
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.648584,
+          "RR@10": 0.374701,
+          "nDCG@10": 0.311142
+        },
+        "p_vs_rrf": 0.518638
+      },
+      "ruffle-warm-natural": {
+        "mean_weights": {
+          "bm25": 0.963999,
+          "dense": 1.050825,
+          "tfidf": 0.985176
+        },
+        "metrics": {
+          "R@100": 0.652626,
+          "RR@10": 0.376902,
+          "nDCG@10": 0.313807
+        },
+        "p_vs_rrf": 0.317756,
+        "p_vs_warm_default": 0.4555
+      }
+    },
+    "msmarco": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.842311,
+          "RR@10": 0.270936,
+          "nDCG@10": 0.330112
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.831423,
+          "RR@10": 0.273209,
+          "nDCG@10": 0.334139
+        },
+        "p_vs_rrf": 0.042489
+      },
+      "ruffle-warm-natural": {
+        "mean_weights": {
+          "bm25": 1.008183,
+          "dense": 0.991817
+        },
+        "metrics": {
+          "R@100": 0.824308,
+          "RR@10": 0.276532,
+          "nDCG@10": 0.337934
+        },
+        "p_vs_rrf": 0.000287,
+        "p_vs_warm_default": 0.000297
+      }
+    },
+    "nfcorpus": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.323538,
+          "RR@10": 0.521904,
+          "nDCG@10": 0.330342
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.325757,
+          "RR@10": 0.530269,
+          "nDCG@10": 0.334768
+        },
+        "p_vs_rrf": 0.189207
+      },
+      "ruffle-warm-natural": {
+        "mean_weights": {
+          "bm25": 1.106505,
+          "dense": 0.943358,
+          "tfidf": 0.950137
+        },
+        "metrics": {
+          "R@100": 0.321313,
+          "RR@10": 0.53121,
+          "nDCG@10": 0.336674
+        },
+        "p_vs_rrf": 0.081032,
+        "p_vs_warm_default": 0.158331
+      }
+    },
+    "quora": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.994578,
+          "RR@10": 0.832165,
+          "nDCG@10": 0.839214
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.993594,
+          "RR@10": 0.835997,
+          "nDCG@10": 0.844253
+        },
+        "p_vs_rrf": 2e-05
+      },
+      "ruffle-warm-natural": {
+        "mean_weights": {
+          "bm25": 1.021011,
+          "dense": 0.997265,
+          "tfidf": 0.981725
+        },
+        "metrics": {
+          "R@100": 0.99273,
+          "RR@10": 0.835941,
+          "nDCG@10": 0.844412
+        },
+        "p_vs_rrf": 3.6e-05,
+        "p_vs_warm_default": 0.795484
+      }
+    },
+    "scifact": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.976667,
+          "RR@10": 0.660439,
+          "nDCG@10": 0.699829
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.983333,
+          "RR@10": 0.67296,
+          "nDCG@10": 0.712081
+        },
+        "p_vs_rrf": 0.031977
+      },
+      "ruffle-warm-natural": {
+        "mean_weights": {
+          "bm25": 1.053471,
+          "dense": 0.987921,
+          "tfidf": 0.958609
+        },
+        "metrics": {
+          "R@100": 0.983333,
+          "RR@10": 0.676765,
+          "nDCG@10": 0.715565
+        },
+        "p_vs_rrf": 0.013754,
+        "p_vs_warm_default": 0.198714
+      }
+    }
+  }
+}
