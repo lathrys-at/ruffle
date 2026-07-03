@@ -41,6 +41,13 @@ jobs:
             echo "$versions"
             exit 1
           fi
+      # The wheel ships copies of the repository-root license texts (PEP 639 cannot
+      # reference files above the project directory); the copies must stay
+      # byte-identical to the originals.
+      - name: License copies match the repository root
+        run: |
+          cmp LICENSE-MIT bindings/python/licenses/LICENSE-MIT
+          cmp LICENSE-APACHE bindings/python/licenses/LICENSE-APACHE
       - name: Doc
         run: cargo doc --no-deps --all-features
         env:
@@ -140,6 +147,10 @@ jobs:
       - name: Test the installed package
         run: |
           python -m pip install pytest
+          # The tests must exercise the installed artifact, not the repo source; a
+          # conftest or path change that silently retargeted the repo would pass
+          # the suite while proving nothing about the sdist.
+          python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
           python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
 
   # Single aggregating check for the `main` branch protection rule: require only
