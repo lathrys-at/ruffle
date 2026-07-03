@@ -23,7 +23,8 @@ crate and its CLI, and vice versa.
 pip install ruffle
 ```
 
-Wheels ship for Linux (x86_64, aarch64), macOS (x86_64, arm64), and Windows (x64).
+Wheels ship for Linux (x86_64, aarch64), macOS (x86_64, arm64), and Windows (x64,
+arm64).
 The wheels use the stable ABI (abi3), so one build covers CPython 3.10 and every
 later version; each release is tested against CPython 3.10, 3.11, 3.12, 3.13, and
 3.14. Support for the lowest version ends when it stops receiving security updates.

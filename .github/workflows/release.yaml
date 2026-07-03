@@ -147,6 +147,7 @@ jobs:
           - { name: macos-x86_64, runner: macos-13, target: x86_64 }
           - { name: macos-arm64, runner: macos-latest, target: aarch64 }
           - { name: windows-x64, runner: windows-latest, target: x64 }
+          - { name: windows-arm64, runner: windows-11-arm, target: aarch64 }
     steps:
       - uses: actions/checkout@v4
       - uses: PyO3/maturin-action@v1
@@ -208,7 +209,17 @@ jobs:
           - { name: macos-x86_64, runner: macos-13 }
           - { name: macos-arm64, runner: macos-latest }
           - { name: windows-x64, runner: windows-latest }
+          - { name: windows-arm64, runner: windows-11-arm }
         python: ["3.10", "3.14"]
+        # CPython publishes Windows-on-ARM builds from 3.11, so that platform's
+        # floor leg smokes 3.11 in place of 3.10; the abi3-py310 wheel itself
+        # installs on any 3.10+ interpreter the platform has.
+        exclude:
+          - platform: { name: windows-arm64, runner: windows-11-arm }
+            python: "3.10"
+        include:
+          - platform: { name: windows-arm64, runner: windows-11-arm }
+            python: "3.11"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
