@@ -1,8 +1,12 @@
 # Proposal: in-tree Python bindings
 
-Status: draft. Names, thresholds, and the workspace layout are open for discussion;
-the invariants in the first section are intended to be non-negotiable across all
-binding proposals (Python, TypeScript, Go).
+Status: implemented (`bindings/python`), with three deltas from the draft below. The
+floor is CPython 3.10 (`abi3-py310`) rather than 3.9, which reached end of life in
+October 2025. The public surface is pure Python over a private compiled module
+(`ruffle._core`), fully typed and documented, rather than "shims if any"; the FFI
+boundary uses typed structures, not JSON, except for states, whose canonical JSON
+string is the persistence format itself. The libm prerequisite in invariant 3 is done
+in the core crate.
 
 ## Invariants shared by every binding
 

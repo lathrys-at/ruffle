@@ -70,6 +70,42 @@ jobs:
         with:
           command: check licenses bans sources
 
+  # The Python bindings: clippy on the extension crate, then the wheel is built and
+  # the full pytest suite runs against it (parity replay, idiomatic tests, the
+  # mypy --strict gate, and the Rust-CLI interop round trip). The matrix covers the
+  # supported floor and a current interpreter; the wheel itself is abi3, one build
+  # for every version from the floor up.
+  python:
+    name: python (${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Clippy (extension crate)
+        run: cargo clippy -p ruffle-py --all-targets -- -D warnings
+      - name: Install the package and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ./bindings/python pytest mypy ruff
+      - name: Ruff
+        working-directory: bindings/python
+        run: |
+          ruff check python tests
+          ruff format --check python tests
+      - name: Test
+        working-directory: bindings/python
+        run: pytest -q
+
   # Single aggregating check for the `main` branch protection rule: require only
   # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
   # cancelled, or skipped job blocks the merge — while the protection rule stays one
@@ -77,7 +113,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [lint, test, msrv, deny]
+    needs: [lint, test, msrv, deny, python]
     runs-on: ubuntu-latest
     steps:
       - name: Require all CI jobs to have succeeded
