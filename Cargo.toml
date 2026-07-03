@@ -18,9 +18,14 @@ readme = "README.md"
 keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
 categories = ["algorithms"]
 # Ship the design document and tuning guide the front-page docs reference, alongside
-# the sources; test/bench trees stay out of the published artifact.
+# the sources; the test tree stays out of the published artifact. The bench source
+# ships because the manifest declares the `fusion` bench target: `cargo package`
+# strips a target whose file is excluded, but maturin's sdist vendoring copies this
+# manifest verbatim, and a vendored manifest declaring a missing bench does not
+# parse.
 include = [
     "src/**",
+    "benches/**",
     "docs/derivation.md",
     "docs/tuning.md",
     "README.md",
