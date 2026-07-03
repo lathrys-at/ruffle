@@ -105,6 +105,30 @@ for (id, score) in &fused.ranking {
 }
 ```
 
+### Python
+
+```
+pip install ruffle
+```
+
+The [`ruffle` package](bindings/python/README.md) wraps the same compiled engine
+behind a fully typed Python surface; behaviour and persisted state are identical to
+the crate down to the serialized bytes. The
+[Python quick start](bindings/python/README.md#quick-start) walks the same
+three-channel example.
+
+### JavaScript and TypeScript
+
+```
+npm install @lathrys-at/ruffle
+```
+
+The [`@lathrys-at/ruffle` package](bindings/wasm/README.md) is the engine compiled
+to WebAssembly under a fully typed TypeScript surface, one ESM artifact for
+Node 20+, browsers, and edge runtimes, with the same byte-identical state. The
+[TypeScript quick start](bindings/wasm/README.md#quick-start) walks the same
+example.
+
 ## Design
 
 Ruffle is calibration-free and recall-safe by construction. Every estimate is read from the
