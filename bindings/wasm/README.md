@@ -1,4 +1,4 @@
-# @lathrys/ruffle
+# @lathrys-at/ruffle
 
 Weighted, adaptive, calibration-free Reciprocal Rank Fusion (RRF) for TypeScript and
 JavaScript.
@@ -23,7 +23,7 @@ runtimes.
 ## Install
 
 ```
-npm install @lathrys/ruffle
+npm install @lathrys-at/ruffle
 ```
 
 The module instantiates its wasm at import (top-level await), so everything is ready
@@ -35,7 +35,7 @@ The following fuses three channels for one query: semantic and lexical channels
 scored on their own native scales, and a rank-only recency channel.
 
 ```ts
-import { Direction, Fuser } from "@lathrys/ruffle";
+import { Direction, Fuser } from "@lathrys-at/ruffle";
 
 // Channels represent different retrieval methods for the same query. Each channel's
 // id is a stable key plus a model-version tag.
@@ -89,7 +89,7 @@ model-version tag: a model swapped in under a kept channel name is refused rathe
 than silently blended.
 
 ```ts
-import { Fuser, RuffleState } from "@lathrys/ruffle";
+import { Fuser, RuffleState } from "@lathrys-at/ruffle";
 
 const json = fuser.state.toJson(); // persist
 // ... restart ...

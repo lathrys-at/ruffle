@@ -7,7 +7,7 @@ version = "0.1.1"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT OR Apache-2.0"
-description = "WebAssembly core of the @lathrys/ruffle npm package: weighted, adaptive, calibration-free reciprocal-rank fusion."
+description = "WebAssembly core of the @lathrys-at/ruffle npm package: weighted, adaptive, calibration-free reciprocal-rank fusion."
 repository = "https://github.com/lathrys-at/ruffle"
 # Publishes to npm (as the package's compiled core), never to crates.io.
 publish = false

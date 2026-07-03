@@ -1,7 +1,7 @@
 # Proposal: in-tree TypeScript bindings (WebAssembly)
 
 Status: implemented (`bindings/wasm`), with three notes against the draft below. The
-package name is `@lathrys/ruffle`, the recommended candidate; it is a one-line
+package name is `@lathrys-at/ruffle`, the recommended candidate; it is a one-line
 change in `package.json` if reconsidered before the first npm publish. The single-ESM
 question resolved to one artifact with top-level await: Node reads the wasm from
 disk, browsers and bundlers fetch it from `import.meta.url`, and the module is ready
@@ -32,10 +32,10 @@ bit-identical rankings and state bytes, and the parity suite asserts it.
 `ruffle` on npm belongs to the Flash-emulator project, so a name is needed. Three
 candidates:
 
-1. **`@lathrys/ruffle`** (recommended). A scoped package under the org. Scopes are the
+1. **`@lathrys-at/ruffle`** (recommended). A scoped package under the org. Scopes are the
    npm-native answer to name collisions: provenance is explicit, the unscoped
    squatting problem disappears, and the import reads naturally
-   (`import { Fuser } from "@lathrys/ruffle"`). Scoped packages are also the only
+   (`import { Fuser } from "@lathrys-at/ruffle"`). Scoped packages are also the only
    names npm grants Trusted Publishing to without a claims process.
 2. `ruffle-ts`. Available, but the `-ts` suffix conventionally signals "TypeScript
    port" or "type definitions," both of which misdescribe a wasm binding, and it
@@ -43,7 +43,7 @@ candidates:
 3. `ruffle-wasm`. Accurate but leads with the implementation detail rather than the
    library.
 
-The draft assumes `@lathrys/ruffle`; nothing else in this proposal depends on the
+The draft assumes `@lathrys-at/ruffle`; nothing else in this proposal depends on the
 choice.
 
 ## Architecture
@@ -87,7 +87,7 @@ crate defaults inside the binding, because TypeScript has no default-then-mutate
 idiom and partial object literals are the native way to say "defaults except these."
 
 ```ts
-import { Fuser, ChannelConfig, Direction } from "@lathrys/ruffle";
+import { Fuser, ChannelConfig, Direction } from "@lathrys-at/ruffle";
 
 const dense = new ChannelConfig({ key: "dense", tag: "clip-v1" }, Direction.HigherIsBetter);
 const lexical = new ChannelConfig({ key: "lexical", tag: "bm25-v1" }, Direction.HigherIsBetter, {

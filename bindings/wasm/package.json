@@ -1,5 +1,5 @@
 {
-  "name": "@lathrys/ruffle",
+  "name": "@lathrys-at/ruffle",
   "version": "0.1.1",
   "description": "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF) of heterogeneous retrieval channels.",
   "license": "(MIT OR Apache-2.0)",

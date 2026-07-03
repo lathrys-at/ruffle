@@ -19,7 +19,7 @@
  * import (top-level await), so everything is ready to use synchronously:
  *
  * ```ts
- * import { Fuser, Direction } from "@lathrys/ruffle";
+ * import { Fuser, Direction } from "@lathrys-at/ruffle";
  *
  * const semantic = {
  *   id: { key: "semantic", tag: "text-embedding-v1" },

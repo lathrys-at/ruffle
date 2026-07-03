@@ -1,4 +1,4 @@
-//! The compiled core of the `@lathrys/ruffle` npm package.
+//! The compiled core of the `@lathrys-at/ruffle` npm package.
 //!
 //! The public TypeScript surface lives in `ts/`; this module is private plumbing
 //! behind it. It links the Rust engine directly and reimplements no statistic, so the

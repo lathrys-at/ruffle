@@ -16,7 +16,7 @@ name: Release
 # bindings wheels through the `pypi` environment, registered as a trusted publisher
 # on the `ruffle` project (PyPI supports registering one before the first release,
 # as a pending publisher). npm publishes the TypeScript package through the `npm`
-# environment, registered as a trusted publisher on `@lathrys/ruffle`, with
+# environment, registered as a trusted publisher on `@lathrys-at/ruffle`, with
 # provenance attached. Every binding's version is the corresponding crate version,
 # which the verify job asserts equals the tag.
 on:
@@ -255,7 +255,7 @@ jobs:
 
   # Build and publish the npm package on a final tag, via npm Trusted Publishing
   # (OIDC, with provenance) through the `npm` environment, registered as a trusted
-  # publisher on the @lathrys/ruffle package. The existence probe makes a re-run or
+  # publisher on the @lathrys-at/ruffle package. The existence probe makes a re-run or
   # duplicate tag-push event skip rather than fail, like the other publishes.
   publish-npm:
     name: Publish to npm
@@ -286,8 +286,8 @@ jobs:
         run: |
           set -euo pipefail
           version="$(jq -r .version package.json)"
-          if npm view "@lathrys/ruffle@${version}" version >/dev/null 2>&1; then
-            echo "::notice::@lathrys/ruffle@${version} is already on npm — skipping"
+          if npm view "@lathrys-at/ruffle@${version}" version >/dev/null 2>&1; then
+            echo "::notice::@lathrys-at/ruffle@${version} is already on npm — skipping"
             exit 0
           fi
           npm publish --provenance --access public
