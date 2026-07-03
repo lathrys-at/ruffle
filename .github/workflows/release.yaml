@@ -159,6 +159,10 @@ jobs:
           name: wheels-${{ matrix.platform.name }}
           path: dist
 
+  # The sdist is also install-tested here: it is a maturin-vendored copy of a Cargo
+  # workspace member with a path dependency on the workspace root, the layout where
+  # a vendored tarball most often stops building, so the exact artifact that
+  # publishes is the one proven to compile and pass the suites.
   sdist:
     name: Wheels (sdist)
     needs: verify
@@ -173,6 +177,53 @@ jobs:
         with:
           name: wheels-sdist
           path: dist
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install from the sdist
+        run: python -m pip install dist/*.tar.gz
+      - name: Test the installed package
+        run: |
+          python -m pip install pytest
+          python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
+
+  # Every wheel is imported and exercised on its native platform and architecture
+  # before PyPI sees it, on the CPython floor and the newest supported version. The
+  # parity replay against the installed wheel is the same bit-exactness gate the
+  # per-PR suite runs; the wheels themselves are what publish-pypi uploads.
+  wheel-smoke:
+    name: Wheel smoke (${{ matrix.platform.name }}, ${{ matrix.python }})
+    needs: wheels
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: linux-x86_64, runner: ubuntu-latest }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm }
+          - { name: macos-x86_64, runner: macos-13 }
+          - { name: macos-arm64, runner: macos-latest }
+          - { name: windows-x64, runner: windows-latest }
+        python: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform.name }}
+          path: dist
+      - name: Install the wheel
+        shell: bash
+        run: python -m pip install --no-index --find-links dist ruffle
+      - name: Test against the installed wheel
+        shell: bash
+        run: |
+          python -m pip install pytest
+          python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
 
   # Publish the wheels to PyPI on a final tag, via PyPI's Trusted Publishing (OIDC).
   # skip-existing makes this idempotent, like the crates.io publish below: a
@@ -180,7 +231,7 @@ jobs:
   # already uploaded.
   publish-pypi:
     name: Publish to PyPI
-    needs: [wheels, sdist]
+    needs: [wheels, sdist, wheel-smoke]
     if: ${{ !contains(github.ref_name, '-') }}
     runs-on: ubuntu-latest
     environment: pypi
