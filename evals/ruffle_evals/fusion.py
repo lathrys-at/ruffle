@@ -29,6 +29,7 @@ from ruffle_evals.datasets import Dataset
 __all__ = [
     "FusionOutcome",
     "aggressive_config",
+    "build_anchor_data",
     "channel_configs",
     "rrf",
     "ruffle_cold",
@@ -176,6 +177,38 @@ def ruffle_cold(
     return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
 
 
+def build_anchor_data(
+    channels: Channels,
+    warm_qids: list[str],
+    configs: list[ruffle.ChannelConfig],
+    refreshes: int,
+) -> dict[str, ruffle.Anchor]:
+    """The anchor refreshes for one warmup pass, prebuilt: one full-scored
+    anchor per selected warmup query, over a seeded random draw of corpus
+    documents. A random draw rather than any channel's top-k, because a top-k
+    pool is a selected sample that biases the correlation estimate.
+
+    Anchors depend on the channels and the draw, never on the fusion
+    configuration, so one payload serves every configuration candidate.
+    """
+    keys = [c.id.key for c in configs]
+    anchor_qids = warm_qids[:: max(1, len(warm_qids) // refreshes)][:refreshes]
+    rng = random.Random(SEED)
+    anchors: dict[str, ruffle.Anchor] = {}
+    # The draw order follows warmup order, keeping the rng sequence identical to
+    # the previous inline construction.
+    for qid in warm_qids:
+        if qid not in anchor_qids:
+            continue
+        candidates = rng.sample(list(channels.doc_ids), min(_ANCHOR_CANDIDATES, len(channels.doc_ids)))
+        scored = {key: channels.score_candidates(qid, candidates, key) for key in keys}
+        index = {doc_id: i for i, doc_id in enumerate(candidates)}
+        anchors[qid] = ruffle.Anchor.build(
+            candidates, configs, lambda doc_id, key: scored[key][index[doc_id]]
+        )
+    return anchors
+
+
 def _warm_fuser(
     runs: dict[str, Run],
     warm_qids: list[str],
@@ -184,29 +217,23 @@ def _warm_fuser(
     channels: Channels | None,
     coupling: bool,
     refreshes: int,
+    anchor_data: dict[str, ruffle.Anchor] | None = None,
 ) -> ruffle.Fuser:
     """A stateful fuser with baselines accumulated over the warmup queries, and,
-    under ``coupling``, redundancy baselines from interleaved anchor refreshes.
-
-    Each anchor is one warmup query scored by every channel over a seeded random
-    draw of corpus documents; a random draw rather than any channel's top-k,
-    because a top-k pool is a selected sample that biases the correlation
-    estimate.
-    """
-    keys = [c.id.key for c in configs]
+    under ``coupling``, redundancy baselines from interleaved anchor refreshes,
+    prebuilt or computed here from the live channels."""
     fuser = ruffle.Fuser(configs, config)
-    anchor_qids = set(warm_qids[:: max(1, len(warm_qids) // refreshes)][:refreshes]) if coupling else set()
-    rng = random.Random(SEED)
+    anchors: dict[str, ruffle.Anchor] = {}
+    if coupling:
+        if anchor_data is not None:
+            anchors = anchor_data
+        else:
+            assert channels is not None
+            anchors = build_anchor_data(channels, warm_qids, configs, refreshes)
     for qid in warm_qids:
         fuser.fuse(_inputs(runs, configs, qid))
-        if qid in anchor_qids:
-            assert channels is not None
-            candidates = rng.sample(list(channels.doc_ids), min(_ANCHOR_CANDIDATES, len(channels.doc_ids)))
-            scored = {key: channels.score_candidates(qid, candidates, key) for key in keys}
-            index = {doc_id: i for i, doc_id in enumerate(candidates)}
-            anchor = ruffle.Anchor.build(
-                candidates, configs, lambda doc_id, key: scored[key][index[doc_id]]
-            )
+        anchor = anchors.get(qid)
+        if anchor is not None:
             fuser.refresh_coupling(anchor)
     return fuser
 
@@ -250,16 +277,19 @@ def ruffle_warm(
     coupling: bool = False,
     refreshes: int = 10,
     config: ruffle.FuseConfig | None = None,
+    anchor_data: dict[str, "ruffle.Anchor"] | None = None,
 ) -> FusionOutcome:
     """Ruffle stateful: baselines accumulate over the warmup queries, then the
     evaluation queries are fused (still stateful, as a deployment would run)."""
     configs = channel_configs() if configs is None else configs
     fuse_config, anchors = _resolve_config(coupling, config)
-    # Without live channel models there is nothing to score an anchor with; the
-    # coupling switch then stays on but its gates never pass, which reads as
-    # "enabled, no evidence yet", the recall-safe direction.
-    anchors = anchors and channels is not None
-    fuser = _warm_fuser(runs, warm_qids, configs, fuse_config, channels, anchors, refreshes)
+    # Without live channel models or prebuilt anchors there is nothing to score
+    # an anchor with; the coupling switch then stays on but its gates never
+    # pass, which reads as "enabled, no evidence yet", the recall-safe direction.
+    anchors = anchors and (channels is not None or anchor_data is not None)
+    fuser = _warm_fuser(
+        runs, warm_qids, configs, fuse_config, channels, anchors, refreshes, anchor_data
+    )
     return _fuse_eval(fuser, runs, eval_qids, configs)
 
 
