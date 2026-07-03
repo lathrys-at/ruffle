@@ -1,0 +1,433 @@
+{
+  "channels": [
+    {
+      "direction": "higher_is_better",
+      "good_score": null,
+      "key": "semantic",
+      "tag": "text-embedding-v1"
+    },
+    {
+      "direction": "lower_is_better",
+      "good_score": {
+        "good": -12.0,
+        "typical": -4.0,
+        "weight": 8.0
+      },
+      "key": "lexical",
+      "tag": "sqlite-fts5-trigram-bm25"
+    },
+    {
+      "direction": "higher_is_better",
+      "good_score": null,
+      "key": "recency",
+      "tag": "recency-v1"
+    }
+  ],
+  "config": {
+    "baseline_mode": "z_score",
+    "coupling": {
+      "discount_cap": 0.5,
+      "enabled": false,
+      "min_overlap": 30,
+      "min_refreshes": 2.0,
+      "min_reliability": 10.0,
+      "shrink_to_identity": 0.5,
+      "stratum_stability_max_var": 0.25
+    },
+    "decay": {
+      "enabled": false,
+      "factor": 0.98
+    },
+    "discrimination": {
+      "denom_floor_frac": 0.5,
+      "g_floor": 0.25,
+      "g_slope": 1.0,
+      "g_upper_bound": 4.0,
+      "min_count_for_z": 5.0,
+      "min_distinct_values": 8,
+      "shrink_pool_size": 20,
+      "top_eps": 0.05,
+      "top_m": 10,
+      "winsor_z": 4.0
+    },
+    "fusion": {
+      "rrf_eta": 60.0
+    }
+  },
+  "description": "Exact score ties sharing a midrank, an empty scored channel, an unregistered input skipped entirely, and a duplicate channel input of which only the first is fused.",
+  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"recency\":\"HigherIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":8.0,\"mean\":4.0,\"m2\":128.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"recency\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"recency-v1\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.25,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":1.3599999999999999,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+  "kind": "session",
+  "name": "ties_and_edge_inputs",
+  "steps": [
+    {
+      "expected": {
+        "confidence": 0.0,
+        "conflict": 0.0,
+        "discrimination": {
+          "lexical": {
+            "degenerate_separation": false,
+            "g": 1.0,
+            "raw_separation": null,
+            "reference_cold": false,
+            "top_m_average": null
+          },
+          "recency": {
+            "degenerate_separation": false,
+            "g": 1.0,
+            "raw_separation": null,
+            "reference_cold": false,
+            "top_m_average": null
+          },
+          "semantic": {
+            "degenerate_separation": false,
+            "g": 1.0,
+            "raw_separation": 6.25,
+            "reference_cold": true,
+            "top_m_average": 1.3599999999999999
+          }
+        },
+        "flags": {
+          "recency": "ranks_only_default_weighted",
+          "semantic": "no_reference"
+        },
+        "ranking": [
+          [
+            "hit1",
+            0.03265360522457684
+          ],
+          [
+            "hit0",
+            0.032133178474641894
+          ],
+          [
+            "doc003",
+            0.02832415420928403
+          ],
+          [
+            "doc011",
+            0.015748031496062992
+          ],
+          [
+            "doc023",
+            0.015748031496062992
+          ],
+          [
+            "doc010",
+            0.015267175572519083
+          ],
+          [
+            "doc022",
+            0.015267175572519083
+          ],
+          [
+            "doc009",
+            0.014814814814814815
+          ],
+          [
+            "doc021",
+            0.014814814814814815
+          ],
+          [
+            "doc008",
+            0.014388489208633094
+          ],
+          [
+            "doc020",
+            0.014388489208633094
+          ],
+          [
+            "doc007",
+            0.013986013986013986
+          ],
+          [
+            "doc019",
+            0.013986013986013986
+          ],
+          [
+            "doc006",
+            0.013605442176870748
+          ],
+          [
+            "doc018",
+            0.013605442176870748
+          ],
+          [
+            "doc005",
+            0.013157894736842105
+          ],
+          [
+            "doc017",
+            0.013157894736842105
+          ],
+          [
+            "doc029",
+            0.013157894736842105
+          ],
+          [
+            "doc004",
+            0.012658227848101266
+          ],
+          [
+            "doc016",
+            0.012658227848101266
+          ],
+          [
+            "doc028",
+            0.012658227848101266
+          ],
+          [
+            "doc015",
+            0.012195121951219513
+          ],
+          [
+            "doc027",
+            0.012195121951219513
+          ],
+          [
+            "doc002",
+            0.011764705882352941
+          ],
+          [
+            "doc014",
+            0.011764705882352941
+          ],
+          [
+            "doc026",
+            0.011764705882352941
+          ],
+          [
+            "doc001",
+            0.011363636363636364
+          ],
+          [
+            "doc013",
+            0.011363636363636364
+          ],
+          [
+            "doc025",
+            0.011363636363636364
+          ],
+          [
+            "doc000",
+            0.01098901098901099
+          ],
+          [
+            "doc012",
+            0.01098901098901099
+          ],
+          [
+            "doc024",
+            0.01098901098901099
+          ]
+        ],
+        "weights": {
+          "lexical": 1.0,
+          "recency": 1.0,
+          "semantic": 1.0
+        }
+      },
+      "inputs": [
+        {
+          "key": "semantic",
+          "scored": [
+            [
+              "doc000",
+              0.0
+            ],
+            [
+              "doc001",
+              0.1
+            ],
+            [
+              "doc002",
+              0.2
+            ],
+            [
+              "doc003",
+              0.30000000000000004
+            ],
+            [
+              "doc004",
+              0.4
+            ],
+            [
+              "doc005",
+              0.5
+            ],
+            [
+              "doc006",
+              0.6000000000000001
+            ],
+            [
+              "doc007",
+              0.7000000000000001
+            ],
+            [
+              "doc008",
+              0.8
+            ],
+            [
+              "doc009",
+              0.9
+            ],
+            [
+              "doc010",
+              1.0
+            ],
+            [
+              "doc011",
+              1.1
+            ],
+            [
+              "doc012",
+              0.0
+            ],
+            [
+              "doc013",
+              0.1
+            ],
+            [
+              "doc014",
+              0.2
+            ],
+            [
+              "doc015",
+              0.30000000000000004
+            ],
+            [
+              "doc016",
+              0.4
+            ],
+            [
+              "doc017",
+              0.5
+            ],
+            [
+              "doc018",
+              0.6000000000000001
+            ],
+            [
+              "doc019",
+              0.7000000000000001
+            ],
+            [
+              "doc020",
+              0.8
+            ],
+            [
+              "doc021",
+              0.9
+            ],
+            [
+              "doc022",
+              1.0
+            ],
+            [
+              "doc023",
+              1.1
+            ],
+            [
+              "doc024",
+              0.0
+            ],
+            [
+              "doc025",
+              0.1
+            ],
+            [
+              "doc026",
+              0.2
+            ],
+            [
+              "doc027",
+              0.30000000000000004
+            ],
+            [
+              "doc028",
+              0.4
+            ],
+            [
+              "doc029",
+              0.5
+            ],
+            [
+              "hit0",
+              3.0
+            ],
+            [
+              "hit1",
+              3.0
+            ]
+          ]
+        },
+        {
+          "key": "lexical",
+          "scored": []
+        },
+        {
+          "key": "recency",
+          "ranked": [
+            "hit1",
+            "doc003",
+            "hit0"
+          ]
+        },
+        {
+          "key": "rogue",
+          "scored": [
+            [
+              "doc000",
+              9.0
+            ],
+            [
+              "doc001",
+              10.0
+            ],
+            [
+              "doc002",
+              11.0
+            ],
+            [
+              "doc003",
+              12.0
+            ]
+          ]
+        },
+        {
+          "key": "semantic",
+          "scored": [
+            [
+              "doc000",
+              0.5
+            ],
+            [
+              "doc001",
+              0.5
+            ],
+            [
+              "doc002",
+              0.5
+            ],
+            [
+              "doc003",
+              0.5
+            ],
+            [
+              "doc004",
+              0.5
+            ]
+          ]
+        }
+      ],
+      "op": "fuse"
+    }
+  ],
+  "unregistered_channels": [
+    {
+      "direction": "higher_is_better",
+      "good_score": null,
+      "key": "rogue",
+      "tag": "unregistered-v1"
+    }
+  ]
+}

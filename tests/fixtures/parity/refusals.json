@@ -1,0 +1,276 @@
+{
+  "cases": [
+    {
+      "channels": [
+        {
+          "direction": "higher_is_better",
+          "good_score": null,
+          "key": "semantic",
+          "tag": "text-embedding-v2"
+        },
+        {
+          "direction": "lower_is_better",
+          "good_score": {
+            "good": -12.0,
+            "typical": -4.0,
+            "weight": 8.0
+          },
+          "key": "lexical",
+          "tag": "sqlite-fts5-trigram-bm25"
+        }
+      ],
+      "config": {
+        "baseline_mode": "z_score",
+        "coupling": {
+          "discount_cap": 0.5,
+          "enabled": false,
+          "min_overlap": 30,
+          "min_refreshes": 2.0,
+          "min_reliability": 10.0,
+          "shrink_to_identity": 0.5,
+          "stratum_stability_max_var": 0.25
+        },
+        "decay": {
+          "enabled": false,
+          "factor": 0.98
+        },
+        "discrimination": {
+          "denom_floor_frac": 0.5,
+          "g_floor": 0.25,
+          "g_slope": 1.0,
+          "g_upper_bound": 4.0,
+          "min_count_for_z": 5.0,
+          "min_distinct_values": 8,
+          "shrink_pool_size": 20,
+          "top_eps": 0.05,
+          "top_m": 10,
+          "winsor_z": 4.0
+        },
+        "fusion": {
+          "rrf_eta": 60.0
+        }
+      },
+      "error": "tag",
+      "kind": "resume",
+      "name": "resume_tag_bump",
+      "state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+    },
+    {
+      "channels": [
+        {
+          "direction": "lower_is_better",
+          "good_score": null,
+          "key": "semantic",
+          "tag": "text-embedding-v1"
+        }
+      ],
+      "config": {
+        "baseline_mode": "z_score",
+        "coupling": {
+          "discount_cap": 0.5,
+          "enabled": false,
+          "min_overlap": 30,
+          "min_refreshes": 2.0,
+          "min_reliability": 10.0,
+          "shrink_to_identity": 0.5,
+          "stratum_stability_max_var": 0.25
+        },
+        "decay": {
+          "enabled": false,
+          "factor": 0.98
+        },
+        "discrimination": {
+          "denom_floor_frac": 0.5,
+          "g_floor": 0.25,
+          "g_slope": 1.0,
+          "g_upper_bound": 4.0,
+          "min_count_for_z": 5.0,
+          "min_distinct_values": 8,
+          "shrink_pool_size": 20,
+          "top_eps": 0.05,
+          "top_m": 10,
+          "winsor_z": 4.0
+        },
+        "fusion": {
+          "rrf_eta": 60.0
+        }
+      },
+      "error": "direction_conflict",
+      "kind": "resume",
+      "name": "resume_direction_flip",
+      "state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+    },
+    {
+      "error": "tag",
+      "kind": "merge",
+      "name": "merge_tag_mismatch",
+      "parts": [
+        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":13.147706411743686,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.000118408468461,\"m2\":128.0000010094807},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":4.745302639570528,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.47775676113001797,\"m2\":0.0},\"tag\":\"text-embedding-v2\"}},\"pairs\":[]}"
+      ]
+    },
+    {
+      "error": "fingerprint",
+      "kind": "merge",
+      "name": "merge_stale_stat_version",
+      "parts": [
+        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":13.147706411743686,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.000118408468461,\"m2\":128.0000010094807},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":4.745302639570528,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.47775676113001797,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+      ]
+    },
+    {
+      "error": "format_version",
+      "kind": "merge",
+      "name": "merge_foreign_format_version",
+      "parts": [
+        "{\"format_version\":99,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.678216043964682,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.033565762114196,\"m2\":128.0811195478141},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":6.360644723403216,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.4646132540899197,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+      ]
+    },
+    {
+      "channels": [
+        {
+          "direction": "higher_is_better",
+          "good_score": null,
+          "key": "semantic",
+          "tag": "text-embedding-v1"
+        },
+        {
+          "direction": "higher_is_better",
+          "good_score": null,
+          "key": "semantic",
+          "tag": "text-embedding-v1"
+        }
+      ],
+      "config": {
+        "baseline_mode": "z_score",
+        "coupling": {
+          "discount_cap": 0.5,
+          "enabled": false,
+          "min_overlap": 30,
+          "min_refreshes": 2.0,
+          "min_reliability": 10.0,
+          "shrink_to_identity": 0.5,
+          "stratum_stability_max_var": 0.25
+        },
+        "decay": {
+          "enabled": false,
+          "factor": 0.98
+        },
+        "discrimination": {
+          "denom_floor_frac": 0.5,
+          "g_floor": 0.25,
+          "g_slope": 1.0,
+          "g_upper_bound": 4.0,
+          "min_count_for_z": 5.0,
+          "min_distinct_values": 8,
+          "shrink_pool_size": 20,
+          "top_eps": 0.05,
+          "top_m": 10,
+          "winsor_z": 4.0
+        },
+        "fusion": {
+          "rrf_eta": 60.0
+        }
+      },
+      "error": "duplicate_channel_key",
+      "kind": "config",
+      "name": "config_duplicate_key"
+    },
+    {
+      "channels": [
+        {
+          "direction": "higher_is_better",
+          "good_score": {
+            "good": 0.3,
+            "typical": 0.5,
+            "weight": 4.0
+          },
+          "key": "semantic",
+          "tag": "text-embedding-v1"
+        }
+      ],
+      "config": {
+        "baseline_mode": "z_score",
+        "coupling": {
+          "discount_cap": 0.5,
+          "enabled": false,
+          "min_overlap": 30,
+          "min_refreshes": 2.0,
+          "min_reliability": 10.0,
+          "shrink_to_identity": 0.5,
+          "stratum_stability_max_var": 0.25
+        },
+        "decay": {
+          "enabled": false,
+          "factor": 0.98
+        },
+        "discrimination": {
+          "denom_floor_frac": 0.5,
+          "g_floor": 0.25,
+          "g_slope": 1.0,
+          "g_upper_bound": 4.0,
+          "min_count_for_z": 5.0,
+          "min_distinct_values": 8,
+          "shrink_pool_size": 20,
+          "top_eps": 0.05,
+          "top_m": 10,
+          "winsor_z": 4.0
+        },
+        "fusion": {
+          "rrf_eta": 60.0
+        }
+      },
+      "error": "invalid_good_score",
+      "kind": "config",
+      "name": "config_invalid_good_score"
+    },
+    {
+      "channels": [
+        {
+          "direction": "higher_is_better",
+          "good_score": null,
+          "key": "semantic",
+          "tag": "text-embedding-v1"
+        }
+      ],
+      "config": {
+        "baseline_mode": "z_score",
+        "coupling": {
+          "discount_cap": 0.5,
+          "enabled": false,
+          "min_overlap": 30,
+          "min_refreshes": 2.0,
+          "min_reliability": 10.0,
+          "shrink_to_identity": 0.5,
+          "stratum_stability_max_var": 0.25
+        },
+        "decay": {
+          "enabled": false,
+          "factor": 0.98
+        },
+        "discrimination": {
+          "denom_floor_frac": 0.5,
+          "g_floor": 5.0,
+          "g_slope": 1.0,
+          "g_upper_bound": 4.0,
+          "min_count_for_z": 5.0,
+          "min_distinct_values": 8,
+          "shrink_pool_size": 20,
+          "top_eps": 0.05,
+          "top_m": 10,
+          "winsor_z": 4.0
+        },
+        "fusion": {
+          "rrf_eta": 60.0
+        }
+      },
+      "error": "invalid_fuse_config",
+      "kind": "config",
+      "name": "config_inverted_g_bounds"
+    }
+  ],
+  "description": "Every gate a binding must surface as a raised error: resume and merge incompatibilities and construction-time configuration refusals.",
+  "kind": "refusals",
+  "name": "refusals"
+}
