@@ -30,7 +30,7 @@ import ruffle
 
 from ruffle_evals import CACHE_DIR, RESULTS_DIR, SEED
 from ruffle_evals.baselines import _ndcg10
-from ruffle_evals.channels import CHANNEL_KEYS, Channels
+from ruffle_evals.channels import CHANNEL_KEYS, DENSE_SLUG, Channels, run_filename
 from ruffle_evals.datasets import load, load_id
 from ruffle_evals.evaluate import evaluate, paired_p
 from ruffle_evals.experiments import _wrong_query_run
@@ -189,7 +189,7 @@ def _payload_to_anchors(payloads: dict, configs: list) -> dict:
 def _load_anchors(bundle: Bundle, make_channels) -> None:
     """Anchor payloads for both directions, from the cache or one live-channels
     pass."""
-    path = CACHE_DIR / "anchors" / f"{bundle.name}-r{REFRESHES}.json"
+    path = CACHE_DIR / "anchors" / f"{bundle.name}-{DENSE_SLUG}-r{REFRESHES}.json"
     if path.exists():
         raw = json.loads(path.read_text())
     else:
@@ -217,7 +217,7 @@ def _cached_runs(name: str, keys: tuple, k: int) -> dict | None:
     ``None`` when any channel's cache is missing."""
     out = {}
     for key in keys:
-        path = CACHE_DIR / "runs" / name / f"{key}-k{k}.json"
+        path = CACHE_DIR / "runs" / name / run_filename(key, k)
         if not path.exists():
             return None
         out[key] = {
@@ -270,7 +270,7 @@ def _load_bundles() -> list[Bundle]:
     runs = {
         key: {
             qid: [(d, float(s)) for d, s in items]
-            for qid, items in json.loads((runs_dir / f"{key}-k{K}.json").read_text()).items()
+            for qid, items in json.loads((runs_dir / run_filename(key, K)).read_text()).items()
         }
         for key in MSMARCO_KEYS
     }

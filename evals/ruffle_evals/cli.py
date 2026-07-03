@@ -48,7 +48,20 @@ def _rounded(value):
 
 
 def _environment() -> dict:
-    return {"ruffle_version": ruffle.__version__, "python": platform.python_version()}
+    # The four searched discrimination defaults are recorded alongside the
+    # version: results must say which defaults produced them even when the
+    # version string alone does not.
+    d = ruffle.DiscriminationConfig()
+    return {
+        "ruffle_version": ruffle.__version__,
+        "python": platform.python_version(),
+        "engine_defaults": {
+            "top_eps": d.top_eps,
+            "top_m": d.top_m,
+            "winsor_z": d.winsor_z,
+            "denom_floor_frac": d.denom_floor_frac,
+        },
+    }
 
 
 def _run_dataset(name: str, k: int, warm_frac: float, refreshes: int) -> None:
@@ -106,10 +119,16 @@ def _weights_cell(mean_weights: dict[str, float] | None, keys) -> str:
     return " / ".join(f"{mean_weights[key]:.3f}" for key in keys)
 
 
+def _delta_cell(profile: dict | None) -> str:
+    if profile is None:
+        return ""
+    return f"{profile['win'] * 100:.0f}% / {profile['loss'] * 100:.0f}%"
+
+
 def _conditions_table(conditions: dict, keys: list[str]) -> list[str]:
     lines = [
-        f"| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | mean weights ({' / '.join(keys)}) |",
-        "|---|---|---|---|---|---|",
+        f"| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights ({' / '.join(keys)}) |",
+        "|---|---|---|---|---|---|---|",
     ]
     order = [
         *keys,
@@ -132,6 +151,7 @@ def _conditions_table(conditions: dict, keys: list[str]) -> list[str]:
         lines.append(
             f"| {condition} | {_fmt(metrics.get('nDCG@10'))} | {_fmt(metrics.get('R@100'))} "
             f"| {_fmt(metrics.get('RR@10'))} | {_fmt(entry.get('p_vs_rrf'), 3)} "
+            f"| {_delta_cell(entry.get('delta_vs_rrf'))} "
             f"| {_weights_cell(entry.get('mean_weights'), keys)} |"
         )
     lines.append("")

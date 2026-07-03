@@ -12,7 +12,10 @@ scales and with a deliberate redundancy between the two lexical channels:
 
 - `bm25`: Lucene-style BM25 over word tokens ([bm25s](https://github.com/xhluca/bm25s)).
 - `tfidf`: cosine over sublinear TF-IDF of character 3-5-grams (scikit-learn).
-- `dense`: cosine over `sentence-transformers/all-MiniLM-L6-v2` embeddings.
+- `dense`: cosine over `Alibaba-NLP/gte-modernbert-base` embeddings (768-d,
+  Apache-2.0, ungated; sequences truncate at 512 tokens). A current
+  retrieval-focused model in the mid-50s BEIR nDCG@10 range, so the dense
+  channel carries the signal an on-device deployment would actually have.
 
 The queries of each collection are shuffled with a fixed seed and split in half.
 The first half warms Ruffle's baselines; every condition is scored on the second
@@ -62,11 +65,17 @@ The conditions:
   globally better than another; that is cross-channel, label-bound information
   outside the engine's contract.
 
-Metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
-[ir_measures](https://github.com/terrierteam/ir_measures). Each fused condition
+Headline metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
+[ir_measures](https://github.com/terrierteam/ir_measures); AP@100 and Recall@10
+are computed into the result files without a table column. Each fused condition
 carries a two-sided paired t-test on per-query nDCG@10 against the `rrf`
-baseline, and the mean per-channel weights the engine actually used on the
-evaluation queries.
+baseline, the mean per-channel weights the engine actually used on the
+evaluation queries, and a per-query delta profile against `rrf`: the
+win/loss/tie rates, the mean delta, and the 5th-percentile delta. The profile
+is what the aggregates hide; whether a mean gain is a small improvement
+everywhere or large wins bought with real per-query damage, and the loss tail
+is the empirical per-query do-no-harm statement. The tables show win/loss; the
+full profile is in the result files.
 
 ## Targeted experiments
 
@@ -152,10 +161,15 @@ regenerates `results/RESULTS.md` from all result files present.
 
 ## Deferred
 
-A fourth channel using a stronger embedding model (`BAAI/bge-small-en-v1.5`,
-which wants a query instruction prefix at encode time) is noted but deferred
-until after the larger-corpus collections (cqadupstack, MS MARCO / TREC-DL) are
-in. As a replacement for MiniLM it would mostly shift collections into the
-dense-dominant regime fiqa already covers; the interesting configuration is as
-an addition, giving a redundant dense pair for the coupling estimator alongside
-the existing lexical pair, and a strong/weak mix within one modality.
+Two extensions are noted for a future round.
+
+A rerun with a larger embedding model as the dense channel, for example
+`Qwen/Qwen3-Embedding-0.6B` (Apache-2.0, currently the strongest small open
+retrieval model, and one that wants a query instruction prefix at encode time,
+which the channel's prompt constants support). The blocker is compute, not
+plumbing: at 0.6B parameters the MS MARCO corpus alone is several days of local
+embedding, where `gte-modernbert-base` keeps the full benchmark to about a day.
+
+A fourth channel using a second embedding model, giving a redundant dense pair
+for the coupling estimator alongside the existing lexical pair, and a
+strong/weak mix within one modality.

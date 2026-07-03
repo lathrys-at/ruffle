@@ -10,7 +10,7 @@ import ruffle
 
 from ruffle_evals.baselines import borda, combmnz, combsum, isr, oracle_rrf
 from ruffle_evals.channels import Channels, Run
-from ruffle_evals.evaluate import evaluate, paired_p
+from ruffle_evals.evaluate import delta_profile, evaluate, paired_p
 from ruffle_evals.fusion import (
     FusionOutcome,
     aggressive_config,
@@ -122,9 +122,10 @@ def main_conditions(
     # fitted on the judgments, which is what makes the row a ceiling.
     conditions["rrf-oracle"]["mean_weights"] = oracle_weights
     for condition, entry in conditions.items():
-        entry["p_vs_rrf"] = (
-            None
-            if condition == BASELINE
-            else paired_p(baseline_per_query, per_queries[condition])
-        )
+        if condition == BASELINE:
+            entry["p_vs_rrf"] = None
+            entry["delta_vs_rrf"] = None
+        else:
+            entry["p_vs_rrf"] = paired_p(baseline_per_query, per_queries[condition])
+            entry["delta_vs_rrf"] = delta_profile(baseline_per_query, per_queries[condition])
     return conditions, per_queries

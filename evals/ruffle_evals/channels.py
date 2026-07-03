@@ -27,13 +27,31 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from ruffle_evals import CACHE_DIR
 from ruffle_evals.datasets import Dataset
 
-__all__ = ["CHANNEL_KEYS", "Channels"]
+__all__ = ["CHANNEL_KEYS", "DENSE_MODEL", "DENSE_SLUG", "Channels", "run_filename"]
 
 CHANNEL_KEYS = ("bm25", "tfidf", "dense")
 
-_DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+# The dense channel's model. gte-modernbert-base is a current (2025), ungated,
+# Apache-2.0 retrieval model in the mid-50s BEIR range: strong enough that the
+# dense channel carries modern signal, small enough (149M parameters) that the
+# 8.8M-passage MS MARCO corpus embeds locally in about a day. It takes raw text
+# with no instruction prefix; a model that needs one sets the two prompt
+# constants. Sequences truncate at 512 tokens for throughput.
+DENSE_MODEL = "Alibaba-NLP/gte-modernbert-base"
+DENSE_SLUG = "gte-modernbert-base"
+_DENSE_QUERY_PROMPT: str = ""
+_DENSE_DOC_PROMPT: str = ""
+_DENSE_MAX_SEQ = 512
 
 _QUERY_CHUNK = 64
+
+
+def run_filename(key: str, k: int) -> str:
+    """The run cache filename for one channel: dense runs are keyed by the
+    embedding model, so a model change can never serve another model's cache."""
+    if key == "dense":
+        return f"dense-{DENSE_SLUG}-k{k}.json"
+    return f"{key}-k{k}.json"
 
 # Above this corpus size the memmap/blockwise paths take over: embeddings live
 # in an on-disk memmap rather than RAM, BM25 runs come from bm25s's own batched
@@ -107,7 +125,7 @@ class Channels:
         return {key: self._run(key, k) for key in self._keys}
 
     def _run(self, key: str, k: int) -> Run:
-        path = CACHE_DIR / "runs" / self._name / f"{key}-k{k}.json"
+        path = CACHE_DIR / "runs" / self._name / run_filename(key, k)
         if path.exists():
             raw = json.loads(path.read_text())
             return {qid: [(d, float(s)) for d, s in items] for qid, items in raw.items()}
@@ -244,7 +262,7 @@ class Channels:
     # -- dense embeddings ------------------------------------------------------
 
     def _corpus_embeddings(self, texts: list[str]) -> np.ndarray:
-        path = CACHE_DIR / "emb" / f"{self._name}-minilm.npy"
+        path = CACHE_DIR / "emb" / f"{self._name}-{DENSE_SLUG}.npy"
         if path.exists():
             return np.load(path, mmap_mode="r") if self._big else np.load(path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -269,16 +287,19 @@ class Channels:
     def _query_embedding(self, qid: str) -> np.ndarray:
         emb = self._query_emb_cache.get(qid)
         if emb is None:
-            emb = self._encode([self._queries[qid]])[0]
+            emb = self._encode([self._queries[qid]], prompt=_DENSE_QUERY_PROMPT)[0]
             self._query_emb_cache[qid] = emb
         return emb
 
-    def _encode(self, texts: list[str]) -> np.ndarray:
+    def _encode(self, texts: list[str], prompt: str = _DENSE_DOC_PROMPT) -> np.ndarray:
         if self._encoder is None:
             from sentence_transformers import SentenceTransformer
 
-            self._encoder = SentenceTransformer(_DENSE_MODEL)
-        # float32 keeps a corpus-scale embedding cache at half a million rows
+            self._encoder = SentenceTransformer(DENSE_MODEL)
+            self._encoder.max_seq_length = _DENSE_MAX_SEQ
+        if prompt:
+            texts = [prompt + t for t in texts]
+        # float32 keeps a corpus-scale embedding cache at millions of rows
         # manageable; scores are widened to float64 at scoring time.
         return self._encoder.encode(
             texts,

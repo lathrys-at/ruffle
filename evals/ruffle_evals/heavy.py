@@ -28,7 +28,7 @@ import ir_datasets
 from ruffle_evals import SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Channels
 from ruffle_evals.datasets import load_id
-from ruffle_evals.evaluate import paired_p
+from ruffle_evals.evaluate import delta_profile, paired_p
 from ruffle_evals.fusion import (
     aggressive_config,
     channel_configs,
@@ -158,6 +158,9 @@ def _macro_aggregate(per_sub: dict[str, dict], pooled: dict[str, dict[str, float
             "p_vs_rrf": None
             if condition == BASELINE
             else paired_p(pooled[BASELINE], pooled[condition]),
+            "delta_vs_rrf": None
+            if condition == BASELINE
+            else delta_profile(pooled[BASELINE], pooled[condition]),
         }
     return aggregated
 
