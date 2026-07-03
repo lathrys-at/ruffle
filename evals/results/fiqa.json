@@ -1,0 +1,153 @@
+{
+  "conditions": {
+    "bm25": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.505896,
+        "RR@10": 0.307596,
+        "nDCG@10": 0.245424
+      },
+      "p_vs_rrf": 0.0
+    },
+    "borda": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.681571,
+        "RR@10": 0.362996,
+        "nDCG@10": 0.305616
+      },
+      "p_vs_rrf": 0.445224
+    },
+    "combmnz": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.681399,
+        "RR@10": 0.393245,
+        "nDCG@10": 0.329685
+      },
+      "p_vs_rrf": 1.3e-05
+    },
+    "combsum": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.686384,
+        "RR@10": 0.393116,
+        "nDCG@10": 0.333447
+      },
+      "p_vs_rrf": 0.000133
+    },
+    "dense": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.719684,
+        "RR@10": 0.447809,
+        "nDCG@10": 0.37199
+      },
+      "p_vs_rrf": 0.000102
+    },
+    "isr": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.684918,
+        "RR@10": 0.391106,
+        "nDCG@10": 0.329591
+      },
+      "p_vs_rrf": 0.027113
+    },
+    "rrf": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.680657,
+        "RR@10": 0.368169,
+        "nDCG@10": 0.30767
+      },
+      "p_vs_rrf": null
+    },
+    "rrf-oracle": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.2,
+        "dense": 0.8,
+        "tfidf": 0.0
+      },
+      "metrics": {
+        "R@100": 0.719684,
+        "RR@10": 0.451069,
+        "nDCG@10": 0.379466
+      },
+      "p_vs_rrf": 0.0
+    },
+    "ruffle-cold": {
+      "mean_conflict": 0.0,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.680657,
+        "RR@10": 0.368169,
+        "nDCG@10": 0.30767
+      },
+      "p_vs_rrf": null
+    },
+    "ruffle-warm": {
+      "mean_conflict": 0.290957,
+      "mean_weights": {
+        "bm25": 0.975917,
+        "dense": 1.035415,
+        "tfidf": 0.988668
+      },
+      "metrics": {
+        "R@100": 0.648584,
+        "RR@10": 0.374701,
+        "nDCG@10": 0.311142
+      },
+      "p_vs_rrf": 0.518638
+    },
+    "ruffle-warm-coupled": {
+      "mean_conflict": 0.290957,
+      "mean_weights": {
+        "bm25": 0.946731,
+        "dense": 1.097885,
+        "tfidf": 0.955385
+      },
+      "metrics": {
+        "R@100": 0.646321,
+        "RR@10": 0.373901,
+        "nDCG@10": 0.31354
+      },
+      "p_vs_rrf": 0.370889
+    },
+    "tfidf": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.472388,
+        "RR@10": 0.208213,
+        "nDCG@10": 0.168448
+      },
+      "p_vs_rrf": 0.0
+    }
+  },
+  "coupling_refreshes": 10,
+  "dataset": "fiqa",
+  "eval_queries": 324,
+  "ir_datasets_id": "beir/fiqa/test",
+  "k": 100,
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 324
+}

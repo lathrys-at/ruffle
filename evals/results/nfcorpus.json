@@ -1,0 +1,153 @@
+{
+  "conditions": {
+    "bm25": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.237493,
+        "RR@10": 0.5108,
+        "nDCG@10": 0.294453
+      },
+      "p_vs_rrf": 0.000642
+    },
+    "borda": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.323142,
+        "RR@10": 0.506643,
+        "nDCG@10": 0.317001
+      },
+      "p_vs_rrf": 0.01324
+    },
+    "combmnz": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.332898,
+        "RR@10": 0.529828,
+        "nDCG@10": 0.334331
+      },
+      "p_vs_rrf": 0.424944
+    },
+    "combsum": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.332084,
+        "RR@10": 0.530462,
+        "nDCG@10": 0.336762
+      },
+      "p_vs_rrf": 0.290416
+    },
+    "dense": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.312092,
+        "RR@10": 0.507344,
+        "nDCG@10": 0.312644
+      },
+      "p_vs_rrf": 0.216127
+    },
+    "isr": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.327928,
+        "RR@10": 0.531751,
+        "nDCG@10": 0.330246
+      },
+      "p_vs_rrf": 0.989738
+    },
+    "rrf": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.323538,
+        "RR@10": 0.521904,
+        "nDCG@10": 0.330342
+      },
+      "p_vs_rrf": null
+    },
+    "rrf-oracle": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.3,
+        "dense": 0.4,
+        "tfidf": 0.3
+      },
+      "metrics": {
+        "R@100": 0.332349,
+        "RR@10": 0.528417,
+        "nDCG@10": 0.333232
+      },
+      "p_vs_rrf": 0.320727
+    },
+    "ruffle-cold": {
+      "mean_conflict": 0.0,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.323538,
+        "RR@10": 0.521904,
+        "nDCG@10": 0.330342
+      },
+      "p_vs_rrf": null
+    },
+    "ruffle-warm": {
+      "mean_conflict": 0.227266,
+      "mean_weights": {
+        "bm25": 1.088339,
+        "dense": 0.955009,
+        "tfidf": 0.956652
+      },
+      "metrics": {
+        "R@100": 0.325757,
+        "RR@10": 0.530269,
+        "nDCG@10": 0.334768
+      },
+      "p_vs_rrf": 0.189207
+    },
+    "ruffle-warm-coupled": {
+      "mean_conflict": 0.227266,
+      "mean_weights": {
+        "bm25": 1.082992,
+        "dense": 1.025791,
+        "tfidf": 0.891217
+      },
+      "metrics": {
+        "R@100": 0.327643,
+        "RR@10": 0.52706,
+        "nDCG@10": 0.337135
+      },
+      "p_vs_rrf": 0.053777
+    },
+    "tfidf": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.270935,
+        "RR@10": 0.513801,
+        "nDCG@10": 0.306961
+      },
+      "p_vs_rrf": 0.00762
+    }
+  },
+  "coupling_refreshes": 10,
+  "dataset": "nfcorpus",
+  "eval_queries": 162,
+  "ir_datasets_id": "beir/nfcorpus/test",
+  "k": 100,
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 161
+}

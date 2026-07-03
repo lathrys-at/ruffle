@@ -1,0 +1,153 @@
+{
+  "conditions": {
+    "bm25": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.949781,
+        "RR@10": 0.73916,
+        "nDCG@10": 0.746188
+      },
+      "p_vs_rrf": 0.0
+    },
+    "borda": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.994967,
+        "RR@10": 0.82845,
+        "nDCG@10": 0.836144
+      },
+      "p_vs_rrf": 1.7e-05
+    },
+    "combmnz": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.995148,
+        "RR@10": 0.848682,
+        "nDCG@10": 0.855743
+      },
+      "p_vs_rrf": 0.0
+    },
+    "combsum": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.995049,
+        "RR@10": 0.852331,
+        "nDCG@10": 0.860981
+      },
+      "p_vs_rrf": 0.0
+    },
+    "dense": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.994539,
+        "RR@10": 0.869053,
+        "nDCG@10": 0.877785
+      },
+      "p_vs_rrf": 0.0
+    },
+    "isr": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.994876,
+        "RR@10": 0.851322,
+        "nDCG@10": 0.858686
+      },
+      "p_vs_rrf": 0.0
+    },
+    "rrf": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.994578,
+        "RR@10": 0.832165,
+        "nDCG@10": 0.839214
+      },
+      "p_vs_rrf": null
+    },
+    "rrf-oracle": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.0,
+        "dense": 0.9,
+        "tfidf": 0.1
+      },
+      "metrics": {
+        "R@100": 0.994539,
+        "RR@10": 0.87426,
+        "nDCG@10": 0.881967
+      },
+      "p_vs_rrf": 0.0
+    },
+    "ruffle-cold": {
+      "mean_conflict": 0.0,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.994578,
+        "RR@10": 0.832165,
+        "nDCG@10": 0.839214
+      },
+      "p_vs_rrf": null
+    },
+    "ruffle-warm": {
+      "mean_conflict": 0.207775,
+      "mean_weights": {
+        "bm25": 1.023737,
+        "dense": 0.992298,
+        "tfidf": 0.983965
+      },
+      "metrics": {
+        "R@100": 0.993594,
+        "RR@10": 0.835997,
+        "nDCG@10": 0.844253
+      },
+      "p_vs_rrf": 2e-05
+    },
+    "ruffle-warm-coupled": {
+      "mean_conflict": 0.207775,
+      "mean_weights": {
+        "bm25": 0.972067,
+        "dense": 1.090326,
+        "tfidf": 0.937607
+      },
+      "metrics": {
+        "R@100": 0.993607,
+        "RR@10": 0.839014,
+        "nDCG@10": 0.84758
+      },
+      "p_vs_rrf": 0.0
+    },
+    "tfidf": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.971447,
+        "RR@10": 0.757277,
+        "nDCG@10": 0.766163
+      },
+      "p_vs_rrf": 0.0
+    }
+  },
+  "coupling_refreshes": 10,
+  "dataset": "quora",
+  "eval_queries": 5000,
+  "ir_datasets_id": "beir/quora/test",
+  "k": 100,
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 5000
+}

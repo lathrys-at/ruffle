@@ -1,0 +1,103 @@
+{
+  "dataset": "nfcorpus",
+  "eval_queries": 162,
+  "ir_datasets_id": "beir/nfcorpus/test",
+  "k": 100,
+  "points": [
+    {
+      "mean_weights": {
+        "bm25": 1.061586,
+        "dense": 0.944138,
+        "tfidf": 0.994276
+      },
+      "metrics": {
+        "R@100": 0.321557,
+        "RR@10": 0.530293,
+        "nDCG@10": 0.332426
+      },
+      "p_vs_rrf": 0.541125,
+      "warmup": 0
+    },
+    {
+      "mean_weights": {
+        "bm25": 1.05826,
+        "dense": 0.943588,
+        "tfidf": 0.998153
+      },
+      "metrics": {
+        "R@100": 0.32026,
+        "RR@10": 0.530996,
+        "nDCG@10": 0.333178
+      },
+      "p_vs_rrf": 0.396513,
+      "warmup": 10
+    },
+    {
+      "mean_weights": {
+        "bm25": 1.03034,
+        "dense": 0.96654,
+        "tfidf": 1.00312
+      },
+      "metrics": {
+        "R@100": 0.324451,
+        "RR@10": 0.529446,
+        "nDCG@10": 0.334391
+      },
+      "p_vs_rrf": 0.219172,
+      "warmup": 25
+    },
+    {
+      "mean_weights": {
+        "bm25": 1.074039,
+        "dense": 0.942698,
+        "tfidf": 0.983263
+      },
+      "metrics": {
+        "R@100": 0.324501,
+        "RR@10": 0.527611,
+        "nDCG@10": 0.33425
+      },
+      "p_vs_rrf": 0.227024,
+      "warmup": 50
+    },
+    {
+      "mean_weights": {
+        "bm25": 1.076914,
+        "dense": 0.955381,
+        "tfidf": 0.967705
+      },
+      "metrics": {
+        "R@100": 0.32617,
+        "RR@10": 0.527611,
+        "nDCG@10": 0.334214
+      },
+      "p_vs_rrf": 0.24191,
+      "warmup": 100
+    },
+    {
+      "mean_weights": {
+        "bm25": 1.088339,
+        "dense": 0.955009,
+        "tfidf": 0.956652
+      },
+      "metrics": {
+        "R@100": 0.325757,
+        "RR@10": 0.530269,
+        "nDCG@10": 0.334768
+      },
+      "p_vs_rrf": 0.189207,
+      "warmup": 161
+    }
+  ],
+  "python": "3.12.13",
+  "rrf": {
+    "metrics": {
+      "R@100": 0.323538,
+      "RR@10": 0.521904,
+      "nDCG@10": 0.330342
+    }
+  },
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 161
+}

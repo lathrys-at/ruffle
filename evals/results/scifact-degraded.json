@@ -1,0 +1,95 @@
+{
+  "dataset": "scifact",
+  "eval_queries": 150,
+  "ir_datasets_id": "beir/scifact/test",
+  "k": 100,
+  "modes": {
+    "flaky": {
+      "broken_weight_on_failed": 0.595976,
+      "broken_weight_on_healthy": 1.501609,
+      "conditions": {
+        "rrf": {
+          "mean_weights": {
+            "bm25": 1.0,
+            "broken": 1.0,
+            "dense": 1.0,
+            "tfidf": 1.0
+          },
+          "metrics": {
+            "R@100": 0.968667,
+            "RR@10": 0.612868,
+            "nDCG@10": 0.665643
+          }
+        },
+        "rrf-clean": {
+          "metrics": {
+            "R@100": 0.976667,
+            "RR@10": 0.660439,
+            "nDCG@10": 0.699829
+          },
+          "p_vs_rrf_broken": 0.001043
+        },
+        "ruffle-warm": {
+          "mean_conflict": 0.245892,
+          "mean_weights": {
+            "bm25": 1.00724,
+            "broken": 1.060868,
+            "dense": 0.981957,
+            "tfidf": 0.949935
+          },
+          "metrics": {
+            "R@100": 0.948667,
+            "RR@10": 0.653656,
+            "nDCG@10": 0.69486
+          },
+          "p_vs_rrf_broken": 0.004068
+        }
+      },
+      "failed_eval_queries": 73
+    },
+    "wrong-query": {
+      "conditions": {
+        "rrf": {
+          "mean_weights": {
+            "bm25": 1.0,
+            "broken": 1.0,
+            "dense": 1.0,
+            "tfidf": 1.0
+          },
+          "metrics": {
+            "R@100": 0.962,
+            "RR@10": 0.641243,
+            "nDCG@10": 0.685259
+          }
+        },
+        "rrf-clean": {
+          "metrics": {
+            "R@100": 0.976667,
+            "RR@10": 0.660439,
+            "nDCG@10": 0.699829
+          },
+          "p_vs_rrf_broken": 0.094331
+        },
+        "ruffle-warm": {
+          "mean_conflict": 0.344717,
+          "mean_weights": {
+            "bm25": 1.001223,
+            "broken": 1.116466,
+            "dense": 0.953287,
+            "tfidf": 0.929023
+          },
+          "metrics": {
+            "R@100": 0.908667,
+            "RR@10": 0.607265,
+            "nDCG@10": 0.650306
+          },
+          "p_vs_rrf_broken": 0.030402
+        }
+      }
+    }
+  },
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 150
+}
