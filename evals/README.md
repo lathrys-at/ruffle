@@ -51,6 +51,16 @@ The conditions:
   random draw of 256 corpus documents under every channel for one warmup query; a
   random draw rather than any channel's top-k, because a top-k pool is a selected
   sample that biases the correlation estimate.
+- `ruffle-warm-aggressive`: the same estimators with the conservatism turned
+  down and every evidence gate intact: discrimination reacts more sharply to a
+  departure from a channel's own norm (`g_slope` 2.5, `g_floor` 0.1) and the
+  redundancy discount, once gated in, may remove most of a duplicated signal
+  (`discount_cap` 0.9, `shrink_to_identity` 0.2), with anchor refreshes as in
+  the coupled condition. The profile prices the conservative defaults: what a
+  harder tilt buys where one channel dominates, and what it costs on the
+  degraded channels. No setting of these knobs learns that one channel is
+  globally better than another; that is cross-channel, label-bound information
+  outside the engine's contract.
 
 Metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
 [ir_measures](https://github.com/terrierteam/ir_measures). Each fused condition

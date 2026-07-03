@@ -5,6 +5,8 @@
   "k": 100,
   "modes": {
     "flaky": {
+      "aggressive_broken_weight_on_failed": 0.36671,
+      "aggressive_broken_weight_on_healthy": 1.836752,
       "broken_weight_on_failed": 0.614187,
       "broken_weight_on_healthy": 1.417966,
       "conditions": {
@@ -43,6 +45,21 @@
             "nDCG@10": 0.300488
           },
           "p_vs_rrf_broken": 0.007349
+        },
+        "ruffle-warm-aggressive": {
+          "mean_conflict": 0.286034,
+          "mean_weights": {
+            "bm25": 0.876798,
+            "broken": 1.115342,
+            "dense": 1.075361,
+            "tfidf": 0.932499
+          },
+          "metrics": {
+            "R@100": 0.592697,
+            "RR@10": 0.364612,
+            "nDCG@10": 0.297837
+          },
+          "p_vs_rrf_broken": 0.131524
         }
       },
       "failed_eval_queries": 159
@@ -84,6 +101,21 @@
             "nDCG@10": 0.296501
           },
           "p_vs_rrf_broken": 0.15252
+        },
+        "ruffle-warm-aggressive": {
+          "mean_conflict": 0.324435,
+          "mean_weights": {
+            "bm25": 0.931975,
+            "broken": 1.077306,
+            "dense": 1.057327,
+            "tfidf": 0.933391
+          },
+          "metrics": {
+            "R@100": 0.553311,
+            "RR@10": 0.329674,
+            "nDCG@10": 0.26995
+          },
+          "p_vs_rrf_broken": 0.001851
         }
       }
     }

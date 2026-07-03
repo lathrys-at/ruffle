@@ -121,6 +121,7 @@ def _conditions_table(conditions: dict, keys: list[str]) -> list[str]:
         "ruffle-cold",
         "ruffle-warm",
         "ruffle-warm-coupled",
+        "ruffle-warm-aggressive",
         "rrf-oracle",
     ]
     for condition in order:
@@ -187,8 +188,10 @@ def _degraded_table(result: dict) -> list[str]:
         entry = result["modes"].get(mode)
         if entry is None:
             continue
-        for condition in ("rrf-clean", "rrf", "ruffle-warm"):
-            data = entry["conditions"][condition]
+        for condition in ("rrf-clean", "rrf", "ruffle-warm", "ruffle-warm-aggressive"):
+            data = entry["conditions"].get(condition)
+            if data is None:
+                continue
             metrics = data["metrics"]
             weights = data.get("mean_weights")
             broken = "" if weights is None else f"{weights['broken']:.3f}"
@@ -208,6 +211,12 @@ def _degraded_table(result: dict) -> list[str]:
                 f"{flaky['broken_weight_on_failed']:.3f}, against "
                 f"{flaky['broken_weight_on_healthy']:.3f} on the healthy ones.",
             ]
+        )
+    if "aggressive_broken_weight_on_failed" in flaky:
+        lines.append(
+            f"Under the aggressive profile that split widens to "
+            f"{flaky['aggressive_broken_weight_on_failed']:.3f} against "
+            f"{flaky['aggressive_broken_weight_on_healthy']:.3f}."
         )
     lines.append("")
     return lines

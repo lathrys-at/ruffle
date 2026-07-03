@@ -29,7 +29,12 @@ from ruffle_evals import SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Channels
 from ruffle_evals.datasets import load_id
 from ruffle_evals.evaluate import paired_p
-from ruffle_evals.fusion import channel_configs, ruffle_warm_multi, split_queries
+from ruffle_evals.fusion import (
+    aggressive_config,
+    channel_configs,
+    ruffle_warm_multi,
+    split_queries,
+)
 from ruffle_evals.protocol import BASELINE, main_conditions
 
 __all__ = ["MSMARCO_KEYS", "SUBFORUMS", "run_cqadupstack", "run_msmarco"]
@@ -200,10 +205,19 @@ def run_msmarco(k: int, refreshes: int) -> dict:
     eval_sets = {"dev": dev_eval, "dl19": set_qids["dl19"], "dl20": set_qids["dl20"]}
     configs = channel_configs(MSMARCO_KEYS)
 
-    print("[msmarco] warming (plain and coupled)", flush=True)
+    print("[msmarco] warming (plain, coupled, aggressive)", flush=True)
     warm_plain = ruffle_warm_multi(runs, warm_qids, eval_sets, configs)
     warm_coupled = ruffle_warm_multi(
         runs, warm_qids, eval_sets, configs, channels=channels, coupling=True, refreshes=refreshes
+    )
+    warm_aggressive = ruffle_warm_multi(
+        runs,
+        warm_qids,
+        eval_sets,
+        configs,
+        channels=channels,
+        refreshes=refreshes,
+        config=aggressive_config(),
     )
 
     results_sets: dict[str, dict] = {}
@@ -219,6 +233,7 @@ def run_msmarco(k: int, refreshes: int) -> dict:
             warm_outcomes={
                 "ruffle-warm": warm_plain[name],
                 "ruffle-warm-coupled": warm_coupled[name],
+                "ruffle-warm-aggressive": warm_aggressive[name],
             },
         )
         results_sets[name] = {"eval_queries": len(eval_qids), "conditions": conditions}

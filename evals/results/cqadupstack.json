@@ -121,6 +121,20 @@
       },
       "p_vs_rrf": 0.001139
     },
+    "ruffle-warm-aggressive": {
+      "mean_conflict": 0.189644,
+      "mean_weights": {
+        "bm25": 0.999758,
+        "dense": 1.105692,
+        "tfidf": 0.894549
+      },
+      "metrics": {
+        "R@100": 0.68747,
+        "RR@10": 0.357201,
+        "nDCG@10": 0.364085
+      },
+      "p_vs_rrf": 0.181533
+    },
     "ruffle-warm-coupled": {
       "mean_conflict": 0.269064,
       "mean_weights": {
@@ -169,6 +183,7 @@
         "rrf-oracle": 0.497421,
         "ruffle-cold": 0.409723,
         "ruffle-warm": 0.413367,
+        "ruffle-warm-aggressive": 0.424124,
         "ruffle-warm-coupled": 0.419178,
         "tfidf": 0.318416
       }
@@ -186,6 +201,7 @@
         "rrf-oracle": 0.47942,
         "ruffle-cold": 0.421467,
         "ruffle-warm": 0.429121,
+        "ruffle-warm-aggressive": 0.430865,
         "ruffle-warm-coupled": 0.433302,
         "tfidf": 0.310955
       }
@@ -203,6 +219,7 @@
         "rrf-oracle": 0.586001,
         "ruffle-cold": 0.542315,
         "ruffle-warm": 0.546505,
+        "ruffle-warm-aggressive": 0.543653,
         "ruffle-warm-coupled": 0.549517,
         "tfidf": 0.420157
       }
@@ -220,6 +237,7 @@
         "rrf-oracle": 0.41887,
         "ruffle-cold": 0.335834,
         "ruffle-warm": 0.341481,
+        "ruffle-warm-aggressive": 0.339765,
         "ruffle-warm-coupled": 0.342861,
         "tfidf": 0.236547
       }
@@ -237,6 +255,7 @@
         "rrf-oracle": 0.292369,
         "ruffle-cold": 0.262252,
         "ruffle-warm": 0.265593,
+        "ruffle-warm-aggressive": 0.265802,
         "ruffle-warm-coupled": 0.263287,
         "tfidf": 0.186451
       }
@@ -254,6 +273,7 @@
         "rrf-oracle": 0.484791,
         "ruffle-cold": 0.40167,
         "ruffle-warm": 0.403259,
+        "ruffle-warm-aggressive": 0.399543,
         "ruffle-warm-coupled": 0.407173,
         "tfidf": 0.287541
       }
@@ -271,6 +291,7 @@
         "rrf-oracle": 0.372235,
         "ruffle-cold": 0.328252,
         "ruffle-warm": 0.333361,
+        "ruffle-warm-aggressive": 0.325755,
         "ruffle-warm-coupled": 0.334406,
         "tfidf": 0.231679
       }
@@ -288,6 +309,7 @@
         "rrf-oracle": 0.341439,
         "ruffle-cold": 0.317794,
         "ruffle-warm": 0.316611,
+        "ruffle-warm-aggressive": 0.307505,
         "ruffle-warm-coupled": 0.317401,
         "tfidf": 0.208244
       }
@@ -305,6 +327,7 @@
         "rrf-oracle": 0.31311,
         "ruffle-cold": 0.272897,
         "ruffle-warm": 0.274133,
+        "ruffle-warm-aggressive": 0.276374,
         "ruffle-warm-coupled": 0.277682,
         "tfidf": 0.169781
       }
@@ -322,6 +345,7 @@
         "rrf-oracle": 0.408951,
         "ruffle-cold": 0.340127,
         "ruffle-warm": 0.34334,
+        "ruffle-warm-aggressive": 0.35067,
         "ruffle-warm-coupled": 0.345774,
         "tfidf": 0.230345
       }
@@ -339,6 +363,7 @@
         "rrf-oracle": 0.411094,
         "ruffle-cold": 0.387105,
         "ruffle-warm": 0.397683,
+        "ruffle-warm-aggressive": 0.375523,
         "ruffle-warm-coupled": 0.399872,
         "tfidf": 0.282553
       }
@@ -356,6 +381,7 @@
         "rrf-oracle": 0.377421,
         "ruffle-cold": 0.328414,
         "ruffle-warm": 0.334789,
+        "ruffle-warm-aggressive": 0.329444,
         "ruffle-warm-coupled": 0.334648,
         "tfidf": 0.19125
       }

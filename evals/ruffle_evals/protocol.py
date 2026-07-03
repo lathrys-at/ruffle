@@ -11,7 +11,14 @@ import ruffle
 from ruffle_evals.baselines import borda, combmnz, combsum, isr, oracle_rrf
 from ruffle_evals.channels import Channels, Run
 from ruffle_evals.evaluate import evaluate, paired_p
-from ruffle_evals.fusion import FusionOutcome, channel_configs, rrf, ruffle_cold, ruffle_warm
+from ruffle_evals.fusion import (
+    FusionOutcome,
+    aggressive_config,
+    channel_configs,
+    rrf,
+    ruffle_cold,
+    ruffle_warm,
+)
 
 __all__ = ["BASELINE", "main_conditions"]
 
@@ -69,6 +76,18 @@ def main_conditions(
                         channels=channels,
                         coupling=True,
                         refreshes=refreshes,
+                    ),
+                ),
+                (
+                    "ruffle-warm-aggressive",
+                    ruffle_warm(
+                        runs,
+                        warm_qids,
+                        eval_qids,
+                        configs=configs,
+                        channels=channels,
+                        refreshes=refreshes,
+                        config=aggressive_config(),
                     ),
                 ),
             ]

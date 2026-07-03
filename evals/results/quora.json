@@ -116,6 +116,20 @@
       },
       "p_vs_rrf": 2e-05
     },
+    "ruffle-warm-aggressive": {
+      "mean_conflict": 0.13324,
+      "mean_weights": {
+        "bm25": 1.028264,
+        "dense": 1.062157,
+        "tfidf": 0.909579
+      },
+      "metrics": {
+        "R@100": 0.986974,
+        "RR@10": 0.836533,
+        "nDCG@10": 0.845773
+      },
+      "p_vs_rrf": 0.002718
+    },
     "ruffle-warm-coupled": {
       "mean_conflict": 0.207775,
       "mean_weights": {

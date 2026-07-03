@@ -28,6 +28,7 @@ from ruffle_evals.datasets import Dataset
 
 __all__ = [
     "FusionOutcome",
+    "aggressive_config",
     "channel_configs",
     "rrf",
     "ruffle_cold",
@@ -35,6 +36,25 @@ __all__ = [
     "ruffle_warm_multi",
     "split_queries",
 ]
+
+
+def aggressive_config() -> "ruffle.FuseConfig":
+    """The harness's aggressive profile: the same estimators with the
+    conservatism turned down, every evidence gate left intact.
+
+    Discrimination reacts more sharply to a departure from a channel's own norm
+    (g_slope 1.0 -> 2.5) and can push an underperforming channel further down
+    (g_floor 0.25 -> 0.1). The redundancy discount, once its reliability,
+    refresh, and stability gates pass, may remove most of a duplicated signal
+    (discount_cap 0.5 -> 0.9) with less mandatory shrinkage toward independence
+    (shrink_to_identity 0.5 -> 0.2). What this profile deliberately cannot do is
+    learn that one channel is globally better than another: that information is
+    cross-channel and label-bound, outside the engine's contract at any setting.
+    """
+    return ruffle.FuseConfig(
+        discrimination=ruffle.DiscriminationConfig(g_slope=2.5, g_floor=0.1),
+        coupling=ruffle.CouplingConfig(enabled=True, discount_cap=0.9, shrink_to_identity=0.2),
+    )
 
 _TAGS = {"bm25": "bm25s-lucene", "tfidf": "char-wb-3-5", "dense": "all-MiniLM-L6-v2"}
 
@@ -209,6 +229,18 @@ def _fuse_eval(
     return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
 
 
+def _resolve_config(
+    coupling: bool, config: ruffle.FuseConfig | None
+) -> tuple[ruffle.FuseConfig | None, bool]:
+    """The effective configuration and whether anchor refreshes run: an explicit
+    ``config`` wins, and its coupling switch decides the anchors."""
+    if config is not None:
+        return config, config.coupling.enabled
+    if coupling:
+        return ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)), True
+    return None, False
+
+
 def ruffle_warm(
     runs: dict[str, Run],
     warm_qids: list[str],
@@ -217,12 +249,17 @@ def ruffle_warm(
     channels: Channels | None = None,
     coupling: bool = False,
     refreshes: int = 10,
+    config: ruffle.FuseConfig | None = None,
 ) -> FusionOutcome:
     """Ruffle stateful: baselines accumulate over the warmup queries, then the
     evaluation queries are fused (still stateful, as a deployment would run)."""
     configs = channel_configs() if configs is None else configs
-    config = ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)) if coupling else None
-    fuser = _warm_fuser(runs, warm_qids, configs, config, channels, coupling, refreshes)
+    fuse_config, anchors = _resolve_config(coupling, config)
+    # Without live channel models there is nothing to score an anchor with; the
+    # coupling switch then stays on but its gates never pass, which reads as
+    # "enabled, no evidence yet", the recall-safe direction.
+    anchors = anchors and channels is not None
+    fuser = _warm_fuser(runs, warm_qids, configs, fuse_config, channels, anchors, refreshes)
     return _fuse_eval(fuser, runs, eval_qids, configs)
 
 
@@ -234,14 +271,16 @@ def ruffle_warm_multi(
     channels: Channels | None = None,
     coupling: bool = False,
     refreshes: int = 10,
+    config: ruffle.FuseConfig | None = None,
 ) -> dict[str, FusionOutcome]:
     """One warmup, several evaluation sets: each set is fused by a fuser resumed
     from the same warm-state snapshot, so no evaluation set's queries leak into
     another's baselines."""
-    config = ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)) if coupling else None
-    warm_state = _warm_fuser(runs, warm_qids, configs, config, channels, coupling, refreshes).state
+    fuse_config, anchors = _resolve_config(coupling, config)
+    anchors = anchors and channels is not None
+    warm_state = _warm_fuser(runs, warm_qids, configs, fuse_config, channels, anchors, refreshes).state
     outcomes: dict[str, FusionOutcome] = {}
     for name, eval_qids in eval_sets.items():
-        fuser = ruffle.Fuser.resume(configs, warm_state, config)
+        fuser = ruffle.Fuser.resume(configs, warm_state, fuse_config)
         outcomes[name] = _fuse_eval(fuser, runs, eval_qids, configs)
     return outcomes
