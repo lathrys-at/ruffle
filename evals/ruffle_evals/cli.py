@@ -74,13 +74,17 @@ def _main_conditions(runs, channels, qrels, warm_qids, eval_qids, refreshes) -> 
     outcomes["rrf-oracle"] = None
 
     conditions = {}
+    per_queries = {}
     baseline_per_query = None
     for condition, ranking in rankings.items():
         aggregate, per_query = evaluate(qrels, ranking)
         outcome = outcomes[condition]
+        # The per-query nDCG vector feeds the paired test but is not persisted:
+        # it is thousands of lines per collection in the committed results, and
+        # regenerable exactly from the fixed seed and the cached runs.
+        per_queries[condition] = per_query
         conditions[condition] = {
             "metrics": aggregate,
-            "per_query_ndcg10": per_query,
             "mean_weights": None if outcome is None else outcome.mean_weights(CHANNEL_KEYS),
             "mean_conflict": None if outcome is None else outcome.mean_conflict(),
         }
@@ -93,7 +97,7 @@ def _main_conditions(runs, channels, qrels, warm_qids, eval_qids, refreshes) -> 
         entry["p_vs_rrf"] = (
             None
             if condition == _BASELINE
-            else paired_p(baseline_per_query, entry["per_query_ndcg10"])
+            else paired_p(baseline_per_query, per_queries[condition])
         )
     return conditions
 

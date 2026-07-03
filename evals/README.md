@@ -119,8 +119,8 @@ python -m ruffle_evals scifact --k 100
 
 Channel runs and corpus embeddings are cached under `cache/` keyed by collection
 and run depth, so re-runs only re-execute the fusion and the metrics. Each run
-writes `results/<dataset>.json` (the main comparison: aggregate metrics,
-per-query nDCG@10, mean weights, and the environment),
+writes `results/<dataset>.json` (the main comparison: aggregate metrics, mean
+weights, p-values, and the environment),
 `results/<dataset>-degraded.json`, and `results/<dataset>-curve.json`, then
 regenerates `results/RESULTS.md` from all result files present.
 
