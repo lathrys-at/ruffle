@@ -1,0 +1,365 @@
+{
+  "channel_keys": [
+    "bm25",
+    "tfidf",
+    "dense"
+  ],
+  "conditions": {
+    "bm25": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.574375,
+        "RR@10": 0.305588,
+        "nDCG@10": 0.307839
+      },
+      "p_vs_rrf": 0.0
+    },
+    "borda": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.749716,
+        "RR@10": 0.35171,
+        "nDCG@10": 0.359273
+      },
+      "p_vs_rrf": 5.3e-05
+    },
+    "combmnz": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.755274,
+        "RR@10": 0.37226,
+        "nDCG@10": 0.378929
+      },
+      "p_vs_rrf": 0.0
+    },
+    "combsum": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.754792,
+        "RR@10": 0.376326,
+        "nDCG@10": 0.385081
+      },
+      "p_vs_rrf": 0.0
+    },
+    "dense": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.785249,
+        "RR@10": 0.393619,
+        "nDCG@10": 0.406565
+      },
+      "p_vs_rrf": 0.0
+    },
+    "isr": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.750064,
+        "RR@10": 0.369382,
+        "nDCG@10": 0.381425
+      },
+      "p_vs_rrf": 0.0
+    },
+    "rrf": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.747679,
+        "RR@10": 0.35565,
+        "nDCG@10": 0.362321
+      },
+      "p_vs_rrf": null
+    },
+    "rrf-oracle": {
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.083894,
+        "dense": 0.881095,
+        "tfidf": 0.035011
+      },
+      "metrics": {
+        "R@100": 0.78557,
+        "RR@10": 0.401053,
+        "nDCG@10": 0.41526
+      },
+      "p_vs_rrf": 0.0
+    },
+    "ruffle-cold": {
+      "mean_conflict": 0.0,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "R@100": 0.747679,
+        "RR@10": 0.35565,
+        "nDCG@10": 0.362321
+      },
+      "p_vs_rrf": null
+    },
+    "ruffle-warm": {
+      "mean_conflict": 0.269064,
+      "mean_weights": {
+        "bm25": 1.002208,
+        "dense": 1.010319,
+        "tfidf": 0.987473
+      },
+      "metrics": {
+        "R@100": 0.722727,
+        "RR@10": 0.36032,
+        "nDCG@10": 0.366603
+      },
+      "p_vs_rrf": 0.001139
+    },
+    "ruffle-warm-coupled": {
+      "mean_conflict": 0.269064,
+      "mean_weights": {
+        "bm25": 0.974102,
+        "dense": 1.083865,
+        "tfidf": 0.942033
+      },
+      "metrics": {
+        "R@100": 0.722559,
+        "RR@10": 0.361644,
+        "nDCG@10": 0.368758
+      },
+      "p_vs_rrf": 4e-06
+    },
+    "tfidf": {
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "R@100": 0.573482,
+        "RR@10": 0.249162,
+        "nDCG@10": 0.25616
+      },
+      "p_vs_rrf": 0.0
+    }
+  },
+  "coupling_refreshes": 10,
+  "dataset": "cqadupstack",
+  "eval_queries": 6575,
+  "ir_datasets_id": "beir/cqadupstack/*",
+  "k": 100,
+  "note": "Macro-averaged over the 12 subforums, each with its own corpus, channels, warmup, and oracle; the paired test pools per-query nDCG@10 across subforums.",
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "subforums": {
+    "android": {
+      "eval_queries": 350,
+      "ndcg10": {
+        "bm25": 0.34985,
+        "borda": 0.408417,
+        "combmnz": 0.430913,
+        "combsum": 0.438665,
+        "dense": 0.497421,
+        "isr": 0.453387,
+        "rrf": 0.409723,
+        "rrf-oracle": 0.497421,
+        "ruffle-cold": 0.409723,
+        "ruffle-warm": 0.413367,
+        "ruffle-warm-coupled": 0.419178,
+        "tfidf": 0.318416
+      }
+    },
+    "english": {
+      "eval_queries": 785,
+      "ndcg10": {
+        "bm25": 0.332906,
+        "borda": 0.422807,
+        "combmnz": 0.44014,
+        "combsum": 0.450985,
+        "dense": 0.472825,
+        "isr": 0.44485,
+        "rrf": 0.421467,
+        "rrf-oracle": 0.47942,
+        "ruffle-cold": 0.421467,
+        "ruffle-warm": 0.429121,
+        "ruffle-warm-coupled": 0.433302,
+        "tfidf": 0.310955
+      }
+    },
+    "gaming": {
+      "eval_queries": 798,
+      "ndcg10": {
+        "bm25": 0.480637,
+        "borda": 0.53593,
+        "combmnz": 0.561599,
+        "combsum": 0.561065,
+        "dense": 0.578918,
+        "isr": 0.558884,
+        "rrf": 0.542315,
+        "rrf-oracle": 0.586001,
+        "ruffle-cold": 0.542315,
+        "ruffle-warm": 0.546505,
+        "ruffle-warm-coupled": 0.549517,
+        "tfidf": 0.420157
+      }
+    },
+    "gis": {
+      "eval_queries": 443,
+      "ndcg10": {
+        "bm25": 0.294189,
+        "borda": 0.330551,
+        "combmnz": 0.350386,
+        "combsum": 0.359061,
+        "dense": 0.41887,
+        "isr": 0.37837,
+        "rrf": 0.335834,
+        "rrf-oracle": 0.41887,
+        "ruffle-cold": 0.335834,
+        "ruffle-warm": 0.341481,
+        "ruffle-warm-coupled": 0.342861,
+        "tfidf": 0.236547
+      }
+    },
+    "mathematica": {
+      "eval_queries": 402,
+      "ndcg10": {
+        "bm25": 0.210534,
+        "borda": 0.260471,
+        "combmnz": 0.266844,
+        "combsum": 0.274045,
+        "dense": 0.288602,
+        "isr": 0.268023,
+        "rrf": 0.262252,
+        "rrf-oracle": 0.292369,
+        "ruffle-cold": 0.262252,
+        "ruffle-warm": 0.265593,
+        "ruffle-warm-coupled": 0.263287,
+        "tfidf": 0.186451
+      }
+    },
+    "physics": {
+      "eval_queries": 520,
+      "ndcg10": {
+        "bm25": 0.324976,
+        "borda": 0.402967,
+        "combmnz": 0.423191,
+        "combsum": 0.432196,
+        "dense": 0.484791,
+        "isr": 0.426437,
+        "rrf": 0.40167,
+        "rrf-oracle": 0.484791,
+        "ruffle-cold": 0.40167,
+        "ruffle-warm": 0.403259,
+        "ruffle-warm-coupled": 0.407173,
+        "tfidf": 0.287541
+      }
+    },
+    "programmers": {
+      "eval_queries": 438,
+      "ndcg10": {
+        "bm25": 0.270993,
+        "borda": 0.325351,
+        "combmnz": 0.342998,
+        "combsum": 0.345186,
+        "dense": 0.358342,
+        "isr": 0.329424,
+        "rrf": 0.328252,
+        "rrf-oracle": 0.372235,
+        "ruffle-cold": 0.328252,
+        "ruffle-warm": 0.333361,
+        "ruffle-warm-coupled": 0.334406,
+        "tfidf": 0.231679
+      }
+    },
+    "stats": {
+      "eval_queries": 326,
+      "ndcg10": {
+        "bm25": 0.271666,
+        "borda": 0.314353,
+        "combmnz": 0.329708,
+        "combsum": 0.334924,
+        "dense": 0.328078,
+        "isr": 0.326214,
+        "rrf": 0.317794,
+        "rrf-oracle": 0.341439,
+        "ruffle-cold": 0.317794,
+        "ruffle-warm": 0.316611,
+        "ruffle-warm-coupled": 0.317401,
+        "tfidf": 0.208244
+      }
+    },
+    "tex": {
+      "eval_queries": 1453,
+      "ndcg10": {
+        "bm25": 0.240644,
+        "borda": 0.270753,
+        "combmnz": 0.29002,
+        "combsum": 0.294538,
+        "dense": 0.300816,
+        "isr": 0.29482,
+        "rrf": 0.272897,
+        "rrf-oracle": 0.31311,
+        "ruffle-cold": 0.272897,
+        "ruffle-warm": 0.274133,
+        "ruffle-warm-coupled": 0.277682,
+        "tfidf": 0.169781
+      }
+    },
+    "unix": {
+      "eval_queries": 536,
+      "ndcg10": {
+        "bm25": 0.285109,
+        "borda": 0.335699,
+        "combmnz": 0.357524,
+        "combsum": 0.368903,
+        "dense": 0.40187,
+        "isr": 0.366155,
+        "rrf": 0.340127,
+        "rrf-oracle": 0.408951,
+        "ruffle-cold": 0.340127,
+        "ruffle-warm": 0.34334,
+        "ruffle-warm-coupled": 0.345774,
+        "tfidf": 0.230345
+      }
+    },
+    "webmasters": {
+      "eval_queries": 253,
+      "ndcg10": {
+        "bm25": 0.317784,
+        "borda": 0.377751,
+        "combmnz": 0.396732,
+        "combsum": 0.396537,
+        "dense": 0.398143,
+        "isr": 0.38674,
+        "rrf": 0.387105,
+        "rrf-oracle": 0.411094,
+        "ruffle-cold": 0.387105,
+        "ruffle-warm": 0.397683,
+        "ruffle-warm-coupled": 0.399872,
+        "tfidf": 0.282553
+      }
+    },
+    "wordpress": {
+      "eval_queries": 271,
+      "ndcg10": {
+        "bm25": 0.314783,
+        "borda": 0.326233,
+        "combmnz": 0.357095,
+        "combsum": 0.364867,
+        "dense": 0.350104,
+        "isr": 0.34379,
+        "rrf": 0.328414,
+        "rrf-oracle": 0.377421,
+        "ruffle-cold": 0.328414,
+        "ruffle-warm": 0.334789,
+        "ruffle-warm-coupled": 0.334648,
+        "tfidf": 0.19125
+      }
+    }
+  },
+  "warm_queries": 6570
+}
