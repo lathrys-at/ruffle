@@ -16,6 +16,11 @@ name = "ruffle_core"
 crate-type = ["cdylib"]
 
 [dependencies]
+# abi3-py310 targets the stable ABI at the lowest supported CPython, so one wheel per
+# platform covers that version and everything after. The floor is the lowest version
+# still receiving security updates; when it drops out of support, this feature moves
+# together with requires-python and the classifiers in pyproject.toml and the tox
+# envlist.
 pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
 ruffle = { path = "../.." }
 # State crosses the FFI boundary as canonical JSON. `float_roundtrip` keeps the

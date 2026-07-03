@@ -9,12 +9,19 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT OR Apache-2.0"
 keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
+# The per-version classifiers list every CPython version the release matrix (tox.ini)
+# tests; the abi3 wheel itself runs on the floor and everything after.
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Rust",
     "Topic :: Software Development :: Libraries",
     "Topic :: Text Processing :: Indexing",
@@ -40,6 +47,8 @@ dev = [
     "mypy>=1.14",
     "pytest>=8",
     "ruff>=0.8",
+    "tox>=4.22",
+    "tox-uv>=1.13",
 ]
 
 [tool.mypy]

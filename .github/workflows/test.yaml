@@ -24,6 +24,10 @@ jobs:
         run: cargo fmt --all --check
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
+      # The workspace's default-members scope plain cargo invocations to the core
+      # crate, so the bindings crate is linted by name.
+      - name: Clippy (Python extension crate)
+        run: cargo clippy -p ruffle-py --all-targets -- -D warnings
       - name: Doc
         run: cargo doc --no-deps --all-features
         env:
@@ -70,41 +74,34 @@ jobs:
         with:
           command: check licenses bans sources
 
-  # The Python bindings: clippy on the extension crate, then the wheel is built and
-  # the full pytest suite runs against it (parity replay, idiomatic tests, the
-  # mypy --strict gate, and the Rust-CLI interop round trip). The matrix covers the
-  # supported floor and a current interpreter; the wheel itself is abi3, one build
-  # for every version from the floor up.
+  # The Python bindings, driven by tox: the wheel is built and the full pytest suite
+  # runs against it (parity replay, idiomatic tests, the mypy --strict gate, and the
+  # Rust-CLI interop round trip) on every supported CPython version, floor first.
+  # The matrix mirrors the tox envlist; the wheel itself is abi3, one build for the
+  # floor and every version after.
   python:
     name: python (${{ matrix.python }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.13"]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Clippy (extension crate)
-        run: cargo clippy -p ruffle-py --all-targets -- -D warnings
-      - name: Install the package and dev tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install ./bindings/python pytest mypy ruff
-      - name: Ruff
-        working-directory: bindings/python
-        run: |
-          ruff check python tests
-          ruff format --check python tests
+      - name: Install tox
+        run: python -m pip install tox
       - name: Test
         working-directory: bindings/python
-        run: pytest -q
+        run: tox -e py$(echo "${{ matrix.python }}" | tr -d .)
+      - name: Lint (ruff)
+        if: matrix.python == '3.13'
+        working-directory: bindings/python
+        run: tox -e lint
 
   # Single aggregating check for the `main` branch protection rule: require only
   # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
