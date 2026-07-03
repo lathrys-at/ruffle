@@ -1,0 +1,73 @@
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "ruffle"
+description = "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF) of heterogeneous retrieval channels."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT OR Apache-2.0"
+# Copies of the repository-root texts (PEP 639 forbids paths above the project
+# directory): both licenses require the text to accompany a redistribution, so the
+# copies land in the wheel under dist-info/licenses/. They live in a subdirectory
+# because the sdist vendors the whole workspace with the project remapped to the
+# archive root, where root-level copies would collide with the repository's own
+# license files.
+license-files = ["licenses/LICENSE-MIT", "licenses/LICENSE-APACHE"]
+keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
+# The per-version classifiers list every CPython version the release matrix (tox.ini)
+# tests; the abi3 wheel itself runs on the floor and everything after.
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing :: Indexing",
+    "Typing :: Typed",
+]
+# The version is the Cargo package version (bindings/python/Cargo.toml), which is kept
+# in lockstep with the core crate; both release from the same tag.
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/lathrys-at/ruffle"
+Changelog = "https://github.com/lathrys-at/ruffle/blob/main/CHANGELOG.md"
+Issues = "https://github.com/lathrys-at/ruffle/issues"
+
+[tool.maturin]
+module-name = "ruffle._core"
+python-source = "python"
+features = ["pyo3/extension-module"]
+
+[dependency-groups]
+dev = [
+    "maturin>=1.7,<2.0",
+    "mypy>=1.14",
+    "pytest>=8",
+    "ruff>=0.8",
+    "tox>=4.22",
+    "tox-uv>=1.13",
+]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 95
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "RUF", "SIM", "UP", "W"]

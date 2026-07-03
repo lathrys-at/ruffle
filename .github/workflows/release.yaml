@@ -8,14 +8,15 @@ name: Release
 # Pre-release tags (vX.Y.Z-rc.N, -alpha, …) are marked as GitHub pre-releases and skip
 # the crates.io publish; only final tags publish.
 #
-# crates.io publishing uses Trusted Publishing (OIDC, no stored token). MANUAL STEPS,
-# once, that cannot be done from here:
-#   1. The first publish of a brand-new crate name cannot use Trusted Publishing (there
-#      is no crate yet to attach a publisher to). Publish it by hand once
-#      (`cargo publish --token …`); this workflow handles every release after — and its
-#      version-skip tolerates that hand-bootstrapped version on the next tag.
-#   2. On crates.io → ruffle → Settings → Trusted Publishing, add a GitHub publisher
-#      for repo lathrys-at/ruffle, workflow `release.yaml`, environment `crates-io`.
+# Publishing uses Trusted Publishing (OIDC, no stored token) on both registries.
+# crates.io publishes through the `crates-io` environment, registered as a trusted
+# publisher on the crate (the crate's first version was published by hand, since
+# crates.io cannot attach a publisher to a name that does not exist yet; the publish
+# step's already-exists skip tolerates that bootstrapped version). PyPI publishes the
+# bindings wheels through the `pypi` environment, registered as a trusted publisher
+# on the `ruffle` project (PyPI supports registering one before the first release,
+# as a pending publisher). The wheel version is the ruffle-py crate version, which
+# the verify job asserts equals the tag.
 on:
   push:
     tags:
@@ -54,6 +55,14 @@ jobs:
             | jq -r '.packages[] | select(.name=="ruffle").version')"
           if [ "$tag" != "$ver" ]; then
             echo "::error::tag v$tag does not match Cargo.toml version $ver"
+            exit 1
+          fi
+          # Version lockstep: the Python bindings always wrap the engine version
+          # they release with, so the wheel version must equal the crate version.
+          pyver="$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name=="ruffle-py").version')"
+          if [ "$tag" != "$pyver" ]; then
+            echo "::error::tag v$tag does not match ruffle-py version $pyver"
             exit 1
           fi
       - name: Format
@@ -122,6 +131,138 @@ jobs:
           crate="target/package/ruffle-${version}.crate"
           sha256sum "$crate" > "$crate.sha256"
           gh release create "$tag" "$crate" "$crate.sha256" --title "$tag" $prerelease $notes
+
+  # Build the Python wheels for every supported platform, plus the sdist. The wheels
+  # are abi3, one per platform and architecture for CPython 3.10 and later.
+  wheels:
+    name: Wheels (${{ matrix.platform.name }})
+    needs: verify
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: linux-x86_64, runner: ubuntu-latest, target: x86_64 }
+          - { name: linux-aarch64, runner: ubuntu-latest, target: aarch64 }
+          - { name: macos-x86_64, runner: macos-13, target: x86_64 }
+          - { name: macos-arm64, runner: macos-latest, target: aarch64 }
+          - { name: windows-x64, runner: windows-latest, target: x64 }
+          - { name: windows-arm64, runner: windows-11-arm, target: aarch64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.platform.target }}
+          args: --release --locked --out dist --manifest-path bindings/python/Cargo.toml
+          manylinux: auto
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform.name }}
+          path: dist
+
+  # The sdist is also install-tested here: it is a maturin-vendored copy of a Cargo
+  # workspace member with a path dependency on the workspace root, the layout where
+  # a vendored tarball most often stops building, so the exact artifact that
+  # publishes is the one proven to compile and pass the suites.
+  sdist:
+    name: Wheels (sdist)
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist --manifest-path bindings/python/Cargo.toml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: dist
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install from the sdist
+        run: python -m pip install dist/*.tar.gz
+      - name: Test the installed package
+        run: |
+          python -m pip install pytest
+          # The tests must exercise the installed artifact, not the repo source.
+          python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
+          python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
+
+  # Every wheel is imported and exercised on its native platform and architecture
+  # before PyPI sees it, on the CPython floor and the newest supported version. The
+  # parity replay against the installed wheel is the same bit-exactness gate the
+  # per-PR suite runs; the wheels themselves are what publish-pypi uploads.
+  wheel-smoke:
+    name: Wheel smoke (${{ matrix.platform.name }}, ${{ matrix.python }})
+    needs: wheels
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: linux-x86_64, runner: ubuntu-latest }
+          - { name: linux-aarch64, runner: ubuntu-24.04-arm }
+          - { name: macos-x86_64, runner: macos-13 }
+          - { name: macos-arm64, runner: macos-latest }
+          - { name: windows-x64, runner: windows-latest }
+          - { name: windows-arm64, runner: windows-11-arm }
+        python: ["3.10", "3.14"]
+        # CPython publishes Windows-on-ARM builds from 3.11, so that platform's
+        # floor leg smokes 3.11 in place of 3.10; the abi3-py310 wheel itself
+        # installs on any 3.10+ interpreter the platform has.
+        exclude:
+          - platform: { name: windows-arm64, runner: windows-11-arm }
+            python: "3.10"
+        include:
+          - platform: { name: windows-arm64, runner: windows-11-arm }
+            python: "3.11"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform.name }}
+          path: dist
+      - name: Install the wheel
+        shell: bash
+        run: python -m pip install --no-index --find-links dist ruffle
+      - name: Test against the installed wheel
+        shell: bash
+        run: |
+          python -m pip install pytest
+          # The tests must exercise the installed wheel, not the repo source.
+          python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
+          python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
+
+  # Publish the wheels to PyPI on a final tag, via PyPI's Trusted Publishing (OIDC).
+  # skip-existing makes this idempotent, like the crates.io publish below: a
+  # duplicate tag-push event or a job re-run must not fail on files the first run
+  # already uploaded.
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [wheels, sdist, wheel-smoke]
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write # mint the OIDC token PyPI Trusted Publishing verifies
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
 
   # Publish to crates.io on a final tag, via Trusted Publishing (OIDC) — no stored
   # token. Skipped for pre-release (rc/alpha) tags, which carry a SemVer hyphen.

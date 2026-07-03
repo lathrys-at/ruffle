@@ -267,8 +267,13 @@ fn quantile_sorted(sorted: &[f64], p: f64) -> f64 {
 /// The logistic squash with slope `k`, mapping a z-score to `(0, 1)` with `f(0) = 0.5`.
 /// It is finite for every finite input: a large negative argument drives the exponential
 /// to infinity and the result to zero without producing a `NaN`.
+///
+/// The exponential comes from `libm` rather than `std`: `std::f64::exp` resolves to the
+/// platform libm, which can differ in the last ulp between platforms, and this factor
+/// reaches the fused weights. `libm` is pure Rust and bit-identical on every target, so
+/// identical inputs produce identical weights and rankings everywhere.
 fn squash(z: f64, k: f64) -> f64 {
-    1.0 / (1.0 + (-k * z).exp())
+    1.0 / (1.0 + libm::exp(-k * z))
 }
 
 /// One statistic's logistic factor, shrunk toward the neutral midpoint `0.5` by how much

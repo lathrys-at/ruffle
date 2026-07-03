@@ -1,0 +1,16 @@
+{
+  "description": "Cross-deployment reconciliation of two compatible states; the merge is commutative, so replays should also check the reversed order produces identical bytes.",
+  "expected_divergence": {
+    "max": 1.735489889509455,
+    "per_channel": {
+      "semantic": 1.735489889509455
+    }
+  },
+  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"recency\":\"HigherIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":2.0,\"mean\":10.412961227854183,\"m2\":14.957662441613653},\"reference\":{\"count\":10.0,\"mean\":4.030315753524391,\"m2\":128.08207017783914},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"recency\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"recency-v1\"},\"semantic\":{\"separation\":{\"count\":5.0,\"mean\":5.5340240242473415,\"m2\":3.0375840132140692},\"reference\":{\"count\":5.0,\"mean\":0.476784154028499,\"m2\":0.00023479304876189753},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+  "kind": "merge",
+  "name": "merge_reconcile",
+  "parts": [
+    "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":2.0,\"mean\":10.412961227854183,\"m2\":14.957662441613653},\"reference\":{\"count\":10.0,\"mean\":4.030315753524391,\"m2\":128.08207017783914},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":2.0,\"mean\":5.552973681486872,\"m2\":1.304665023900466},\"reference\":{\"count\":2.0,\"mean\":0.47118500760996884,\"m2\":0.00008637588865655622},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+    "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"recency\":\"HigherIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"recency\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"recency-v1\"},\"semantic\":{\"separation\":{\"count\":3.0,\"mean\":5.5213909194209885,\"m2\":1.731722024281951},\"reference\":{\"count\":3.0,\"mean\":0.48051691830751914,\"m2\":0.00004391569138487694},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+  ]
+}

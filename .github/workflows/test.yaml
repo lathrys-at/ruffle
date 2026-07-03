@@ -24,6 +24,30 @@ jobs:
         run: cargo fmt --all --check
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
+      # The workspace's default-members scope plain cargo invocations to the core
+      # crate, so the bindings crate is linted by name.
+      - name: Clippy (Python extension crate)
+        run: cargo clippy -p ruffle-py --all-targets -- -D warnings
+      # Version lockstep holds on every PR, not only at release time: every binding
+      # crate carries the core crate's version, so the workspace has exactly one
+      # version across all members.
+      - name: Version lockstep
+        run: |
+          versions="$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | "\(.name) \(.version)"')"
+          count="$(echo "$versions" | awk '{print $2}' | sort -u | wc -l)"
+          if [ "$count" -ne 1 ]; then
+            echo "::error::workspace crate versions have drifted apart"
+            echo "$versions"
+            exit 1
+          fi
+      # The wheel ships copies of the repository-root license texts (PEP 639 cannot
+      # reference files above the project directory); the copies must stay
+      # byte-identical to the originals.
+      - name: License copies match the repository root
+        run: |
+          cmp LICENSE-MIT bindings/python/licenses/LICENSE-MIT
+          cmp LICENSE-APACHE bindings/python/licenses/LICENSE-APACHE
       - name: Doc
         run: cargo doc --no-deps --all-features
         env:
@@ -70,6 +94,65 @@ jobs:
         with:
           command: check licenses bans sources
 
+  # The Python bindings, driven by tox: the wheel is built and the full pytest suite
+  # runs against it (parity replay, idiomatic tests, the mypy --strict gate, and the
+  # Rust-CLI interop round trip) on every supported CPython version, floor first.
+  # The matrix mirrors the tox envlist; the wheel itself is abi3, one build for the
+  # floor and every version after.
+  python:
+    name: python (${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install tox
+        run: python -m pip install tox
+      - name: Test
+        working-directory: bindings/python
+        run: tox -e py$(echo "${{ matrix.python }}" | tr -d .)
+      - name: Lint (ruff)
+        if: matrix.python == '3.13'
+        working-directory: bindings/python
+        run: tox -e lint
+
+  # The sdist is a maturin-vendored copy of a Cargo workspace member with a path
+  # dependency on the workspace root, the layout where a vendored tarball most often
+  # stops building. This job proves the README's from-source claim: build the sdist,
+  # install it with pip in a clean environment (compiling through the Rust
+  # toolchain), and replay the parity and API suites against the installed package.
+  python-sdist:
+    name: python (sdist install)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the sdist
+        run: |
+          python -m pip install maturin
+          maturin sdist --manifest-path bindings/python/Cargo.toml --out dist
+      - name: Install from the sdist
+        run: python -m pip install dist/*.tar.gz
+      - name: Test the installed package
+        run: |
+          python -m pip install pytest
+          # The tests must exercise the installed artifact, not the repo source; a
+          # conftest or path change that silently retargeted the repo would pass
+          # the suite while proving nothing about the sdist.
+          python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
+          python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
+
   # Single aggregating check for the `main` branch protection rule: require only
   # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
   # cancelled, or skipped job blocks the merge — while the protection rule stays one
@@ -77,7 +160,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [lint, test, msrv, deny]
+    needs: [lint, test, msrv, deny, python, python-sdist]
     runs-on: ubuntu-latest
     steps:
       - name: Require all CI jobs to have succeeded

@@ -21,3 +21,13 @@ target
 #.idea/
 
 .claude
+
+# Python bindings: dev virtualenv and build artifacts. The editable install drops the
+# compiled extension into the source tree; only the .pyi stub is committed.
+bindings/python/.venv/
+bindings/python/dist/
+bindings/python/uv.lock
+__pycache__/
+*.abi3.so
+*.pyd
+.tox/
