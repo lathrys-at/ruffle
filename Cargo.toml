@@ -2,7 +2,7 @@
 # cargo invocation (build, test, clippy) scoped to the core crate, so the bindings,
 # which need a Python toolchain, build only when named explicitly (`-p ruffle-py`).
 [workspace]
-members = [".", "bindings/python"]
+members = [".", "bindings/python", "bindings/wasm"]
 default-members = ["."]
 resolver = "3"
 

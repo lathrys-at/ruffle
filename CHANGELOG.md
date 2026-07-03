@@ -16,6 +16,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   by the binding's tests. Wheels build for Linux (x86_64, aarch64), macOS (x86_64,
   arm64), and Windows (x64, arm64) on CPython 3.10 and later, and publish to PyPI
   from the release workflow via Trusted Publishing, version-locked to the crate.
+- In-tree TypeScript bindings (`bindings/wasm`, npm package `@lathrys-at/ruffle`): the
+  engine compiled to WebAssembly under a hand-written, fully typed TypeScript
+  surface, one ESM artifact for Node 20+, browsers, and edge runtimes. WebAssembly's
+  exact IEEE-754 semantics and the `libm` transcendentals make rankings and state
+  bytes identical to the native crate, enforced by the same parity suite. Publishes
+  to npm from the release workflow via Trusted Publishing with provenance,
+  version-locked to the crate.
 
 ### Changed
 

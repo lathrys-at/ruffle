@@ -31,3 +31,9 @@ __pycache__/
 *.abi3.so
 *.pyd
 .tox/
+
+# TypeScript bindings: dependencies and build outputs (pkg/ is the wasm-pack
+# output, dist/ the compiled wrapper).
+node_modules/
+bindings/wasm/pkg/
+bindings/wasm/dist/

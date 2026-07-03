@@ -1,9 +1,25 @@
 # Proposal: in-tree TypeScript bindings (WebAssembly)
 
-Status: draft. The package name is the main open decision. The shared invariants
-(one engine, state interoperability, determinism, version lockstep, parity suite) are
-stated in full in [`python-bindings.md`](python-bindings.md) and apply here unchanged,
-including the prerequisite `libm` switch in the core crate.
+Status: implemented (`bindings/wasm`), with three notes against the draft below. The
+package name is `@lathrys-at/ruffle`, the recommended candidate; it is a one-line
+change in `package.json` if reconsidered before the first npm publish. The single-ESM
+question resolved to one artifact with top-level await: Node reads the wasm from
+disk, browsers and bundlers fetch it from `import.meta.url`, and the module is ready
+synchronously after import. The parity suite runs twice in CI: under Node, and in
+headless Chromium (vitest browser mode over Playwright), where the wasm loads
+through the fetch path browsers, bundlers, and edge runtimes use. The shared
+invariants (one engine, state interoperability, determinism, version lockstep,
+parity suite) are stated in full in [`python-bindings.md`](python-bindings.md) and
+apply here unchanged; the `libm` prerequisite is done in the core crate.
+
+Departures from the draft after review: `RuffleState` is an immutable value
+(`rekey` and `decay` return new states), matching the Python binding; result
+objects are classes whose `toJSON` converts their ES `Map`s to plain records, so
+`JSON.stringify` serializes them whole; a `StateError` covers a state document that
+does not parse; and unknown configuration keys are refused with `TypeError` in the
+TypeScript layer, because serde-wasm-bindgen reads known fields off a JS object and
+ignores the rest, so `deny_unknown_fields` cannot catch a typo'd knob at the
+boundary.
 
 ## Why wasm, and why it is a good home for ruffle
 
@@ -26,10 +42,10 @@ bit-identical rankings and state bytes, and the parity suite asserts it.
 `ruffle` on npm belongs to the Flash-emulator project, so a name is needed. Three
 candidates:
 
-1. **`@lathrys/ruffle`** (recommended). A scoped package under the org. Scopes are the
+1. **`@lathrys-at/ruffle`** (recommended). A scoped package under the org. Scopes are the
    npm-native answer to name collisions: provenance is explicit, the unscoped
    squatting problem disappears, and the import reads naturally
-   (`import { Fuser } from "@lathrys/ruffle"`). Scoped packages are also the only
+   (`import { Fuser } from "@lathrys-at/ruffle"`). Scoped packages are also the only
    names npm grants Trusted Publishing to without a claims process.
 2. `ruffle-ts`. Available, but the `-ts` suffix conventionally signals "TypeScript
    port" or "type definitions," both of which misdescribe a wasm binding, and it
@@ -37,7 +53,7 @@ candidates:
 3. `ruffle-wasm`. Accurate but leads with the implementation detail rather than the
    library.
 
-The draft assumes `@lathrys/ruffle`; nothing else in this proposal depends on the
+The draft assumes `@lathrys-at/ruffle`; nothing else in this proposal depends on the
 choice.
 
 ## Architecture
@@ -81,12 +97,17 @@ crate defaults inside the binding, because TypeScript has no default-then-mutate
 idiom and partial object literals are the native way to say "defaults except these."
 
 ```ts
-import { Fuser, ChannelConfig, Direction } from "@lathrys/ruffle";
+import { Fuser, Direction, RuffleState } from "@lathrys-at/ruffle";
 
-const dense = new ChannelConfig({ key: "dense", tag: "clip-v1" }, Direction.HigherIsBetter);
-const lexical = new ChannelConfig({ key: "lexical", tag: "bm25-v1" }, Direction.HigherIsBetter, {
-  typical: 12.0, good: 24.0, weight: 8,
-});
+const dense = {
+  id: { key: "dense", tag: "clip-v1" },
+  direction: Direction.HigherIsBetter,
+};
+const lexical = {
+  id: { key: "lexical", tag: "bm25-v1" },
+  direction: Direction.HigherIsBetter,
+  goodScore: { typical: 12.0, good: 24.0, weight: 8 },
+};
 
 const fuser = Fuser.create([dense, lexical], { coupling: { enabled: false } }); // throws on invalid config
 
@@ -94,17 +115,18 @@ const fused = fuser.fuse([
   { key: "dense", scored: [["doc-1", 0.91], ["doc-2", 0.55]] },
   { key: "lexical", scored: [["doc-2", 7.3], ["doc-1", 4.1]] },
 ]);
-fused.ranking;        // Array<[string, number]>
-fused.weights;        // Map<string, number>
-fused.discrimination; // Map<string, ChannelDiscrimination>
+fused.ranking;        // ReadonlyArray<readonly [string, number]>
+fused.weights;        // ReadonlyMap<string, number>
+fused.discrimination; // ReadonlyMap<string, ChannelDiscrimination>
 
-const json = fuser.stateJson();          // persist
-const resumed = Fuser.resume([dense, lexical], json, {}); // throws Mismatch on gate failure
+const json = fuser.state.toJson();       // persist
+const resumed = Fuser.resume([dense, lexical], RuffleState.fromJson(json)); // throws ResumeError on gate failure
 ```
 
-Errors map to a small exception hierarchy (`RuffleError` base, `ConfigError`,
-`MismatchError`) carrying the same variant information the Rust enums do. The
-`components` tier is out of scope for the first release, as in Python.
+Errors map to a small exception hierarchy (`RuffleError` base; `ConfigError`,
+`ResumeError`, `MergeError`, `StateError`) carrying the same variant information
+the Rust enums do. The `components` tier is out of scope for the first release, as
+in Python.
 
 One wasm-specific lifecycle note: wasm-bindgen objects hold linear-memory allocations
 that JS garbage collection does not free deterministically. The wrapper keeps the
