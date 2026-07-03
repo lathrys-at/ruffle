@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import ir_datasets
 
-__all__ = ["DATASETS", "Dataset", "load"]
+__all__ = ["DATASETS", "Dataset", "load", "load_id"]
 
 # name -> ir_datasets id of the split holding the test queries and qrels. All
 # download from public mirrors without a usage agreement. trec-covid has only 50
@@ -41,8 +41,13 @@ class Dataset:
 
 
 def load(name: str) -> Dataset:
-    """Loads a collection by harness name, downloading it on first use."""
-    ds = ir_datasets.load(DATASETS[name])
+    """Loads a registered collection by harness name."""
+    return load_id(DATASETS[name], name)
+
+
+def load_id(dsid: str, name: str) -> Dataset:
+    """Loads any ir_datasets id under a harness name, downloading on first use."""
+    ds = ir_datasets.load(dsid)
 
     docs: dict[str, str] = {}
     for doc in ds.docs_iter():

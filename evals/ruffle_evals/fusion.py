@@ -32,6 +32,7 @@ __all__ = [
     "rrf",
     "ruffle_cold",
     "ruffle_warm",
+    "ruffle_warm_multi",
     "split_queries",
 ]
 
@@ -155,6 +156,59 @@ def ruffle_cold(
     return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
 
 
+def _warm_fuser(
+    runs: dict[str, Run],
+    warm_qids: list[str],
+    configs: list[ruffle.ChannelConfig],
+    config: ruffle.FuseConfig | None,
+    channels: Channels | None,
+    coupling: bool,
+    refreshes: int,
+) -> ruffle.Fuser:
+    """A stateful fuser with baselines accumulated over the warmup queries, and,
+    under ``coupling``, redundancy baselines from interleaved anchor refreshes.
+
+    Each anchor is one warmup query scored by every channel over a seeded random
+    draw of corpus documents; a random draw rather than any channel's top-k,
+    because a top-k pool is a selected sample that biases the correlation
+    estimate.
+    """
+    keys = [c.id.key for c in configs]
+    fuser = ruffle.Fuser(configs, config)
+    anchor_qids = set(warm_qids[:: max(1, len(warm_qids) // refreshes)][:refreshes]) if coupling else set()
+    rng = random.Random(SEED)
+    for qid in warm_qids:
+        fuser.fuse(_inputs(runs, configs, qid))
+        if qid in anchor_qids:
+            assert channels is not None
+            candidates = rng.sample(list(channels.doc_ids), min(_ANCHOR_CANDIDATES, len(channels.doc_ids)))
+            scored = {key: channels.score_candidates(qid, candidates, key) for key in keys}
+            index = {doc_id: i for i, doc_id in enumerate(candidates)}
+            anchor = ruffle.Anchor.build(
+                candidates, configs, lambda doc_id, key: scored[key][index[doc_id]]
+            )
+            fuser.refresh_coupling(anchor)
+    return fuser
+
+
+def _fuse_eval(
+    fuser: ruffle.Fuser,
+    runs: dict[str, Run],
+    eval_qids: list[str],
+    configs: list[ruffle.ChannelConfig],
+) -> FusionOutcome:
+    keys = [c.id.key for c in configs]
+    fused: dict[str, list[tuple[str, float]]] = {}
+    weights: dict[str, dict[str, float]] = {}
+    conflict: dict[str, float] = {}
+    for qid in eval_qids:
+        result = fuser.fuse(_inputs(runs, configs, qid))
+        fused[qid] = [(item.id, item.score) for item in result.ranking]
+        weights[qid] = {key: result.weights[key] for key in keys}
+        conflict[qid] = result.conflict
+    return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
+
+
 def ruffle_warm(
     runs: dict[str, Run],
     warm_qids: list[str],
@@ -165,40 +219,29 @@ def ruffle_warm(
     refreshes: int = 10,
 ) -> FusionOutcome:
     """Ruffle stateful: baselines accumulate over the warmup queries, then the
-    evaluation queries are fused (still stateful, as a deployment would run).
-
-    With ``coupling`` set, the warmup also interleaves anchor refreshes so the
-    redundancy discount has the reliability, refresh count, and stability evidence
-    it is gated on. Each anchor is one warmup query scored by every channel over a
-    seeded random draw of corpus documents; a random draw rather than any
-    channel's top-k, because a top-k pool is a selected sample that biases the
-    correlation estimate.
-    """
+    evaluation queries are fused (still stateful, as a deployment would run)."""
     configs = channel_configs() if configs is None else configs
-    keys = [c.id.key for c in configs]
     config = ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)) if coupling else None
-    fuser = ruffle.Fuser(configs, config)
+    fuser = _warm_fuser(runs, warm_qids, configs, config, channels, coupling, refreshes)
+    return _fuse_eval(fuser, runs, eval_qids, configs)
 
-    anchor_qids = set(warm_qids[:: max(1, len(warm_qids) // refreshes)][:refreshes]) if coupling else set()
-    rng = random.Random(SEED)
 
-    for qid in warm_qids:
-        fuser.fuse(_inputs(runs, configs, qid))
-        if qid in anchor_qids:
-            assert channels is not None
-            candidates = rng.sample(list(channels.doc_ids), min(_ANCHOR_CANDIDATES, len(channels.doc_ids)))
-            lookups = {key: channels.score_lookup(qid, key) for key in keys}
-            anchor = ruffle.Anchor.build(
-                candidates, configs, lambda doc_id, key: lookups[key](doc_id)
-            )
-            fuser.refresh_coupling(anchor)
-
-    fused: dict[str, list[tuple[str, float]]] = {}
-    weights: dict[str, dict[str, float]] = {}
-    conflict: dict[str, float] = {}
-    for qid in eval_qids:
-        result = fuser.fuse(_inputs(runs, configs, qid))
-        fused[qid] = [(item.id, item.score) for item in result.ranking]
-        weights[qid] = {key: result.weights[key] for key in keys}
-        conflict[qid] = result.conflict
-    return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
+def ruffle_warm_multi(
+    runs: dict[str, Run],
+    warm_qids: list[str],
+    eval_sets: dict[str, list[str]],
+    configs: list[ruffle.ChannelConfig],
+    channels: Channels | None = None,
+    coupling: bool = False,
+    refreshes: int = 10,
+) -> dict[str, FusionOutcome]:
+    """One warmup, several evaluation sets: each set is fused by a fuser resumed
+    from the same warm-state snapshot, so no evaluation set's queries leak into
+    another's baselines."""
+    config = ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)) if coupling else None
+    warm_state = _warm_fuser(runs, warm_qids, configs, config, channels, coupling, refreshes).state
+    outcomes: dict[str, FusionOutcome] = {}
+    for name, eval_qids in eval_sets.items():
+        fuser = ruffle.Fuser.resume(configs, warm_state, config)
+        outcomes[name] = _fuse_eval(fuser, runs, eval_qids, configs)
+    return outcomes

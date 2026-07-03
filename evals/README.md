@@ -95,11 +95,27 @@ first use into `cache/`:
 | fiqa | `beir/fiqa/test` | 57K | 648 |
 | quora | `beir/quora/test` | 523K | 10,000 |
 | trec-covid | `beir/trec-covid` | 171K | 50 |
+| cqadupstack | `beir/cqadupstack/*` | 457K over 12 corpora | 13,145 |
+| msmarco | `msmarco-passage` | 8.8M | 6,980 dev + 43 dl19 + 54 dl20 |
 
 The default run covers the first four; quora is the statistical-power
 collection, leaving 5,000 evaluation queries after the split. trec-covid has
 too few queries for a meaningful warm/eval split and runs only when named
 explicitly.
+
+cqadupstack and msmarco run through dedicated runners, only when named
+explicitly, and produce the main comparison only (the degraded and curve
+experiments answer mechanism questions already covered on the standard
+collections). cqadupstack follows the BEIR reporting convention: each subforum
+is its own corpus with its own channels, warmup, and oracle, metrics are
+macro-averaged over the twelve, and the paired test pools per-query values.
+msmarco uses two channels (BM25 and dense, the canonical hybrid pair; a
+character-ngram TF-IDF matrix is not workable at 8.8M passages), with corpus
+embeddings in an on-disk float32 memmap and blockwise top-k scoring. Its
+dev/small queries split into warmup and evaluation halves, and the TREC-DL
+2019/2020 judged sets are evaluated by fusers resumed from the same dev-warmed
+state snapshot, a transfer of warm baselines to a foreign query set over the
+shared corpus.
 
 ## Running
 
