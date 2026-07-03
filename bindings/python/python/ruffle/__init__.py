@@ -50,14 +50,16 @@ from ruffle._core import (
     MergeError,
     ResumeError,
     RuffleError,
+    StateError,
     __version__,
 )
-from ruffle._fuser import ChannelDiscrimination, ChannelFlag, Fused, Fuser
+from ruffle._fuser import ChannelDiscrimination, ChannelFlag, Fused, Fuser, RankedItem
 from ruffle._state import (
     ChannelSummary,
     Divergence,
     MeanVar,
     MergePolicy,
+    MergeResult,
     PairSummary,
     RuffleState,
     StatFingerprint,
@@ -87,11 +89,14 @@ __all__ = [
     "MeanVar",
     "MergeError",
     "MergePolicy",
+    "MergeResult",
     "PairSummary",
+    "RankedItem",
     "ResumeError",
     "RrfConfig",
     "RuffleError",
     "RuffleState",
     "StatFingerprint",
+    "StateError",
     "__version__",
 ]

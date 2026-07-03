@@ -8,6 +8,13 @@ description = "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF)
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT OR Apache-2.0"
+# Copies of the repository-root texts (PEP 639 forbids paths above the project
+# directory): both licenses require the text to accompany a redistribution, so the
+# copies land in the wheel under dist-info/licenses/. They live in a subdirectory
+# because the sdist vendors the whole workspace with the project remapped to the
+# archive root, where root-level copies would collide with the repository's own
+# license files.
+license-files = ["licenses/LICENSE-MIT", "licenses/LICENSE-APACHE"]
 keywords = ["retrieval", "fusion", "ranking", "rrf", "search"]
 # The per-version classifiers list every CPython version the release matrix (tox.ini)
 # tests; the abi3 wheel itself runs on the floor and everything after.

@@ -6,7 +6,10 @@ October 2025. The public surface is pure Python over a private compiled module
 (`ruffle._core`), fully typed and documented, rather than "shims if any"; the FFI
 boundary uses typed structures, not JSON, except for states, whose canonical JSON
 string is the persistence format itself. The libm prerequisite in invariant 3 is done
-in the core crate.
+in the core crate. Two Python-side departures from the Rust shapes, from review:
+`RuffleState` is an immutable, hashable value (`rekey` and `decay` return new states,
+and `merge` returns a named `(state, divergence)` pair), and a fourth exception,
+`StateError`, covers a state document that does not parse.
 
 ## Invariants shared by every binding
 
@@ -102,7 +105,7 @@ Everything else maps one to one:
 | `Fused { ranking, weights, flags, discrimination, confidence, conflict }` | frozen attributes on a result object |
 | `RuffleState::{merge, divergence, rekey, decay}` + serde JSON | same, plus `to_json()` / `from_json()` |
 | `Anchor::build(candidates, channels, score_fn)` | same, `score_fn: Callable[[str, str], float | None]` |
-| `ConfigError` / `ResumeError` / `Mismatch` | exception classes under a common `RuffleError` base |
+| `ConfigError` / `ResumeError` / `Mismatch` / serde parse errors | `ConfigError` / `ResumeError` / `MergeError` / `StateError` under a common `RuffleError` base |
 
 The `components` tier (the pure per-stage estimators) is deliberately out of scope for
 the first release. It exists in Rust for composition and auditing; a Python caller who

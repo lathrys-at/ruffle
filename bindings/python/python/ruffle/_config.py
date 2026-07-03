@@ -168,6 +168,11 @@ class FuseConfig:
 
     Validation runs when a :class:`ruffle.Fuser` is built, so an out-of-range knob
     fails at construction with :class:`ruffle.ConfigError` rather than mid-query.
+
+    ``dataclasses.asdict`` yields ``baseline_mode`` as the :class:`BaselineMode`
+    member itself, which ``json.dumps`` refuses; a JSON-bound dump wants
+    ``baseline_mode.value``. The configuration is not a persistence format; the
+    persisted object is :class:`ruffle.RuffleState`.
     """
 
     discrimination: DiscriminationConfig = field(default_factory=DiscriminationConfig)

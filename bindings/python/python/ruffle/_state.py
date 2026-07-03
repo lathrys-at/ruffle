@@ -15,12 +15,12 @@ import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from types import MappingProxyType
-from typing import cast
+from typing import NamedTuple, cast
 
 from ruffle import _core
 from ruffle._channels import Direction
 from ruffle._config import BaselineMode
+from ruffle._frozen import FrozenMap
 from ruffle._types import (
     DivergenceDict,
     MeanVarDict,
@@ -34,6 +34,7 @@ __all__ = [
     "Divergence",
     "MeanVar",
     "MergePolicy",
+    "MergeResult",
     "PairSummary",
     "RuffleState",
     "StatFingerprint",
@@ -47,13 +48,15 @@ class MergePolicy(Enum):
     """Refuses on any format, fingerprint, or tag mismatch. The only policy for now."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class MeanVar:
     """Confidence-weighted streaming mean and variance, as persisted by the engine.
 
     ``count`` is the effective observation count, fractional to support
     pseudo-counts and decay; ``mean`` is the running mean; ``m2`` is the sum of
     squared deviations from the mean, so the population variance is ``m2 / count``.
+    The fields are keyword-only: all three are floats, so a positional call could
+    transpose them silently.
     """
 
     count: float
@@ -123,7 +126,15 @@ class Divergence:
 
     @classmethod
     def _from_dict(cls, d: DivergenceDict) -> Divergence:
-        return cls(per_channel=MappingProxyType(dict(d["per_channel"])), max=d["max"])
+        return cls(per_channel=FrozenMap(d["per_channel"]), max=d["max"])
+
+
+class MergeResult(NamedTuple):
+    """What :meth:`RuffleState.merge` returns: the merged state and the advisory
+    divergence between the inputs. Unpacks as a ``(state, divergence)`` pair."""
+
+    state: RuffleState
+    divergence: Divergence
 
 
 _DIRECTIONS: dict[PersistedDirection, Direction] = {
@@ -140,7 +151,10 @@ class RuffleState:
 
     A state comes from :attr:`ruffle.Fuser.state`, from :meth:`from_json`, or from
     :meth:`merge`; there is no public constructor, since an empty state is created by
-    building a :class:`ruffle.Fuser`. Its single merge operation serves three roles:
+    building a :class:`ruffle.Fuser`. A state is an immutable value: every operation
+    (:meth:`merge`, :meth:`rekey`, :meth:`decay`) returns a new state, equality and
+    hashing follow the canonical bytes, and equal states are interchangeable. Its
+    single merge operation serves three roles:
     streaming update as new queries arrive, operator prior seeded before any traffic,
     and cross-deployment reconciliation of states accumulated on separate machines.
     Every merge is gated on a required per-channel model-version tag, so a model
@@ -169,14 +183,16 @@ class RuffleState:
 
     @classmethod
     def from_json(cls, data: str) -> RuffleState:
-        """Loads a state from its JSON serialization, validating it in the process.
+        """Loads a state from its JSON serialization.
 
         The input is re-serialized canonically, so :meth:`to_json` on the result
         yields the engine's canonical bytes even when the input was formatted
-        differently.
+        differently. Loading checks the document's shape against the state schema,
+        not its versions; the format and statistic version gates run at
+        :meth:`ruffle.Fuser.resume` and :meth:`merge`.
 
         Raises:
-            ValueError: the input is not a well-formed serialized state.
+            ruffle.StateError: the input is not a well-formed serialized state.
         """
         return cls._from_canonical(_core.state_canonicalize(data))
 
@@ -192,9 +208,10 @@ class RuffleState:
     def merge(
         parts: Sequence[RuffleState],
         policy: MergePolicy = MergePolicy.STRICT,
-    ) -> tuple[RuffleState, Divergence]:
+    ) -> MergeResult:
         """Combines several states into one, returning the merged state and an
-        advisory divergence between the inputs.
+        advisory divergence between the inputs as a named ``(state, divergence)``
+        pair.
 
         The merge is associative and commutative and, with decay off, exact up to
         f64 rounding. Under :attr:`MergePolicy.STRICT` it refuses on the first
@@ -208,8 +225,11 @@ class RuffleState:
         """
         if not isinstance(policy, MergePolicy):
             raise TypeError(f"policy must be a MergePolicy, not {type(policy).__name__}")
-        merged, divergence = _core.state_merge([p._json for p in parts])
-        return RuffleState._from_canonical(merged), Divergence._from_dict(divergence)
+        merged, divergence = _core.state_merge([p._json for p in parts], policy.value)
+        return MergeResult(
+            state=RuffleState._from_canonical(merged),
+            divergence=Divergence._from_dict(divergence),
+        )
 
     def divergence(self, other: RuffleState) -> Divergence:
         """The advisory divergence between this state and another, callable on its
@@ -224,29 +244,31 @@ class RuffleState:
         """
         return Divergence._from_dict(_core.state_divergence(self._json, other._json))
 
-    def rekey(self, from_key: str, to_key: str) -> None:
-        """Renames a channel's key, moving all of its statistics with it: the channel
-        summary, every pair summary that referenced the old key, and the channel's
-        orientation in the fingerprint.
+    def rekey(self, from_key: str, to_key: str) -> RuffleState:
+        """Returns a state with a channel's key renamed and all of its statistics
+        moved with it: the channel summary, every pair summary that referenced the
+        old key, and the channel's orientation in the fingerprint. The original
+        state is unchanged.
 
         When the destination already exists, the moved data and the existing data are
         merged, and the destination keeps its own model-version tag and orientation:
         the caller is asserting that the old key's history belongs to the channel
-        already living under the new one. A no-op rename leaves the state unchanged.
+        already living under the new one. A no-op rename returns an equal state.
         Unlike :meth:`merge`, rekey runs no tag gate; it is a deliberate rename and
         cannot fail.
         """
-        self._json = _core.state_rekey(self._json, from_key, to_key)
+        return RuffleState._from_canonical(_core.state_rekey(self._json, from_key, to_key))
 
-    def decay(self, factor: float) -> None:
-        """Scales the confidence of every persisted summary down by ``factor``,
-        shrinking effective counts while leaving means and variances unchanged.
+    def decay(self, factor: float) -> RuffleState:
+        """Returns a state with the confidence of every persisted summary scaled
+        down by ``factor``, shrinking effective counts while leaving means and
+        variances unchanged. The original state is unchanged.
 
         ``factor`` is clamped to ``[0, 1]``. Decay is the one operation that breaks
         the exactness of :meth:`merge`: decaying then merging no longer gives the
         same result as merging then decaying.
         """
-        self._json = _core.state_decay(self._json, factor)
+        return RuffleState._from_canonical(_core.state_decay(self._json, factor))
 
     # --- read-only views -------------------------------------------------------------
 
@@ -263,16 +285,13 @@ class RuffleState:
         return StatFingerprint(
             stat_version=raw["stat_version"],
             baseline_mode=_BASELINE_MODES[raw["baseline_mode"]],
-            directions=MappingProxyType(
-                {k: _DIRECTIONS[v] for k, v in raw["directions"].items()}
-            ),
+            directions=FrozenMap({k: _DIRECTIONS[v] for k, v in raw["directions"].items()}),
         )
 
     @property
     def channels(self) -> Mapping[str, ChannelSummary]:
-        """The per-channel summaries, keyed by join handle. A snapshot: later
-        mutations of the state are not reflected in a previously returned mapping."""
-        return MappingProxyType(
+        """The per-channel summaries, keyed by join handle."""
+        return FrozenMap(
             {
                 key: ChannelSummary(
                     separation=MeanVar._from_dict(raw["separation"]),
@@ -286,8 +305,8 @@ class RuffleState:
     @property
     def pairs(self) -> Mapping[tuple[str, str], PairSummary]:
         """The per-pair coupling summaries, keyed by the canonical (sorted) channel
-        pair. A snapshot, like :attr:`channels`."""
-        return MappingProxyType(
+        pair."""
+        return FrozenMap(
             {
                 (pair[0], pair[1]): PairSummary(
                     redundancy=MeanVar._from_dict(raw["redundancy"]),
@@ -307,8 +326,10 @@ class RuffleState:
             return NotImplemented
         return self._json == other._json
 
-    # Mutable (rekey and decay update the state in place), so not hashable.
-    __hash__ = None  # type: ignore[assignment]
+    def __hash__(self) -> int:
+        # Immutable (every operation returns a new state), hashed over the canonical
+        # bytes that also define equality.
+        return hash(self._json)
 
     def __repr__(self) -> str:
         parsed = self._parsed()

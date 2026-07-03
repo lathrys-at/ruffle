@@ -42,7 +42,9 @@ def make_channel(d: dict[str, Any]) -> ChannelConfig:
     return ChannelConfig(
         ChannelId(d["key"], d["tag"]),
         Direction(d["direction"]),
-        None if gs is None else GoodScore(gs["typical"], gs["good"], gs["weight"]),
+        None
+        if gs is None
+        else GoodScore(typical=gs["typical"], good=gs["good"], weight=gs["weight"]),
     )
 
 

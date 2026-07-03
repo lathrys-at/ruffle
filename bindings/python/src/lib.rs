@@ -54,6 +54,13 @@ create_exception!(
      channel's orientation, or a channel's model-version tag, or the merge received no \
      states at all."
 );
+create_exception!(
+    ruffle,
+    StateError,
+    RuffleError,
+    "A serialized state document could not be parsed: it is not JSON, or not the \
+     state schema."
+);
 
 /// The one score newtype the binding needs: a native Python float, declared as-is.
 /// The meaning a Rust caller declares through a newtype is carried on the Python side
@@ -217,7 +224,7 @@ fn internal_err(e: impl std::fmt::Display) -> PyErr {
 
 fn parse_state(s: &str) -> PyResult<rf::RuffleState> {
     serde_json::from_str(s)
-        .map_err(|e| PyValueError::new_err(format!("invalid ruffle state JSON: {e}")))
+        .map_err(|e| StateError::new_err(format!("invalid ruffle state JSON: {e}")))
 }
 
 fn state_json(state: &rf::RuffleState) -> PyResult<String> {
@@ -266,12 +273,16 @@ fn extract_inputs(inputs: &Bound<'_, PyAny>) -> PyResult<Vec<rf::ChannelInput<St
     Ok(out)
 }
 
-fn flag_str(flag: rf::ChannelFlag) -> &'static str {
+fn flag_str(flag: rf::ChannelFlag) -> PyResult<&'static str> {
     match flag {
-        rf::ChannelFlag::RanksOnlyDefaultWeighted => "ranks_only_default_weighted",
-        rf::ChannelFlag::DegenerateSeparation => "degenerate_separation",
-        rf::ChannelFlag::NoReference => "no_reference",
-        _ => "unknown",
+        rf::ChannelFlag::RanksOnlyDefaultWeighted => Ok("ranks_only_default_weighted"),
+        rf::ChannelFlag::DegenerateSeparation => Ok("degenerate_separation"),
+        rf::ChannelFlag::NoReference => Ok("no_reference"),
+        // ChannelFlag is #[non_exhaustive]; a variant this binding predates raises
+        // rather than leaking an out-of-contract string through the typed surface.
+        other => Err(RuffleError::new_err(format!(
+            "the engine reported a channel flag this binding does not know: {other:?}"
+        ))),
     }
 }
 
@@ -282,8 +293,8 @@ fn fused_to_py<'py>(py: Python<'py>, f: &rf::Fused<String>) -> PyResult<Bound<'p
     let flags: BTreeMap<String, &'static str> = f
         .flags
         .iter()
-        .map(|(k, v)| (k.clone(), flag_str(*v)))
-        .collect();
+        .map(|(k, v)| Ok((k.clone(), flag_str(*v)?)))
+        .collect::<PyResult<_>>()?;
     d.set_item("flags", flags)?;
     let disc = PyDict::new(py);
     for (k, v) in &f.discrimination {
@@ -404,11 +415,13 @@ impl Fuser {
 
     fn refresh_coupling(
         &mut self,
+        py: Python<'_>,
         channels: Vec<(String, String)>,
         rows: Vec<Vec<Option<f64>>>,
     ) -> PyResult<()> {
         let anchor = build_anchor(channels, rows)?;
-        self.inner.refresh_coupling(&anchor);
+        let inner = &mut self.inner;
+        py.detach(|| inner.refresh_coupling(&anchor));
         Ok(())
     }
 
@@ -419,23 +432,40 @@ impl Fuser {
 
 // --- state operations ------------------------------------------------------------------
 
-/// Parses a state and re-serializes it canonically, validating it in the process.
+/// Parses a state document and re-serializes it canonically; a document that does
+/// not parse as a state is refused with `StateError`. Parsing checks the document's
+/// shape against the state schema, not its versions; the format and statistic
+/// version gates run at resume and merge.
 #[pyfunction]
 fn state_canonicalize(state: &str) -> PyResult<String> {
     state_json(&parse_state(state)?)
 }
 
-/// Merges several states, returning the merged canonical bytes and the advisory
-/// divergence.
+fn parse_policy(policy: &str) -> PyResult<rf::MergePolicy> {
+    match policy {
+        "strict" => Ok(rf::MergePolicy::Strict),
+        other => Err(PyValueError::new_err(format!(
+            "unknown merge policy {other:?}"
+        ))),
+    }
+}
+
+/// Merges several states under the named policy, returning the merged canonical
+/// bytes and the advisory divergence.
 #[pyfunction]
-fn state_merge<'py>(py: Python<'py>, parts: Vec<String>) -> PyResult<(String, Bound<'py, PyDict>)> {
+fn state_merge<'py>(
+    py: Python<'py>,
+    parts: Vec<String>,
+    policy: &str,
+) -> PyResult<(String, Bound<'py, PyDict>)> {
+    let policy = parse_policy(policy)?;
     let states: Vec<rf::RuffleState> = parts
         .iter()
         .map(|s| parse_state(s))
         .collect::<PyResult<_>>()?;
     let refs: Vec<&rf::RuffleState> = states.iter().collect();
     let (merged, divergence) = py
-        .detach(|| rf::RuffleState::merge(&refs, rf::MergePolicy::Strict))
+        .detach(|| rf::RuffleState::merge(&refs, policy))
         .map_err(merge_err)?;
     Ok((state_json(&merged)?, divergence_to_py(py, &divergence)?))
 }
@@ -525,6 +555,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("ConfigError", py.get_type::<ConfigError>())?;
     m.add("ResumeError", py.get_type::<ResumeError>())?;
     m.add("MergeError", py.get_type::<MergeError>())?;
+    m.add("StateError", py.get_type::<StateError>())?;
     m.add_class::<Fuser>()?;
     m.add_function(wrap_pyfunction!(state_canonicalize, m)?)?;
     m.add_function(wrap_pyfunction!(state_merge, m)?)?;

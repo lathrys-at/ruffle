@@ -3,8 +3,11 @@ exceptions, defaults, and the read-only state views."""
 
 from __future__ import annotations
 
+import concurrent.futures
+import copy
 import dataclasses
 import importlib.metadata
+import pickle
 
 import pytest
 import ruffle
@@ -22,7 +25,9 @@ from ruffle import (
     GoodScore,
     MergePolicy,
     RuffleState,
+    _core,
 )
+from ruffle._channels import _registrations
 
 
 def spiked_pool(n: int = 30) -> list[tuple[str, float]]:
@@ -39,6 +44,12 @@ class TestVersioning:
     def test_format_and_stat_versions_are_exposed(self) -> None:
         assert isinstance(ruffle.FORMAT_VERSION, int)
         assert isinstance(ruffle.STAT_VERSION, int)
+
+    def test_license_texts_ship_with_the_distribution(self) -> None:
+        dist = importlib.metadata.distribution("ruffle")
+        license_files = dist.metadata.get_all("License-File") or []
+        names = sorted(path.split("/")[-1] for path in license_files)
+        assert names == ["LICENSE-APACHE", "LICENSE-MIT"]
 
 
 class TestConfig:
@@ -79,6 +90,7 @@ class TestExceptions:
         assert issubclass(ruffle.ConfigError, ruffle.RuffleError)
         assert issubclass(ruffle.ResumeError, ruffle.RuffleError)
         assert issubclass(ruffle.MergeError, ruffle.RuffleError)
+        assert issubclass(ruffle.StateError, ruffle.RuffleError)
 
     def test_empty_merge_refuses(self) -> None:
         with pytest.raises(ruffle.MergeError, match="empty set of states"):
@@ -165,8 +177,10 @@ class TestState:
         assert RuffleState.from_json(pretty).to_json() == state.to_json()
 
     def test_from_json_rejects_garbage(self) -> None:
-        with pytest.raises(ValueError, match="invalid ruffle state"):
+        with pytest.raises(ruffle.StateError, match="invalid ruffle state"):
             RuffleState.from_json("{not json")
+        with pytest.raises(ruffle.StateError):
+            RuffleState.from_json('{"format_version": 1}')
 
     def test_no_public_constructor(self) -> None:
         with pytest.raises(TypeError, match="no public constructor"):
@@ -191,20 +205,22 @@ class TestState:
         assert fp.directions["s"] is Direction.HIGHER_IS_BETTER
         assert state.format_version == ruffle.FORMAT_VERSION
 
-    def test_decay_halves_counts_and_preserves_means(self) -> None:
+    def test_decay_returns_a_new_state(self) -> None:
         state = self.make_state()
         before = state.channels["s"].separation
-        state.decay(0.5)
-        after = state.channels["s"].separation
+        decayed = state.decay(0.5)
+        after = decayed.channels["s"].separation
         assert after.count == pytest.approx(before.count * 0.5)
         assert after.mean == before.mean
+        assert state.channels["s"].separation == before
 
-    def test_rekey_moves_summaries(self) -> None:
+    def test_rekey_returns_a_new_state(self) -> None:
         state = self.make_state()
-        state.rekey("s", "dense")
-        assert "s" not in state.channels
-        assert state.channels["dense"].tag == "v1"
-        assert state.fingerprint.directions["dense"] is Direction.HIGHER_IS_BETTER
+        rekeyed = state.rekey("s", "dense")
+        assert "s" not in rekeyed.channels
+        assert rekeyed.channels["dense"].tag == "v1"
+        assert rekeyed.fingerprint.directions["dense"] is Direction.HIGHER_IS_BETTER
+        assert "s" in state.channels
 
     def test_merge_pools_counts(self) -> None:
         a, b = self.make_state(), self.make_state()
@@ -212,9 +228,25 @@ class TestState:
         assert merged.channels["s"].separation.count == 2.0
         assert divergence.max == 0.0
 
-    def test_states_are_unhashable(self) -> None:
-        with pytest.raises(TypeError):
-            hash(self.make_state())
+    def test_merge_result_has_named_fields(self) -> None:
+        a, b = self.make_state(), self.make_state()
+        result = RuffleState.merge([a, b])
+        assert result.state == result[0]
+        assert result.divergence == result[1]
+
+    def test_equal_states_compare_and_hash_equal(self) -> None:
+        a, b = self.make_state(), self.make_state()
+        assert a == b
+        assert hash(a) == hash(b)
+        assert len({a, b}) == 1
+
+    def test_standalone_divergence_is_symmetric(self) -> None:
+        a = self.make_state()
+        b = self.make_state().decay(0.5)
+        d = a.divergence(b)
+        assert set(d.per_channel) == {"s"}
+        assert d.max >= 0.0
+        assert d == b.divergence(a)
 
 
 class TestResume:
@@ -261,6 +293,88 @@ class TestAnchor:
         assert pair.refreshes == 1.0
         assert pair.redundancy.count == 40.0
         assert pair.redundancy.mean == pytest.approx(1.0)
+
+
+class TestInputs:
+    def test_no_public_constructors(self) -> None:
+        with pytest.raises(TypeError, match="no public constructor"):
+            ChannelInput()
+        with pytest.raises(TypeError, match="no public constructor"):
+            Anchor()
+
+    def test_inputs_compare_by_content(self) -> None:
+        semantic = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER)
+        a = ChannelInput.scored(semantic, [("a", 1.0)])
+        b = ChannelInput.scored(semantic, [("a", 1.0)])
+        c = ChannelInput.scored(semantic, [("a", 2.0)])
+        assert a == b
+        assert a != c
+        assert a != ChannelInput.ranked(semantic, ["a"])
+
+
+class TestCopyAndPickle:
+    def make_fused(self) -> tuple[Fuser, ruffle.Fused]:
+        semantic = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER)
+        fuser = Fuser([semantic])
+        return fuser, fuser.fuse([ChannelInput.scored(semantic, spiked_pool())])
+
+    def test_fused_deepcopies_and_pickles(self) -> None:
+        _, fused = self.make_fused()
+        assert copy.deepcopy(fused) == fused
+        restored: ruffle.Fused = pickle.loads(pickle.dumps(fused))
+        assert restored == fused
+        with pytest.raises(TypeError):
+            restored.weights["s"] = 2.0  # type: ignore[index]
+
+    def test_state_deepcopies_and_pickles(self) -> None:
+        fuser, _ = self.make_fused()
+        state = fuser.state
+        assert copy.deepcopy(state) == state
+        restored = pickle.loads(pickle.dumps(state))
+        assert restored == state
+        assert restored.to_json() == state.to_json()
+
+    def test_fuser_refuses_pickle_and_copy(self) -> None:
+        fuser, _ = self.make_fused()
+        with pytest.raises(TypeError, match="state"):
+            pickle.dumps(fuser)
+        with pytest.raises(TypeError, match="state"):
+            copy.deepcopy(fuser)
+
+
+class TestBoundaryErrors:
+    """The private boundary refuses malformed input specs rather than guessing."""
+
+    def make_core_fuser(self) -> _core.Fuser:
+        semantic = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER)
+        return _core.Fuser(_registrations([semantic]), FuseConfig()._to_dict())
+
+    def test_unknown_input_kind_is_refused(self) -> None:
+        fuser = self.make_core_fuser()
+        with pytest.raises(ValueError, match="unknown input kind"):
+            fuser.fuse([("mystery", "s", [])])  # type: ignore[list-item]
+
+    def test_malformed_spec_arity_is_refused(self) -> None:
+        fuser = self.make_core_fuser()
+        with pytest.raises((TypeError, ValueError, IndexError)):
+            fuser.fuse([("scored", "s")])  # type: ignore[list-item]
+
+
+class TestConcurrency:
+    def test_independent_fusers_fuse_in_parallel_threads(self) -> None:
+        def run() -> list[str]:
+            semantic = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER)
+            fuser = Fuser([semantic])
+            out: list[str] = []
+            for _ in range(50):
+                fused = fuser.fuse([ChannelInput.scored(semantic, spiked_pool())])
+                out.append(fused.ranking[0].id)
+            return out
+
+        expected = run()
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            results = [f.result() for f in [pool.submit(run) for _ in range(4)]]
+        assert all(r == expected for r in results)
 
 
 class TestReprs:

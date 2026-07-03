@@ -5,11 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from types import MappingProxyType
+from typing import NamedTuple, NoReturn
 
 from ruffle import _core
 from ruffle._channels import Anchor, ChannelConfig, ChannelInput, _registrations
 from ruffle._config import FuseConfig
+from ruffle._frozen import FrozenMap
 from ruffle._state import RuffleState
 from ruffle._types import FusedDict
 
@@ -18,6 +19,7 @@ __all__ = [
     "ChannelFlag",
     "Fused",
     "Fuser",
+    "RankedItem",
 ]
 
 
@@ -59,12 +61,20 @@ class ChannelDiscrimination:
     reference_cold: bool
 
 
+class RankedItem(NamedTuple):
+    """One entry of a fused ranking: the item's id and its fused score. Unpacks as
+    an ``(id, score)`` pair."""
+
+    id: str
+    score: float
+
+
 @dataclass(frozen=True)
 class Fused:
     """The outcome of fusing one query: the merged ranking plus the weights, flags,
     and diagnostics behind it.
 
-    ``ranking`` is the fused order, best first, each id with its fused score.
+    ``ranking`` is the fused order, best first, as :class:`RankedItem` entries.
     ``weights`` holds the per-channel weights actually used. ``flags`` explains any
     non-standard weighting; a channel absent from it was weighted on its full
     discrimination score. ``discrimination`` holds the per-channel reads behind the
@@ -72,9 +82,11 @@ class Fused:
     the top-set agreement of the discriminating channels, in ``[0, 1]``;
     ``conflict`` is its complement, high when confident channels disagree on which
     items are relevant.
+
+    The mappings are read-only; the whole result pickles and deep-copies.
     """
 
-    ranking: tuple[tuple[str, float], ...]
+    ranking: tuple[RankedItem, ...]
     weights: Mapping[str, float]
     flags: Mapping[str, ChannelFlag]
     discrimination: Mapping[str, ChannelDiscrimination]
@@ -84,12 +96,10 @@ class Fused:
     @classmethod
     def _from_core(cls, raw: FusedDict) -> Fused:
         return cls(
-            ranking=tuple((item_id, score) for item_id, score in raw["ranking"]),
-            weights=MappingProxyType(dict(raw["weights"])),
-            flags=MappingProxyType(
-                {key: ChannelFlag(value) for key, value in raw["flags"].items()}
-            ),
-            discrimination=MappingProxyType(
+            ranking=tuple(RankedItem(item_id, score) for item_id, score in raw["ranking"]),
+            weights=FrozenMap(raw["weights"]),
+            flags=FrozenMap({key: ChannelFlag(value) for key, value in raw["flags"].items()}),
+            discrimination=FrozenMap(
                 {
                     key: ChannelDiscrimination(
                         g=d["g"],
@@ -118,9 +128,11 @@ class Fuser:
     from saved state with :meth:`resume`; :attr:`state` exposes the baselines to
     persist.
 
-    :meth:`fuse` releases the GIL while the engine runs, so a multi-threaded host
-    can fuse on worker threads; a single fuser is not itself thread-safe, since each
-    stateful fuse updates the baselines.
+    :meth:`fuse` and :meth:`refresh_coupling` release the GIL while the engine runs,
+    so a multi-threaded host can fuse on worker threads; a single fuser is not
+    itself thread-safe, since each stateful fuse updates the baselines. A fuser does
+    not pickle or copy; its persistent form is :attr:`state`, restored with
+    :meth:`resume`.
     """
 
     __slots__ = ("_channels", "_config", "_inner")
@@ -254,6 +266,14 @@ class Fuser:
     def channels(self) -> tuple[ChannelConfig, ...]:
         """The channel registrations this fuser was built with."""
         return self._channels
+
+    def __reduce__(self) -> NoReturn:
+        # Blocks pickle and copy/deepcopy alike; either would otherwise share or
+        # half-copy the live engine handle.
+        raise TypeError(
+            "a Fuser cannot be pickled or copied; its persistent form is the state "
+            "property, restored with Fuser.resume"
+        )
 
     def __repr__(self) -> str:
         keys = [c.id.key for c in self._channels]

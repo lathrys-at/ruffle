@@ -34,7 +34,7 @@ class Direction(Enum):
     """A lower native score is a better match (negated at ingest)."""
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class GoodScore:
     """An operator-declared reference for how good a channel's scores are in absolute
     terms, in the channel's native units (before orientation).
@@ -56,6 +56,9 @@ class GoodScore:
     ``typical`` and ``good`` are negated together with the scores. After orientation
     ``good`` must exceed ``typical``; a declaration that cannot orient is refused at
     ``Fuser`` construction with :class:`ruffle.ConfigError`.
+
+    The fields are keyword-only: all three are floats, so a positional call could
+    transpose them silently.
     """
 
     typical: float
@@ -109,7 +112,8 @@ class ChannelInput:
 
     An input is either scored or rank-only, a stable property of how the channel is
     wired rather than something inferred per query. Instances come from
-    :meth:`scored` or :meth:`ranked`.
+    :meth:`scored` or :meth:`ranked`; there is no public constructor. Two inputs
+    compare equal when they carry the same channel, kind, and items.
     """
 
     __slots__ = ("_key", "_spec")
@@ -117,14 +121,32 @@ class ChannelInput:
     _key: str
     _spec: InputSpec
 
-    def __init__(self, key: str, spec: InputSpec) -> None:
-        self._key = key
-        self._spec = spec
+    def __init__(self) -> None:
+        raise TypeError(
+            "ChannelInput has no public constructor; an input comes from "
+            "ChannelInput.scored or ChannelInput.ranked"
+        )
+
+    @classmethod
+    def _from_spec(cls, key: str, spec: InputSpec) -> ChannelInput:
+        value = object.__new__(cls)
+        value._key = key
+        value._spec = spec
+        return value
 
     @property
     def key(self) -> str:
         """The channel this input belongs to, named by its join-handle key."""
         return self._key
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ChannelInput):
+            return NotImplemented
+        return self._key == other._key and self._spec == other._spec
+
+    # The scored payload holds lists, so an input is equality-bearing but unhashable,
+    # like the lists themselves.
+    __hash__ = None  # type: ignore[assignment]
 
     @classmethod
     def scored(cls, config: ChannelConfig, items: Iterable[tuple[str, float]]) -> ChannelInput:
@@ -140,7 +162,7 @@ class ChannelInput:
         counted twice by the fusion, so the ids in one input must be distinct.
         """
         payload = [(str(item_id), float(score)) for item_id, score in items]
-        return cls(
+        return cls._from_spec(
             config.id.key,
             ("scored", config.id.key, config.direction.value, payload),
         )
@@ -157,7 +179,7 @@ class ChannelInput:
         Each channel lists each item at most once. A repeated id within one input is
         counted twice by the fusion, so the ids in one input must be distinct.
         """
-        return cls(config.id.key, ("ranked", config.id.key, [str(i) for i in ids]))
+        return cls._from_spec(config.id.key, ("ranked", config.id.key, [str(i) for i in ids]))
 
     def _to_spec(self) -> InputSpec:
         return self._spec
@@ -181,8 +203,8 @@ class Anchor:
     destroys the redundancy estimate. Whether a candidate set is unselected cannot be
     checked from the ids alone, so this contract rests with the caller.
 
-    Instances come from :meth:`build`; the anchor is fed to
-    :meth:`ruffle.Fuser.refresh_coupling`.
+    Instances come from :meth:`build`; there is no public constructor. The anchor is
+    fed to :meth:`ruffle.Fuser.refresh_coupling`.
     """
 
     __slots__ = ("_channels", "_rows")
@@ -190,13 +212,19 @@ class Anchor:
     _channels: list[tuple[str, DirectionValue]]
     _rows: list[list[float | None]]
 
-    def __init__(
-        self,
+    def __init__(self) -> None:
+        raise TypeError("Anchor has no public constructor; an anchor comes from Anchor.build")
+
+    @classmethod
+    def _from_rows(
+        cls,
         channels: list[tuple[str, DirectionValue]],
         rows: list[list[float | None]],
-    ) -> None:
-        self._channels = channels
-        self._rows = rows
+    ) -> Anchor:
+        anchor = object.__new__(cls)
+        anchor._channels = channels
+        anchor._rows = rows
+        return anchor
 
     @classmethod
     def build(
@@ -223,7 +251,7 @@ class Anchor:
                 value = score(candidate, key)
                 row.append(None if value is None else float(value))
             rows.append(row)
-        return cls([(c.id.key, c.direction.value) for c in channels], rows)
+        return cls._from_rows([(c.id.key, c.direction.value) for c in channels], rows)
 
     def __repr__(self) -> str:
         keys = [k for k, _ in self._channels]

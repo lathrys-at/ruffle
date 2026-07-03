@@ -96,9 +96,9 @@ def test_state_ops_fixture() -> None:
 
     for op in fixture["ops"]:
         if op["op"] == "rekey":
-            state.rekey(op["from"], op["to"])
+            state = state.rekey(op["from"], op["to"])
         elif op["op"] == "decay":
-            state.decay(op["factor"])
+            state = state.decay(op["factor"])
         else:
             raise AssertionError(f"unknown op {op['op']!r}")
 
