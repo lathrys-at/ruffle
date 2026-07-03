@@ -1,3 +1,11 @@
+# The root crate doubles as the workspace root. `default-members` keeps every plain
+# cargo invocation (build, test, clippy) scoped to the core crate, so the bindings,
+# which need a Python toolchain, build only when named explicitly (`-p ruffle-py`).
+[workspace]
+members = [".", "bindings/python"]
+default-members = ["."]
+resolver = "3"
+
 [package]
 name = "ruffle"
 version = "0.1.1"
@@ -36,6 +44,11 @@ path = "src/bin/ruffle.rs"
 required-features = ["cli"]
 
 [dependencies]
+# Pure-Rust `sin`/`exp` for the copula map and the logistic squash. The std versions
+# resolve to the platform libm and can differ in the last ulp between platforms; these
+# two values reach persistent state and the fused weights, so they use `libm` to make
+# identical inputs produce identical state bytes and rankings on every target.
+libm = "0.2"
 serde = { version = "1", features = ["derive"] }
 thiserror = "2"
 clap = { version = "4", features = ["derive"], optional = true }

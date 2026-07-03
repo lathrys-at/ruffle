@@ -1,0 +1,27 @@
+[package]
+name = "ruffle-py"
+# Version lockstep: this always equals the core crate version it links, and both
+# release from the same tag. The release workflow asserts the equality.
+version = "0.1.1"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT OR Apache-2.0"
+description = "Python bindings for ruffle: weighted, adaptive, calibration-free reciprocal-rank fusion."
+repository = "https://github.com/lathrys-at/ruffle"
+# Publishes to PyPI (as the wheel's compiled core), never to crates.io.
+publish = false
+
+[lib]
+name = "ruffle_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.29", features = ["extension-module", "abi3-py310"] }
+ruffle = { path = "../.." }
+# State crosses the FFI boundary as canonical JSON. `float_roundtrip` keeps the
+# round-trip bit-exact, matching the core crate's CLI (see the root Cargo.toml).
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+unsafe_op_in_unsafe_fn = "deny"

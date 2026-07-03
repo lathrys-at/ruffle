@@ -146,9 +146,14 @@ pub fn anchor_correlations(
 /// the copula's linear correlation without ever trusting the samples' raw magnitudes.
 /// It maps `[-1, 1]` onto `[-1, 1]` monotonically and fixes `0`. Returns `None` when the
 /// underlying rank correlation is undefined (a constant sample, or a degenerate input).
+///
+/// The sine comes from `libm` rather than `std`: `std::f64::sin` resolves to the
+/// platform libm, which can differ in the last ulp between platforms, and this value
+/// enters persistent state. `libm` is pure Rust and bit-identical on every target, so
+/// identical inputs produce identical state bytes everywhere.
 fn copula_correlation(xs: &[f64], ys: &[f64]) -> Option<f64> {
     let rho_s = pearson(&midranks(xs), &midranks(ys))?;
-    let r = 2.0 * (std::f64::consts::FRAC_PI_6 * rho_s).sin();
+    let r = 2.0 * libm::sin(std::f64::consts::FRAC_PI_6 * rho_s);
     // rho_s is already in [-1, 1]; the bound here only absorbs rounding. min/max rather
     // than `clamp` so a pathological input degrades instead of panicking.
     #[allow(clippy::manual_clamp)]
