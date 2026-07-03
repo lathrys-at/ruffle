@@ -25,7 +25,7 @@ estimates.
 
 ```toml
 [dependencies]
-ruffle = "0.1"
+ruffle = "0.2"
 ```
 
 ```rust
