@@ -315,13 +315,27 @@ jobs:
       - name: Publish
         working-directory: bindings/wasm
         run: |
-          set -euo pipefail
+          set -uo pipefail
           version="$(jq -r .version package.json)"
           if npm view "@lathrys-at/ruffle@${version}" version >/dev/null 2>&1; then
             echo "::notice::@lathrys-at/ruffle@${version} is already on npm — skipping"
             exit 0
           fi
-          npm publish --provenance --access public
+          # Idempotent past the probe too, like the crates.io and PyPI publishes: a
+          # version that appears between the probe and the publish (a concurrent
+          # duplicate run) is a skip, not a failure.
+          set +e
+          out="$(npm publish --provenance --access public 2>&1)"
+          status=$?
+          echo "$out"
+          if [ "$status" -eq 0 ]; then
+            echo "::notice::published @lathrys-at/ruffle@${version}"
+          elif echo "$out" | grep -qiE 'previously published|cannot publish over|E409'; then
+            echo "::notice::@lathrys-at/ruffle@${version} is already on npm — skipping"
+          else
+            echo "::error::npm publish failed (exit $status)"
+            exit 1
+          fi
 
   # Publish the wheels to PyPI on a final tag, via PyPI's Trusted Publishing (OIDC).
   # skip-existing makes this idempotent, like the crates.io publish below: a

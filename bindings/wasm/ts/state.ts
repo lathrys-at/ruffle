@@ -185,10 +185,21 @@ export class RuffleState {
 
   /**
    * The canonical JSON serialization. Byte-identical for equal contents, so the
-   * output is content-addressable and safe to compare, hash, and diff.
+   * output is content-addressable and safe to compare, hash, and diff. This is
+   * the persistence format; `toJSON` below only feeds `JSON.stringify`.
    */
   toJson(): string {
     return this.#json;
+  }
+
+  /**
+   * The parsed state document, the form `JSON.stringify` embeds when a state sits
+   * inside a larger object (without it a state stringifies to `{}`). A state
+   * re-serialized this way is loadable with `fromJson` but not guaranteed
+   * byte-canonical; the content-addressable bytes come from `toJson`.
+   */
+  toJSON(): unknown {
+    return this.#parsed();
   }
 
   /**
@@ -299,7 +310,7 @@ export class RuffleState {
     };
   }
 
-  /** The per-channel summaries, keyed by join handle. */
+  /** The per-channel summaries, keyed by join handle. Built fresh on each access. */
   get channels(): ReadonlyMap<string, ChannelSummary> {
     const out = new Map<string, ChannelSummary>();
     for (const [key, raw] of Object.entries(this.#parsed().channels)) {
@@ -312,7 +323,10 @@ export class RuffleState {
     return out;
   }
 
-  /** The per-pair coupling summaries, one entry per canonical (sorted) channel pair. */
+  /**
+   * The per-pair coupling summaries, one entry per canonical (sorted) channel
+   * pair. Built fresh on each access, like `channels`.
+   */
   get pairs(): readonly PairEntry[] {
     return this.#parsed().pairs.map(([pair, raw]) => ({
       channels: [pair[0], pair[1]],

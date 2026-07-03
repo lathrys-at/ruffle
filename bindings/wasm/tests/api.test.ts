@@ -273,6 +273,22 @@ describe("state", () => {
       RuffleError,
     );
   });
+
+  test("a state embedded in JSON.stringify carries the document", () => {
+    const state = makeState();
+    const embedded = JSON.parse(JSON.stringify({ state })) as {
+      state: { format_version: number };
+    };
+    expect(embedded.state.format_version).toBe(FORMAT_VERSION);
+    const reloaded = RuffleState.fromJson(JSON.stringify(state));
+    expect(reloaded.equals(state)).toBe(true);
+  });
+
+  test("a single-part merge reproduces the state", () => {
+    const state = makeState();
+    const [merged] = RuffleState.merge([state]);
+    expect(merged.equals(state)).toBe(true);
+  });
 });
 
 describe("resume", () => {
@@ -397,6 +413,53 @@ describe("input validation", () => {
     expect(() => Fuser.create([channel("s")], typo)).toThrowError(/topeps/);
     const rogue = { copuling: {} } as unknown as FuseConfigInit;
     expect(() => Fuser.create([channel("s")], rogue)).toThrowError(/copuling/);
+  });
+
+  test("prototype members do not pass as configuration keys", () => {
+    const top = { toString: 1 } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], top)).toThrowError(/toString/);
+    const nested = {
+      coupling: { hasOwnProperty: 1 },
+    } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], nested)).toThrowError(
+      /hasOwnProperty/,
+    );
+  });
+
+  test("a non-object configuration section is refused, not silently defaulted", () => {
+    const primitive = { discrimination: 42 } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], primitive)).toThrowError(
+      /must be an object, not number/,
+    );
+    const nullish = { coupling: null } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], nullish)).toThrowError(
+      /must be an object, not null/,
+    );
+  });
+
+  test("an input with neither scored nor ranked is refused by name", () => {
+    const fuser = Fuser.create([channel("s")]);
+    try {
+      const bare = { key: "s" } as unknown as ChannelInput;
+      expect(() => fuser.fuse([bare])).toThrowError(/neither scored nor ranked/);
+    } finally {
+      fuser.free();
+    }
+  });
+
+  test("a ranked input with an explicit undefined scored field is accepted", () => {
+    const fuser = Fuser.create([channel("s")]);
+    try {
+      const input = {
+        key: "s",
+        scored: undefined,
+        ranked: ["a", "b"],
+      } as unknown as ChannelInput;
+      const fused = fuser.fuse([input]);
+      expect(fused.ranking.map(([id]) => id)).toEqual(["a", "b"]);
+    } finally {
+      fuser.free();
+    }
   });
 });
 

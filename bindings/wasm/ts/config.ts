@@ -137,10 +137,18 @@ export function defaultConfig(): FuseConfig {
 }
 
 // The allowed keys come from the engine's own default configuration, so the check
-// can never drift from the knobs the engine actually reads.
-function checkKeys(section: string, given: object, allowed: object): void {
+// can never drift from the knobs the engine actually reads. Object.hasOwn keeps
+// prototype members (toString, valueOf, ...) from passing as knobs, and the shape
+// check keeps a primitive or null section from silently resolving to pure
+// defaults.
+function checkKeys(section: string, given: unknown, allowed: object): void {
+  if (typeof given !== "object" || given === null || Array.isArray(given)) {
+    const actual =
+      given === null ? "null" : Array.isArray(given) ? "an array" : typeof given;
+    throw new TypeError(`the ${section} section must be an object, not ${actual}`);
+  }
   for (const key of Object.keys(given)) {
-    if (!(key in allowed)) {
+    if (!Object.hasOwn(allowed, key)) {
       throw new TypeError(`unknown ${section} key ${JSON.stringify(key)}`);
     }
   }

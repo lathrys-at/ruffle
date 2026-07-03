@@ -38,21 +38,32 @@ function inputDtos(
   directions: ReadonlyMap<string, Direction>,
 ): InputDto[] {
   return inputs.map((input) => {
-    if ("scored" in input) {
-      // The union says one or the other; a plain-JS caller supplying both would
-      // otherwise get silent scored-wins instead of the engine's refusal.
-      if ("ranked" in input) {
-        throw new TypeError(
-          `channel input ${JSON.stringify(input.key)} carries both scored and ` +
-            "ranked items; an input is one or the other",
-        );
-      }
+    // The union says one or the other. The checks compare values, not key
+    // presence, so a ranked input carrying an explicit `scored: undefined` is
+    // accepted; a plain-JS caller supplying both real fields would otherwise get
+    // silent scored-wins, and one supplying neither would get an opaque boundary
+    // error.
+    const scored = "scored" in input ? input.scored : undefined;
+    const ranked = "ranked" in input ? input.ranked : undefined;
+    if (scored !== undefined && ranked !== undefined) {
+      throw new TypeError(
+        `channel input ${JSON.stringify(input.key)} carries both scored and ` +
+          "ranked items; an input is one or the other",
+      );
+    }
+    if (scored !== undefined) {
       // An unregistered key is skipped entirely by the engine, so its orientation
       // is never read; the fallback only keeps the boundary shape total.
       const direction = directions.get(input.key) ?? Direction.HigherIsBetter;
-      return { key: input.key, direction, scored: input.scored };
+      return { key: input.key, direction, scored };
     }
-    return { key: input.key, ranked: input.ranked };
+    if (ranked === undefined) {
+      throw new TypeError(
+        `channel input ${JSON.stringify(input.key)} carries neither scored nor ` +
+          "ranked items",
+      );
+    }
+    return { key: input.key, ranked };
   });
 }
 

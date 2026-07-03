@@ -96,12 +96,17 @@ crate defaults inside the binding, because TypeScript has no default-then-mutate
 idiom and partial object literals are the native way to say "defaults except these."
 
 ```ts
-import { Fuser, ChannelConfig, Direction } from "@lathrys-at/ruffle";
+import { Fuser, Direction, RuffleState } from "@lathrys-at/ruffle";
 
-const dense = new ChannelConfig({ key: "dense", tag: "clip-v1" }, Direction.HigherIsBetter);
-const lexical = new ChannelConfig({ key: "lexical", tag: "bm25-v1" }, Direction.HigherIsBetter, {
-  typical: 12.0, good: 24.0, weight: 8,
-});
+const dense = {
+  id: { key: "dense", tag: "clip-v1" },
+  direction: Direction.HigherIsBetter,
+};
+const lexical = {
+  id: { key: "lexical", tag: "bm25-v1" },
+  direction: Direction.HigherIsBetter,
+  goodScore: { typical: 12.0, good: 24.0, weight: 8 },
+};
 
 const fuser = Fuser.create([dense, lexical], { coupling: { enabled: false } }); // throws on invalid config
 
@@ -109,17 +114,18 @@ const fused = fuser.fuse([
   { key: "dense", scored: [["doc-1", 0.91], ["doc-2", 0.55]] },
   { key: "lexical", scored: [["doc-2", 7.3], ["doc-1", 4.1]] },
 ]);
-fused.ranking;        // Array<[string, number]>
-fused.weights;        // Map<string, number>
-fused.discrimination; // Map<string, ChannelDiscrimination>
+fused.ranking;        // ReadonlyArray<readonly [string, number]>
+fused.weights;        // ReadonlyMap<string, number>
+fused.discrimination; // ReadonlyMap<string, ChannelDiscrimination>
 
-const json = fuser.stateJson();          // persist
-const resumed = Fuser.resume([dense, lexical], json, {}); // throws Mismatch on gate failure
+const json = fuser.state.toJson();       // persist
+const resumed = Fuser.resume([dense, lexical], RuffleState.fromJson(json)); // throws ResumeError on gate failure
 ```
 
-Errors map to a small exception hierarchy (`RuffleError` base, `ConfigError`,
-`MismatchError`) carrying the same variant information the Rust enums do. The
-`components` tier is out of scope for the first release, as in Python.
+Errors map to a small exception hierarchy (`RuffleError` base; `ConfigError`,
+`ResumeError`, `MergeError`, `StateError`) carrying the same variant information
+the Rust enums do. The `components` tier is out of scope for the first release, as
+in Python.
 
 One wasm-specific lifecycle note: wasm-bindgen objects hold linear-memory allocations
 that JS garbage collection does not free deterministically. The wrapper keeps the
