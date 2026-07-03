@@ -197,6 +197,37 @@ jobs:
         working-directory: bindings/wasm
         run: npm test
 
+  # The browser lane: the same parity fixtures replay bit-exact in headless
+  # Chromium (vitest browser mode over Playwright), which exercises the
+  # fetch-from-import.meta.url wasm load path that the Node suite never takes —
+  # the path every browser, bundler, and edge deployment uses.
+  typescript-browser:
+    name: typescript (browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: bindings/wasm/package-lock.json
+      - name: Install
+        working-directory: bindings/wasm
+        run: npm ci
+      - name: Build
+        working-directory: bindings/wasm
+        run: npm run build
+      - name: Install Chromium
+        working-directory: bindings/wasm
+        run: npx playwright install --with-deps chromium
+      - name: Test in the browser
+        working-directory: bindings/wasm
+        run: npm run test:browser
+
   # Single aggregating check for the `main` branch protection rule: require only
   # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
   # cancelled, or skipped job blocks the merge — while the protection rule stays one
@@ -204,7 +235,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [lint, test, msrv, deny, python, python-sdist, typescript]
+    needs: [lint, test, msrv, deny, python, python-sdist, typescript, typescript-browser]
     runs-on: ubuntu-latest
     steps:
       - name: Require all CI jobs to have succeeded

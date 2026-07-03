@@ -19,7 +19,7 @@ import {
   RuffleState,
   type ChannelConfig,
 } from "../ts/index.js";
-import { REPO_ROOT } from "./helpers.js";
+import { REPO_ROOT } from "./node-fixtures.js";
 
 function hasCargo(): boolean {
   try {

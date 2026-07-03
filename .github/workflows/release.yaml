@@ -255,8 +255,10 @@ jobs:
 
   # The TypeScript suite as a release gate, on every tag: the wasm artifact is
   # built and the full vitest suite (parity replay, idiomatic tests, the tsc gate,
-  # packaging assertions, and the Rust-CLI interop round trip) runs against it,
-  # mirroring the wheel-smoke gate on the Python side.
+  # packaging assertions, and the Rust-CLI interop round trip) runs against it
+  # under Node, and the parity replay then runs again in headless Chromium through
+  # the fetch load path browsers and edge runtimes use — mirroring the wheel-smoke
+  # gate on the Python side.
   typescript:
     name: TypeScript suite
     needs: verify
@@ -278,6 +280,12 @@ jobs:
       - name: Test
         working-directory: bindings/wasm
         run: npm test
+      - name: Install Chromium
+        working-directory: bindings/wasm
+        run: npx playwright install --with-deps chromium
+      - name: Test in the browser
+        working-directory: bindings/wasm
+        run: npm run test:browser
 
   # Build and publish the npm package on a final tag, via npm Trusted Publishing
   # (OIDC, with provenance) through the `npm` environment, registered as a trusted

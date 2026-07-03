@@ -5,8 +5,9 @@ package name is `@lathrys-at/ruffle`, the recommended candidate; it is a one-lin
 change in `package.json` if reconsidered before the first npm publish. The single-ESM
 question resolved to one artifact with top-level await: Node reads the wasm from
 disk, browsers and bundlers fetch it from `import.meta.url`, and the module is ready
-synchronously after import. The browser smoke test is not yet in CI; the vitest
-suite covers Node, and a headless-browser lane remains open work. The shared
+synchronously after import. The parity suite runs twice in CI: under Node, and in
+headless Chromium (vitest browser mode over Playwright), where the wasm loads
+through the fetch path browsers, bundlers, and edge runtimes use. The shared
 invariants (one engine, state interoperability, determinism, version lockstep,
 parity suite) are stated in full in [`python-bindings.md`](python-bindings.md) and
 apply here unchanged; the `libm` prerequisite is done in the core crate.
