@@ -19,18 +19,21 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - name: Format
         run: cargo fmt --all --check
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
       # The workspace's default-members scope plain cargo invocations to the core
-      # crate, so the bindings crate is linted by name.
+      # crate, so the bindings crates are linted by name.
       - name: Clippy (Python extension crate)
         run: cargo clippy -p ruffle-py --all-targets -- -D warnings
+      - name: Clippy (wasm extension crate)
+        run: cargo clippy -p ruffle-wasm --target wasm32-unknown-unknown --all-targets -- -D warnings
       # Version lockstep holds on every PR, not only at release time: every binding
-      # crate carries the core crate's version, so the workspace has exactly one
-      # version across all members.
+      # carries the core crate's version, so the workspace has exactly one version
+      # across all members, and the npm package declares that same version.
       - name: Version lockstep
         run: |
           versions="$(cargo metadata --no-deps --format-version 1 \
@@ -41,13 +44,22 @@ jobs:
             echo "$versions"
             exit 1
           fi
-      # The wheel ships copies of the repository-root license texts (PEP 639 cannot
-      # reference files above the project directory); the copies must stay
+          crate="$(echo "$versions" | awk 'NR==1 {print $2}')"
+          npmver="$(jq -r .version bindings/wasm/package.json)"
+          if [ "$crate" != "$npmver" ]; then
+            echo "::error::the npm package version $npmver does not match the crate version $crate"
+            exit 1
+          fi
+      # The wheel and the npm tarball ship copies of the repository-root license
+      # texts (PEP 639 cannot reference files above the project directory, and npm
+      # only packs files under the package root); the copies must stay
       # byte-identical to the originals.
       - name: License copies match the repository root
         run: |
           cmp LICENSE-MIT bindings/python/licenses/LICENSE-MIT
           cmp LICENSE-APACHE bindings/python/licenses/LICENSE-APACHE
+          cmp LICENSE-MIT bindings/wasm/LICENSE-MIT
+          cmp LICENSE-APACHE bindings/wasm/LICENSE-APACHE
       - name: Doc
         run: cargo doc --no-deps --all-features
         env:
@@ -153,6 +165,38 @@ jobs:
           python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
           python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
 
+  # The TypeScript bindings: the wasm artifact is built and the full vitest suite
+  # runs against it (parity replay, idiomatic tests, the tsc --strict gate, and the
+  # Rust-CLI interop round trip). The matrix covers the supported floor and a
+  # current Node; the artifact itself is runtime-agnostic wasm.
+  typescript:
+    name: typescript (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20", "24"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: bindings/wasm/package-lock.json
+      - name: Install
+        working-directory: bindings/wasm
+        run: npm ci
+      - name: Build
+        working-directory: bindings/wasm
+        run: npm run build
+      - name: Test
+        working-directory: bindings/wasm
+        run: npm test
+
   # Single aggregating check for the `main` branch protection rule: require only
   # "ci-ok". It runs always() and fails unless every other job succeeded, so a failed,
   # cancelled, or skipped job blocks the merge — while the protection rule stays one
@@ -160,7 +204,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [lint, test, msrv, deny, python, python-sdist]
+    needs: [lint, test, msrv, deny, python, python-sdist, typescript]
     runs-on: ubuntu-latest
     steps:
       - name: Require all CI jobs to have succeeded

@@ -1,9 +1,15 @@
 # Proposal: in-tree TypeScript bindings (WebAssembly)
 
-Status: draft. The package name is the main open decision. The shared invariants
-(one engine, state interoperability, determinism, version lockstep, parity suite) are
-stated in full in [`python-bindings.md`](python-bindings.md) and apply here unchanged,
-including the prerequisite `libm` switch in the core crate.
+Status: implemented (`bindings/wasm`), with three notes against the draft below. The
+package name is `@lathrys/ruffle`, the recommended candidate; it is a one-line
+change in `package.json` if reconsidered before the first npm publish. The single-ESM
+question resolved to one artifact with top-level await: Node reads the wasm from
+disk, browsers and bundlers fetch it from `import.meta.url`, and the module is ready
+synchronously after import. The browser smoke test is not yet in CI; the vitest
+suite covers Node, and a headless-browser lane remains open work. The shared
+invariants (one engine, state interoperability, determinism, version lockstep,
+parity suite) are stated in full in [`python-bindings.md`](python-bindings.md) and
+apply here unchanged; the `libm` prerequisite is done in the core crate.
 
 ## Why wasm, and why it is a good home for ruffle
 

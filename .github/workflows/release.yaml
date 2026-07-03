@@ -15,8 +15,10 @@ name: Release
 # step's already-exists skip tolerates that bootstrapped version). PyPI publishes the
 # bindings wheels through the `pypi` environment, registered as a trusted publisher
 # on the `ruffle` project (PyPI supports registering one before the first release,
-# as a pending publisher). The wheel version is the ruffle-py crate version, which
-# the verify job asserts equals the tag.
+# as a pending publisher). npm publishes the TypeScript package through the `npm`
+# environment, registered as a trusted publisher on `@lathrys/ruffle`, with
+# provenance attached. Every binding's version is the corresponding crate version,
+# which the verify job asserts equals the tag.
 on:
   push:
     tags:
@@ -57,12 +59,23 @@ jobs:
             echo "::error::tag v$tag does not match Cargo.toml version $ver"
             exit 1
           fi
-          # Version lockstep: the Python bindings always wrap the engine version
-          # they release with, so the wheel version must equal the crate version.
+          # Version lockstep: every binding always wraps the engine version it
+          # releases with, so each binding's version must equal the crate version.
           pyver="$(cargo metadata --no-deps --format-version 1 \
             | jq -r '.packages[] | select(.name=="ruffle-py").version')"
           if [ "$tag" != "$pyver" ]; then
             echo "::error::tag v$tag does not match ruffle-py version $pyver"
+            exit 1
+          fi
+          wasmver="$(cargo metadata --no-deps --format-version 1 \
+            | jq -r '.packages[] | select(.name=="ruffle-wasm").version')"
+          if [ "$tag" != "$wasmver" ]; then
+            echo "::error::tag v$tag does not match ruffle-wasm version $wasmver"
+            exit 1
+          fi
+          npmver="$(jq -r .version bindings/wasm/package.json)"
+          if [ "$tag" != "$npmver" ]; then
+            echo "::error::tag v$tag does not match the npm package version $npmver"
             exit 1
           fi
       - name: Format
@@ -239,6 +252,45 @@ jobs:
           # The tests must exercise the installed wheel, not the repo source.
           python -c "import ruffle; assert 'site-packages' in ruffle.__file__, ruffle.__file__"
           python -m pytest bindings/python/tests/test_parity.py bindings/python/tests/test_api.py -q
+
+  # Build and publish the npm package on a final tag, via npm Trusted Publishing
+  # (OIDC, with provenance) through the `npm` environment, registered as a trusted
+  # publisher on the @lathrys/ruffle package. The existence probe makes a re-run or
+  # duplicate tag-push event skip rather than fail, like the other publishes.
+  publish-npm:
+    name: Publish to npm
+    needs: verify
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # mint the OIDC token npm Trusted Publishing verifies
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Build
+        working-directory: bindings/wasm
+        run: |
+          npm ci
+          npm run build
+      - name: Publish
+        working-directory: bindings/wasm
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version package.json)"
+          if npm view "@lathrys/ruffle@${version}" version >/dev/null 2>&1; then
+            echo "::notice::@lathrys/ruffle@${version} is already on npm — skipping"
+            exit 0
+          fi
+          npm publish --provenance --access public
 
   # Publish the wheels to PyPI on a final tag, via PyPI's Trusted Publishing (OIDC).
   # skip-existing makes this idempotent, like the crates.io publish below: a
