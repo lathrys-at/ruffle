@@ -1,0 +1,52 @@
+{
+  "name": "@lathrys/ruffle",
+  "version": "0.1.1",
+  "description": "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF) of heterogeneous retrieval channels.",
+  "license": "(MIT OR Apache-2.0)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lathrys-at/ruffle.git",
+    "directory": "bindings/wasm"
+  },
+  "homepage": "https://github.com/lathrys-at/ruffle",
+  "bugs": "https://github.com/lathrys-at/ruffle/issues",
+  "keywords": [
+    "retrieval",
+    "fusion",
+    "ranking",
+    "rrf",
+    "search",
+    "wasm"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "pkg/ruffle_wasm.js",
+    "pkg/ruffle_wasm.d.ts",
+    "pkg/ruffle_wasm_bg.wasm",
+    "pkg/ruffle_wasm_bg.wasm.d.ts"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "sideEffects": true,
+  "scripts": {
+    "build": "npm run build:wasm && npm run build:ts",
+    "build:wasm": "wasm-pack build --target web --out-dir pkg --no-pack --release",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0",
+    "wasm-pack": "^0.13.0"
+  }
+}
