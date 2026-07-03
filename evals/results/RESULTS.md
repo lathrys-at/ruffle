@@ -16,9 +16,49 @@ baseline; a blank cell means the rankings were identical to the baseline.
 | tfidf | 0.6678 | 0.9387 | 0.6193 | 0.040 |  |
 | dense | 0.6255 | 0.9233 | 0.5835 | 0.000 |  |
 | rrf | 0.6998 | 0.9767 | 0.6604 |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.7005 | 0.9833 | 0.6582 | 0.824 |  |
+| isr | 0.7289 | 0.9833 | 0.6874 | 0.026 |  |
+| combsum | 0.7179 | 0.9833 | 0.6763 | 0.035 |  |
+| combmnz | 0.7134 | 0.9833 | 0.6734 | 0.072 |  |
 | ruffle-cold | 0.6998 | 0.9767 | 0.6604 |  | 1.000 / 1.000 / 1.000 |
 | ruffle-warm | 0.7121 | 0.9833 | 0.6730 | 0.032 | 1.049 / 0.964 / 0.987 |
 | ruffle-warm-coupled | 0.7147 | 0.9767 | 0.6762 | 0.018 | 1.044 / 0.892 / 1.065 |
+| rrf-oracle | 0.7067 | 0.9331 | 0.6733 | 0.483 | 0.700 / 0.100 / 0.200 |
+
+#### Degraded fourth channel
+
+A broken channel derived from the BM25 run joins the three healthy ones.
+`wrong-query` serves another query's results (healthy-looking scores,
+irrelevant content); `flaky` serves the tail of its own results (ranks
+51-100) on a seeded half of the queries. The p column compares against
+four-channel RRF, so it reads what each fusion recovers of the damage.
+
+| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
+|---|---|---|---|---|---|---|---|
+| wrong-query | rrf-clean | 0.6998 | 0.9767 | 0.6604 | 0.094 |  |  |
+| wrong-query | rrf | 0.6853 | 0.9620 | 0.6412 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.6503 | 0.9087 | 0.6073 | 0.030 | 1.116 | 0.345 |
+| flaky | rrf-clean | 0.6998 | 0.9767 | 0.6604 | 0.001 |  |  |
+| flaky | rrf | 0.6656 | 0.9687 | 0.6129 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.6949 | 0.9487 | 0.6537 | 0.004 | 1.061 | 0.246 |
+
+In the flaky mode the broken channel's mean weight on the 73 failed evaluation queries is 0.596, against 1.502 on the healthy ones.
+
+#### Warmup learning curve
+
+Ruffle warm (default configuration) on the fixed evaluation split, warmed
+on increasing prefixes of the warmup split. Size zero is online-from-cold:
+the fuser adapts across the evaluation queries themselves. The RRF floor
+on this split is nDCG@10 0.6998, R@100 0.9767.
+
+| warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
+|---|---|---|---|---|
+| 0 | 0.7136 | 0.9833 | 0.027 | 0.999 / 0.969 / 1.032 |
+| 10 | 0.7140 | 0.9833 | 0.023 | 1.020 / 0.972 / 1.008 |
+| 25 | 0.7138 | 0.9833 | 0.024 | 1.045 / 0.963 / 0.992 |
+| 50 | 0.7121 | 0.9833 | 0.032 | 1.052 / 0.973 / 0.975 |
+| 100 | 0.7120 | 0.9833 | 0.033 | 1.055 / 0.966 / 0.979 |
+| 150 | 0.7121 | 0.9833 | 0.032 | 1.049 / 0.964 / 0.987 |
 
 ### nfcorpus
 
@@ -30,9 +70,49 @@ baseline; a blank cell means the rankings were identical to the baseline.
 | tfidf | 0.3070 | 0.2709 | 0.5138 | 0.008 |  |
 | dense | 0.3126 | 0.3121 | 0.5073 | 0.216 |  |
 | rrf | 0.3303 | 0.3235 | 0.5219 |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.3170 | 0.3231 | 0.5066 | 0.013 |  |
+| isr | 0.3302 | 0.3279 | 0.5318 | 0.990 |  |
+| combsum | 0.3368 | 0.3321 | 0.5305 | 0.290 |  |
+| combmnz | 0.3343 | 0.3329 | 0.5298 | 0.425 |  |
 | ruffle-cold | 0.3303 | 0.3235 | 0.5219 |  | 1.000 / 1.000 / 1.000 |
 | ruffle-warm | 0.3348 | 0.3258 | 0.5303 | 0.189 | 1.088 / 0.957 / 0.955 |
 | ruffle-warm-coupled | 0.3371 | 0.3276 | 0.5271 | 0.054 | 1.083 / 0.891 / 1.026 |
+| rrf-oracle | 0.3332 | 0.3323 | 0.5284 | 0.321 | 0.300 / 0.300 / 0.400 |
+
+#### Degraded fourth channel
+
+A broken channel derived from the BM25 run joins the three healthy ones.
+`wrong-query` serves another query's results (healthy-looking scores,
+irrelevant content); `flaky` serves the tail of its own results (ranks
+51-100) on a seeded half of the queries. The p column compares against
+four-channel RRF, so it reads what each fusion recovers of the damage.
+
+| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
+|---|---|---|---|---|---|---|---|
+| wrong-query | rrf-clean | 0.3303 | 0.3235 | 0.5219 | 0.084 |  |  |
+| wrong-query | rrf | 0.3255 | 0.3084 | 0.5176 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.3247 | 0.3072 | 0.5055 | 0.858 | 1.054 | 0.351 |
+| flaky | rrf-clean | 0.3303 | 0.3235 | 0.5219 | 0.009 |  |  |
+| flaky | rrf | 0.3131 | 0.3036 | 0.5056 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.3210 | 0.3076 | 0.5203 | 0.049 | 1.062 | 0.266 |
+
+In the flaky mode the broken channel's mean weight on the 81 failed evaluation queries is 0.795, against 1.329 on the healthy ones.
+
+#### Warmup learning curve
+
+Ruffle warm (default configuration) on the fixed evaluation split, warmed
+on increasing prefixes of the warmup split. Size zero is online-from-cold:
+the fuser adapts across the evaluation queries themselves. The RRF floor
+on this split is nDCG@10 0.3303, R@100 0.3235.
+
+| warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
+|---|---|---|---|---|
+| 0 | 0.3324 | 0.3216 | 0.541 | 1.062 / 0.994 / 0.944 |
+| 10 | 0.3332 | 0.3203 | 0.397 | 1.058 / 0.998 / 0.944 |
+| 25 | 0.3344 | 0.3245 | 0.219 | 1.030 / 1.003 / 0.967 |
+| 50 | 0.3342 | 0.3245 | 0.227 | 1.074 / 0.983 / 0.943 |
+| 100 | 0.3342 | 0.3262 | 0.242 | 1.077 / 0.968 / 0.955 |
+| 161 | 0.3348 | 0.3258 | 0.189 | 1.088 / 0.957 / 0.955 |
 
 ### fiqa
 
@@ -44,6 +124,105 @@ baseline; a blank cell means the rankings were identical to the baseline.
 | tfidf | 0.1684 | 0.4724 | 0.2082 | 0.000 |  |
 | dense | 0.3720 | 0.7197 | 0.4478 | 0.000 |  |
 | rrf | 0.3077 | 0.6807 | 0.3682 |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.3056 | 0.6816 | 0.3630 | 0.445 |  |
+| isr | 0.3296 | 0.6849 | 0.3911 | 0.027 |  |
+| combsum | 0.3334 | 0.6864 | 0.3931 | 0.000 |  |
+| combmnz | 0.3297 | 0.6814 | 0.3932 | 0.000 |  |
 | ruffle-cold | 0.3077 | 0.6807 | 0.3682 |  | 1.000 / 1.000 / 1.000 |
 | ruffle-warm | 0.3111 | 0.6486 | 0.3747 | 0.519 | 0.976 / 0.989 / 1.035 |
 | ruffle-warm-coupled | 0.3135 | 0.6463 | 0.3739 | 0.371 | 0.947 / 0.955 / 1.098 |
+| rrf-oracle | 0.3795 | 0.7197 | 0.4511 | 0.000 | 0.200 / 0.000 / 0.800 |
+
+#### Degraded fourth channel
+
+A broken channel derived from the BM25 run joins the three healthy ones.
+`wrong-query` serves another query's results (healthy-looking scores,
+irrelevant content); `flaky` serves the tail of its own results (ranks
+51-100) on a seeded half of the queries. The p column compares against
+four-channel RRF, so it reads what each fusion recovers of the damage.
+
+| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
+|---|---|---|---|---|---|---|---|
+| wrong-query | rrf-clean | 0.3077 | 0.6807 | 0.3682 | 0.284 |  |  |
+| wrong-query | rrf | 0.3067 | 0.6452 | 0.3678 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.2965 | 0.5993 | 0.3619 | 0.153 | 1.031 | 0.412 |
+| flaky | rrf-clean | 0.3077 | 0.6807 | 0.3682 | 0.000 |  |  |
+| flaky | rrf | 0.2860 | 0.6225 | 0.3426 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.3005 | 0.6006 | 0.3634 | 0.007 | 1.024 | 0.368 |
+
+In the flaky mode the broken channel's mean weight on the 159 failed evaluation queries is 0.614, against 1.418 on the healthy ones.
+
+#### Warmup learning curve
+
+Ruffle warm (default configuration) on the fixed evaluation split, warmed
+on increasing prefixes of the warmup split. Size zero is online-from-cold:
+the fuser adapts across the evaluation queries themselves. The RRF floor
+on this split is nDCG@10 0.3077, R@100 0.6807.
+
+| warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
+|---|---|---|---|---|
+| 0 | 0.3151 | 0.6425 | 0.182 | 0.988 / 0.976 / 1.036 |
+| 10 | 0.3138 | 0.6453 | 0.268 | 0.985 / 0.984 / 1.031 |
+| 25 | 0.3138 | 0.6446 | 0.265 | 0.971 / 0.988 / 1.041 |
+| 50 | 0.3123 | 0.6475 | 0.384 | 0.989 / 0.988 / 1.023 |
+| 100 | 0.3127 | 0.6457 | 0.349 | 0.990 / 0.985 / 1.025 |
+| 250 | 0.3112 | 0.6492 | 0.516 | 0.982 / 0.982 / 1.036 |
+| 324 | 0.3111 | 0.6486 | 0.519 | 0.976 / 0.989 / 1.035 |
+
+### quora
+
+5000 evaluation queries (5000 warmup), top-100 per channel, ruffle 0.2.0.
+
+| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | mean weights (bm25 / tfidf / dense) |
+|---|---|---|---|---|---|
+| bm25 | 0.7462 | 0.9498 | 0.7392 | 0.000 |  |
+| tfidf | 0.7662 | 0.9714 | 0.7573 | 0.000 |  |
+| dense | 0.8778 | 0.9945 | 0.8691 | 0.000 |  |
+| rrf | 0.8392 | 0.9946 | 0.8322 |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.8361 | 0.9950 | 0.8285 | 0.000 |  |
+| isr | 0.8587 | 0.9949 | 0.8513 | 0.000 |  |
+| combsum | 0.8610 | 0.9950 | 0.8523 | 0.000 |  |
+| combmnz | 0.8557 | 0.9951 | 0.8487 | 0.000 |  |
+| ruffle-cold | 0.8392 | 0.9946 | 0.8322 |  | 1.000 / 1.000 / 1.000 |
+| ruffle-warm | 0.8443 | 0.9936 | 0.8360 | 0.000 | 1.024 / 0.984 / 0.992 |
+| ruffle-warm-coupled | 0.8476 | 0.9936 | 0.8390 | 0.000 | 0.972 / 0.938 / 1.090 |
+| rrf-oracle | 0.8820 | 0.9945 | 0.8743 | 0.000 | 0.000 / 0.100 / 0.900 |
+
+#### Degraded fourth channel
+
+A broken channel derived from the BM25 run joins the three healthy ones.
+`wrong-query` serves another query's results (healthy-looking scores,
+irrelevant content); `flaky` serves the tail of its own results (ranks
+51-100) on a seeded half of the queries. The p column compares against
+four-channel RRF, so it reads what each fusion recovers of the damage.
+
+| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
+|---|---|---|---|---|---|---|---|
+| wrong-query | rrf-clean | 0.8392 | 0.9946 | 0.8322 | 0.090 |  |  |
+| wrong-query | rrf | 0.8389 | 0.9929 | 0.8318 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.8143 | 0.9897 | 0.8048 | 0.000 | 1.022 | 0.371 |
+| flaky | rrf-clean | 0.8392 | 0.9946 | 0.8322 | 0.000 |  |  |
+| flaky | rrf | 0.7968 | 0.9906 | 0.7804 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.8174 | 0.9899 | 0.8067 | 0.000 | 1.028 | 0.264 |
+
+In the flaky mode the broken channel's mean weight on the 2490 failed evaluation queries is 0.669, against 1.385 on the healthy ones.
+
+#### Warmup learning curve
+
+Ruffle warm (default configuration) on the fixed evaluation split, warmed
+on increasing prefixes of the warmup split. Size zero is online-from-cold:
+the fuser adapts across the evaluation queries themselves. The RRF floor
+on this split is nDCG@10 0.8392, R@100 0.9946.
+
+| warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
+|---|---|---|---|---|
+| 0 | 0.8443 | 0.9937 | 0.000 | 1.018 / 0.986 / 0.995 |
+| 10 | 0.8443 | 0.9937 | 0.000 | 1.018 / 0.986 / 0.997 |
+| 25 | 0.8444 | 0.9936 | 0.000 | 1.017 / 0.987 / 0.996 |
+| 50 | 0.8445 | 0.9936 | 0.000 | 1.015 / 0.988 / 0.996 |
+| 100 | 0.8445 | 0.9937 | 0.000 | 1.013 / 0.991 / 0.997 |
+| 250 | 0.8447 | 0.9937 | 0.000 | 1.010 / 0.992 / 0.998 |
+| 500 | 0.8445 | 0.9937 | 0.000 | 1.015 / 0.990 / 0.995 |
+| 1000 | 0.8443 | 0.9936 | 0.000 | 1.020 / 0.984 / 0.997 |
+| 2500 | 0.8444 | 0.9936 | 0.000 | 1.021 / 0.985 / 0.994 |
+| 5000 | 0.8443 | 0.9936 | 0.000 | 1.024 / 0.984 / 0.992 |

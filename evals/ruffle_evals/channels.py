@@ -30,6 +30,8 @@ CHANNEL_KEYS = ("bm25", "tfidf", "dense")
 
 _DENSE_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
+_QUERY_CHUNK = 64
+
 # One run entry: (doc_id, native_score), best first.
 Run = dict[str, list[tuple[str, float]]]
 
@@ -53,7 +55,7 @@ class Channels:
         self._bm25.index(self._bm25_tokens, show_progress=False)
 
         # char_wb ngrams stay inside word boundaries, which keeps the vocabulary
-        # bounded; the max_features cap holds the fiqa-scale matrix to a workable
+        # bounded; the max_features cap holds the corpus-scale matrix to a workable
         # size. norm="l2" (the default) makes every dot product a cosine.
         self._tfidf = TfidfVectorizer(
             analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True, max_features=200_000
@@ -83,35 +85,51 @@ class Channels:
     def _compute_run(self, key: str, k: int) -> Run:
         qids = list(self._dataset.queries.keys())
         run: Run = {}
-        for qid in qids:
-            scores = self.full_scores(qid, key)
-            top = np.argsort(-scores, kind="stable")[:k]
-            # A zero lexical score means no ngram or term overlap at all; keeping
-            # such documents would pad the run with arbitrary ties.
-            run[qid] = [
-                (self._doc_ids[int(i)], float(scores[int(i)])) for i in top if scores[int(i)] > 0
-            ]
+        for start in range(0, len(qids), _QUERY_CHUNK):
+            chunk = qids[start : start + _QUERY_CHUNK]
+            sims = self._score_chunk(chunk, key)
+            for row, qid in enumerate(chunk):
+                run[qid] = self._topk_row(sims[row], k)
         return run
+
+    def _score_chunk(self, qids: list[str], key: str) -> np.ndarray:
+        """Native scores for a chunk of queries over the whole corpus, one row per
+        query. Chunking bounds the dense (queries x docs) block that materializes."""
+        queries = [self._dataset.queries[qid] for qid in qids]
+        if key == "bm25":
+            return np.vstack([self._bm25_full(q) for q in queries])
+        if key == "tfidf":
+            qvecs = self._tfidf.transform(queries)
+            return np.asarray((qvecs @ self._tfidf_docs.T).todense(), dtype=np.float64)
+        if key == "dense":
+            emb = np.vstack([self._query_embedding(qid) for qid in qids])
+            return (emb @ self._dense_docs.T).astype(np.float64)
+        raise KeyError(key)
+
+    def _topk_row(self, scores: np.ndarray, k: int) -> list[tuple[str, float]]:
+        # argpartition instead of a full sort: the corpus can be half a million
+        # documents and only the top k matter.
+        k = min(k, scores.size)
+        top = np.argpartition(-scores, k - 1)[:k]
+        top = top[np.argsort(-scores[top], kind="stable")]
+        # A zero lexical score means no ngram or term overlap at all; keeping such
+        # documents would pad the run with arbitrary ties.
+        return [(self._doc_ids[int(i)], float(scores[int(i)])) for i in top if scores[int(i)] > 0]
 
     # -- full scoring (anchors) ----------------------------------------------
 
     def full_scores(self, qid: str, key: str) -> np.ndarray:
         """One channel's native score for every corpus document, for one query."""
-        query = self._dataset.queries[qid]
-        if key == "bm25":
-            # Token ids from a per-query tokenize are relative to the query's own
-            # vocabulary, so full scoring goes through string tokens, which the
-            # index maps against the corpus vocabulary.
-            tokens = bm25s.tokenize(query, stopwords="en", show_progress=False, return_ids=False)
-            if not tokens[0]:
-                return np.zeros(len(self._doc_ids))
-            return np.asarray(self._bm25.get_scores(tokens[0]), dtype=np.float64)
-        if key == "tfidf":
-            qvec = self._tfidf.transform([query])
-            return np.asarray((self._tfidf_docs @ qvec.T).todense(), dtype=np.float64).ravel()
-        if key == "dense":
-            return self._dense_docs @ self._query_embedding(qid)
-        raise KeyError(key)
+        return self._score_chunk([qid], key)[0]
+
+    def _bm25_full(self, query: str) -> np.ndarray:
+        # Token ids from a per-query tokenize are relative to the query's own
+        # vocabulary, so full scoring goes through string tokens, which the index
+        # maps against the corpus vocabulary.
+        tokens = bm25s.tokenize(query, stopwords="en", show_progress=False, return_ids=False)
+        if not tokens[0]:
+            return np.zeros(len(self._doc_ids))
+        return np.asarray(self._bm25.get_scores(tokens[0]), dtype=np.float64)
 
     def score_lookup(self, qid: str, key: str) -> Callable[[str], float]:
         """A ``(doc_id) -> float`` scorer over one precomputed full-score vector."""
@@ -146,10 +164,12 @@ class Channels:
             from sentence_transformers import SentenceTransformer
 
             self._encoder = SentenceTransformer(_DENSE_MODEL)
+        # float32 keeps a corpus-scale embedding cache at half a million rows
+        # manageable; scores are widened to float64 at scoring time.
         return self._encoder.encode(
             texts,
             batch_size=64,
             normalize_embeddings=True,
             convert_to_numpy=True,
             show_progress_bar=len(texts) > 1000,
-        ).astype(np.float64)
+        ).astype(np.float32)

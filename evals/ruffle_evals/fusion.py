@@ -17,7 +17,8 @@ first formed on.
 from __future__ import annotations
 
 import random
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 
 import ruffle
 
@@ -25,27 +26,56 @@ from ruffle_evals import SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Channels, Run
 from ruffle_evals.datasets import Dataset
 
-__all__ = ["FusionResult", "channel_configs", "rrf", "ruffle_cold", "ruffle_warm", "split_queries"]
-
-# Fused rankings by query id, plus the mean per-channel weights the engine used on
-# the evaluated queries (1.0 for every channel under plain RRF and, by
-# construction, under the cold condition).
-FusionResult = tuple[dict[str, list[tuple[str, float]]], dict[str, float]]
+__all__ = [
+    "FusionOutcome",
+    "channel_configs",
+    "rrf",
+    "ruffle_cold",
+    "ruffle_warm",
+    "split_queries",
+]
 
 _TAGS = {"bm25": "bm25s-lucene", "tfidf": "char-wb-3-5", "dense": "all-MiniLM-L6-v2"}
 
 _ANCHOR_CANDIDATES = 256
 
 
-def channel_configs() -> list[ruffle.ChannelConfig]:
-    """The three channel registrations. No good-score reference is declared: the
-    harness measures the calibration-free path, where every reference is learned
-    from traffic."""
+@dataclass(frozen=True)
+class FusionOutcome:
+    """One condition's fused rankings plus the engine readings behind them.
+
+    ``weights`` holds the per-channel weight used on each query (1.0 for every
+    channel under plain RRF and, by construction, under the cold condition).
+    ``conflict`` holds the per-query conflict diagnostic where the engine ran,
+    ``None`` for the harness's own RRF baseline.
+    """
+
+    rankings: dict[str, list[tuple[str, float]]]
+    weights: dict[str, dict[str, float]]
+    conflict: dict[str, float] | None
+
+    def mean_weights(self, keys: Sequence[str]) -> dict[str, float]:
+        n = max(len(self.weights), 1)
+        return {k: sum(w[k] for w in self.weights.values()) / n for k in keys}
+
+    def mean_conflict(self) -> float | None:
+        if self.conflict is None or not self.conflict:
+            return None
+        return sum(self.conflict.values()) / len(self.conflict)
+
+
+def channel_configs(
+    keys: Sequence[str] = CHANNEL_KEYS, tags: dict[str, str] | None = None
+) -> list[ruffle.ChannelConfig]:
+    """Channel registrations for the given keys. No good-score reference is
+    declared: the harness measures the calibration-free path, where every
+    reference is learned from traffic."""
+    all_tags = {**_TAGS, **(tags or {})}
     return [
         ruffle.ChannelConfig(
-            ruffle.ChannelId(key, _TAGS[key]), ruffle.Direction.HIGHER_IS_BETTER
+            ruffle.ChannelId(key, all_tags[key]), ruffle.Direction.HIGHER_IS_BETTER
         )
-        for key in CHANNEL_KEYS
+        for key in keys
     ]
 
 
@@ -66,7 +96,12 @@ def _inputs(
     ]
 
 
-def rrf(runs: dict[str, Run], qids: Iterable[str], eta: float = 60.0) -> FusionResult:
+def rrf(
+    runs: dict[str, Run],
+    qids: Iterable[str],
+    keys: Sequence[str] = CHANNEL_KEYS,
+    eta: float = 60.0,
+) -> FusionOutcome:
     """Plain unweighted reciprocal-rank fusion, implemented independently of the
     engine so the cold condition has something external to agree with.
 
@@ -75,13 +110,14 @@ def rrf(runs: dict[str, Run], qids: Iterable[str], eta: float = 60.0) -> FusionR
     is checkable ranking for ranking rather than only metric for metric.
     """
     fused: dict[str, list[tuple[str, float]]] = {}
+    weights: dict[str, dict[str, float]] = {}
     for qid in qids:
         first_seen: dict[str, int] = {}
-        for key in CHANNEL_KEYS:
+        for key in keys:
             for doc_id, _ in runs[key].get(qid, []):
                 first_seen.setdefault(doc_id, len(first_seen))
         scores = dict.fromkeys(first_seen, 0.0)
-        for key in CHANNEL_KEYS:
+        for key in keys:
             items = runs[key].get(qid, [])
             order = sorted(
                 range(len(items)), key=lambda i: (-items[i][1], first_seen[items[i][0]])
@@ -96,34 +132,38 @@ def rrf(runs: dict[str, Run], qids: Iterable[str], eta: float = 60.0) -> FusionR
                     scores[items[p][0]] += 1.0 / (eta + midrank)
                 i = j + 1
         fused[qid] = sorted(scores.items(), key=lambda it: (-it[1], first_seen[it[0]]))
-    return fused, {key: 1.0 for key in CHANNEL_KEYS}
+        weights[qid] = {key: 1.0 for key in keys}
+    return FusionOutcome(rankings=fused, weights=weights, conflict=None)
 
 
-def ruffle_cold(runs: dict[str, Run], qids: Iterable[str]) -> FusionResult:
+def ruffle_cold(
+    runs: dict[str, Run], qids: Iterable[str], configs: list[ruffle.ChannelConfig] | None = None
+) -> FusionOutcome:
     """Ruffle stateless with an empty prior: per-query fusion with no accumulated
     baseline, the mode a deployment starts in."""
-    configs = channel_configs()
+    configs = channel_configs() if configs is None else configs
+    keys = [c.id.key for c in configs]
     prior = ruffle.Fuser(configs).state
     fused: dict[str, list[tuple[str, float]]] = {}
-    weight_sums = {key: 0.0 for key in CHANNEL_KEYS}
-    count = 0
+    weights: dict[str, dict[str, float]] = {}
+    conflict: dict[str, float] = {}
     for qid in qids:
         result = ruffle.Fuser.fuse_stateless(_inputs(runs, configs, qid), configs, prior)
         fused[qid] = [(item.id, item.score) for item in result.ranking]
-        for key in CHANNEL_KEYS:
-            weight_sums[key] += result.weights[key]
-        count += 1
-    return fused, {key: s / max(count, 1) for key, s in weight_sums.items()}
+        weights[qid] = {key: result.weights[key] for key in keys}
+        conflict[qid] = result.conflict
+    return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)
 
 
 def ruffle_warm(
     runs: dict[str, Run],
     warm_qids: list[str],
     eval_qids: list[str],
+    configs: list[ruffle.ChannelConfig] | None = None,
     channels: Channels | None = None,
     coupling: bool = False,
     refreshes: int = 10,
-) -> FusionResult:
+) -> FusionOutcome:
     """Ruffle stateful: baselines accumulate over the warmup queries, then the
     evaluation queries are fused (still stateful, as a deployment would run).
 
@@ -134,7 +174,8 @@ def ruffle_warm(
     channel's top-k, because a top-k pool is a selected sample that biases the
     correlation estimate.
     """
-    configs = channel_configs()
+    configs = channel_configs() if configs is None else configs
+    keys = [c.id.key for c in configs]
     config = ruffle.FuseConfig(coupling=ruffle.CouplingConfig(enabled=True)) if coupling else None
     fuser = ruffle.Fuser(configs, config)
 
@@ -146,18 +187,18 @@ def ruffle_warm(
         if qid in anchor_qids:
             assert channels is not None
             candidates = rng.sample(list(channels.doc_ids), min(_ANCHOR_CANDIDATES, len(channels.doc_ids)))
-            lookups = {key: channels.score_lookup(qid, key) for key in CHANNEL_KEYS}
+            lookups = {key: channels.score_lookup(qid, key) for key in keys}
             anchor = ruffle.Anchor.build(
                 candidates, configs, lambda doc_id, key: lookups[key](doc_id)
             )
             fuser.refresh_coupling(anchor)
 
     fused: dict[str, list[tuple[str, float]]] = {}
-    weight_sums = {key: 0.0 for key in CHANNEL_KEYS}
+    weights: dict[str, dict[str, float]] = {}
+    conflict: dict[str, float] = {}
     for qid in eval_qids:
         result = fuser.fuse(_inputs(runs, configs, qid))
         fused[qid] = [(item.id, item.score) for item in result.ranking]
-        for key in CHANNEL_KEYS:
-            weight_sums[key] += result.weights[key]
-    n = max(len(eval_qids), 1)
-    return fused, {key: s / n for key, s in weight_sums.items()}
+        weights[qid] = {key: result.weights[key] for key in keys}
+        conflict[qid] = result.conflict
+    return FusionOutcome(rankings=fused, weights=weights, conflict=conflict)

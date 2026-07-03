@@ -13,18 +13,20 @@ import ir_datasets
 
 __all__ = ["DATASETS", "Dataset", "load"]
 
-# name -> ir_datasets id of the split holding the test queries and qrels. All four
+# name -> ir_datasets id of the split holding the test queries and qrels. All
 # download from public mirrors without a usage agreement. trec-covid has only 50
-# queries, too few for a meaningful warm/eval split, so the default run set is the
-# first three and trec-covid runs only when named explicitly.
+# queries, too few for a meaningful warm/eval split, so it runs only when named
+# explicitly. quora is the statistical-power collection: 10,000 test queries
+# leave 5,000 for evaluation after the split.
 DATASETS: dict[str, str] = {
     "scifact": "beir/scifact/test",
     "nfcorpus": "beir/nfcorpus/test",
     "fiqa": "beir/fiqa/test",
+    "quora": "beir/quora/test",
     "trec-covid": "beir/trec-covid",
 }
 
-DEFAULT_DATASETS = ("scifact", "nfcorpus", "fiqa")
+DEFAULT_DATASETS = ("scifact", "nfcorpus", "fiqa", "quora")
 
 
 @dataclass(frozen=True)

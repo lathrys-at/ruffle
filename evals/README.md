@@ -28,6 +28,18 @@ The conditions:
   of the engine, with the engine's tie conventions (tied scores within a channel
   share their midrank; fused-score ties fall back to first-seen order) so
   agreement with the cold condition is checkable ranking for ranking.
+- `borda`, `isr`: two further rank-based rules, Borda count over the truncated
+  lists and inverse square rank, as completeness rows for RRF's own family.
+- `combsum`, `combmnz`: the classic score-based fusions (Fox and Shaw), over
+  min-max normalized scores. Both require bringing every channel's scores onto a
+  shared scale first, which is exactly the per-channel calibration step Ruffle
+  avoids; they are the contrast class.
+- `rrf-oracle`: RRF with fixed per-channel weights grid-searched on the unit
+  simplex (step 0.1) against the evaluation split's own relevance judgments. The
+  labels choose the weights, so this row is not a competitor: it is a ceiling on
+  what any fixed per-channel weighting could achieve with these runs, and the
+  table reads as a bracket, the RRF floor to the oracle ceiling, with Ruffle's
+  label-free weights in between.
 - `ruffle-cold`: `Fuser.fuse_stateless` with an empty prior, per query. With no
   accumulated baselines and no declared references this reduces to unweighted
   RRF by construction; the condition verifies that reduction on real runs.
@@ -46,6 +58,31 @@ carries a two-sided paired t-test on per-query nDCG@10 against the `rrf`
 baseline, and the mean per-channel weights the engine actually used on the
 evaluation queries.
 
+## Targeted experiments
+
+Two further protocols run per collection, reusing the cached runs.
+
+The degraded-channel experiment adds a broken fourth channel derived from the
+BM25 run and measures what it costs each fusion, in two failure modes chosen
+because they sit on opposite sides of what label-free weighting can see.
+`wrong-query` serves another query's BM25 results: internally healthy scores
+over irrelevant content. Per-channel statistics read a channel against its own
+norm, so this mode is designed to be invisible to them; the honest expectation
+is that Ruffle matches RRF's damage rather than recovering it, with the conflict
+diagnostic as the signal that moves. `flaky` serves the tail of the channel's
+own results (ranks 51-100, true low scores) on a seeded half of the queries,
+simulating intermittent retrieval failure; that failure is visible per query as
+a departure from the channel's learned norm, which is what discrimination
+weighting reads. Each mode reports three conditions (three-channel RRF, four-
+channel RRF, four-channel Ruffle warm), the broken channel's mean weight, and
+for the flaky mode that weight split across failed and healthy queries.
+
+The learning curve warms a fresh stateful fuser on increasing prefixes of the
+warmup split and scores the same evaluation split each time, tracing the climb
+from the cold floor toward the fully warmed numbers. Warmup size zero is
+online-from-cold: the fuser still adapts across the evaluation queries
+themselves.
+
 ## Collections
 
 Datasets load through [ir_datasets](https://ir-datasets.com/) and download on
@@ -56,10 +93,13 @@ first use into `cache/`:
 | scifact | `beir/scifact/test` | 5K | 300 |
 | nfcorpus | `beir/nfcorpus/test` | 3.6K | 323 |
 | fiqa | `beir/fiqa/test` | 57K | 648 |
+| quora | `beir/quora/test` | 523K | 10,000 |
 | trec-covid | `beir/trec-covid` | 171K | 50 |
 
-The default run covers the first three. trec-covid has too few queries for a
-meaningful warm/eval split and runs only when named explicitly.
+The default run covers the first four; quora is the statistical-power
+collection, leaving 5,000 evaluation queries after the split. trec-covid has
+too few queries for a meaningful warm/eval split and runs only when named
+explicitly.
 
 ## Running
 
@@ -79,6 +119,17 @@ python -m ruffle_evals scifact --k 100
 
 Channel runs and corpus embeddings are cached under `cache/` keyed by collection
 and run depth, so re-runs only re-execute the fusion and the metrics. Each run
-writes `results/<dataset>.json` (aggregate metrics, per-query nDCG@10, mean
-weights, and the environment) and regenerates `results/RESULTS.md` from all
-result files present.
+writes `results/<dataset>.json` (the main comparison: aggregate metrics,
+per-query nDCG@10, mean weights, and the environment),
+`results/<dataset>-degraded.json`, and `results/<dataset>-curve.json`, then
+regenerates `results/RESULTS.md` from all result files present.
+
+## Deferred
+
+A fourth channel using a stronger embedding model (`BAAI/bge-small-en-v1.5`,
+which wants a query instruction prefix at encode time) is noted but deferred
+until after the larger-corpus collections (cqadupstack, MS MARCO / TREC-DL) are
+in. As a replacement for MiniLM it would mostly shift collections into the
+dense-dominant regime fiqa already covers; the interesting configuration is as
+an addition, giving a redundant dense pair for the coupling estimator alongside
+the existing lexical pair, and a strong/weak mix within one modality.
