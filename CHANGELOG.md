@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-03
+
+The first bindings release: the same engine, callable from Python and TypeScript,
+with byte-identical persisted state across all three.
+
 ### Added
 
 - In-tree Python bindings (`bindings/python`, PyPI package `ruffle`): a fully typed,
@@ -88,6 +93,7 @@ it. Section references (§4, §5, …) point into the design document,
 - Dual-licensed under MIT OR Apache-2.0. See [`LICENSE-MIT`](LICENSE-MIT) and
   [`LICENSE-APACHE`](LICENSE-APACHE).
 
-[Unreleased]: https://github.com/lathrys-at/ruffle/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/lathrys-at/ruffle/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/lathrys-at/ruffle/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/lathrys-at/ruffle/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/lathrys-at/ruffle/releases/tag/v0.1.0

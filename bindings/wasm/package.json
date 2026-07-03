@@ -1,6 +1,6 @@
 {
   "name": "@lathrys-at/ruffle",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Weighted, adaptive, calibration-free reciprocal-rank fusion (RRF) of heterogeneous retrieval channels.",
   "license": "(MIT OR Apache-2.0)",
   "repository": {
