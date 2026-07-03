@@ -1,11 +1,5 @@
 /** The public value types: channel identity, registration, inputs, and results. */
 
-import type {
-  DirectionValue,
-  BaselineModeValue,
-  FlagValue,
-} from "./boundary.js";
-
 /**
  * Whether a higher native score means a better match, or a lower one.
  *
@@ -20,7 +14,7 @@ export const Direction = {
   /** A lower native score is a better match (negated at ingest). */
   LowerIsBetter: "lower_is_better",
 } as const;
-export type Direction = DirectionValue;
+export type Direction = (typeof Direction)[keyof typeof Direction];
 
 /**
  * How a channel's scores are standardized within the channel before comparison.
@@ -30,7 +24,7 @@ export const BaselineMode = {
   /** Standardizes each score against the channel's running mean and variance. */
   ZScore: "z_score",
 } as const;
-export type BaselineMode = BaselineModeValue;
+export type BaselineMode = (typeof BaselineMode)[keyof typeof BaselineMode];
 
 /** Why a channel was not weighted by its full discrimination score. */
 export const ChannelFlag = {
@@ -50,7 +44,7 @@ export const ChannelFlag = {
    */
   NoReference: "no_reference",
 } as const;
-export type ChannelFlag = FlagValue;
+export type ChannelFlag = (typeof ChannelFlag)[keyof typeof ChannelFlag];
 
 /** How `RuffleState.merge` treats incompatible inputs. */
 export const MergePolicy = {
@@ -146,6 +140,16 @@ export interface ChannelDiscrimination {
   readonly referenceCold: boolean;
 }
 
+/** The plain-object form `Fused.toJSON` produces, with the maps as records. */
+export interface FusedJson {
+  readonly ranking: ReadonlyArray<readonly [string, number]>;
+  readonly weights: Readonly<Record<string, number>>;
+  readonly flags: Readonly<Record<string, ChannelFlag>>;
+  readonly discrimination: Readonly<Record<string, ChannelDiscrimination>>;
+  readonly confidence: number;
+  readonly conflict: number;
+}
+
 /**
  * The outcome of fusing one query: the merged ranking plus the weights, flags, and
  * diagnostics behind it.
@@ -157,14 +161,57 @@ export interface ChannelDiscrimination {
  * reasoning is readable from the result alone. `confidence` is the top-set
  * agreement of the discriminating channels, in `[0, 1]`; `conflict` is its
  * complement, high when confident channels disagree on which items are relevant.
+ *
+ * The per-channel fields are `ReadonlyMap`s; `toJSON` converts them to plain
+ * records, so `JSON.stringify(fused)` serializes the whole result rather than the
+ * empty objects a raw `Map` stringifies to.
  */
-export interface Fused {
-  readonly ranking: ReadonlyArray<readonly [string, number]>;
-  readonly weights: ReadonlyMap<string, number>;
-  readonly flags: ReadonlyMap<string, ChannelFlag>;
-  readonly discrimination: ReadonlyMap<string, ChannelDiscrimination>;
-  readonly confidence: number;
-  readonly conflict: number;
+export class Fused {
+  private constructor(
+    readonly ranking: ReadonlyArray<readonly [string, number]>,
+    readonly weights: ReadonlyMap<string, number>,
+    readonly flags: ReadonlyMap<string, ChannelFlag>,
+    readonly discrimination: ReadonlyMap<string, ChannelDiscrimination>,
+    readonly confidence: number,
+    readonly conflict: number,
+  ) {}
+
+  /** @internal */
+  static _create(parts: {
+    ranking: ReadonlyArray<readonly [string, number]>;
+    weights: ReadonlyMap<string, number>;
+    flags: ReadonlyMap<string, ChannelFlag>;
+    discrimination: ReadonlyMap<string, ChannelDiscrimination>;
+    confidence: number;
+    conflict: number;
+  }): Fused {
+    return new Fused(
+      parts.ranking,
+      parts.weights,
+      parts.flags,
+      parts.discrimination,
+      parts.confidence,
+      parts.conflict,
+    );
+  }
+
+  /** The result with the maps as plain records, the form `JSON.stringify` uses. */
+  toJSON(): FusedJson {
+    return {
+      ranking: this.ranking,
+      weights: Object.fromEntries(this.weights),
+      flags: Object.fromEntries(this.flags),
+      discrimination: Object.fromEntries(this.discrimination),
+      confidence: this.confidence,
+      conflict: this.conflict,
+    };
+  }
+}
+
+/** The plain-object form `Divergence.toJSON` produces. */
+export interface DivergenceJson {
+  readonly perChannel: Readonly<Record<string, number>>;
+  readonly max: number;
 }
 
 /**
@@ -173,9 +220,22 @@ export interface Fused {
  * The number never gates a merge; gating is done by the model-version tag. It flags
  * a silent model swap, where two summaries have drifted far apart while their tags
  * still match. `max` is the largest per-channel distance, the single number a
- * caller can threshold on.
+ * caller can threshold on. `perChannel` is a `ReadonlyMap`; `toJSON` converts it to
+ * a plain record for `JSON.stringify`.
  */
-export interface Divergence {
-  readonly perChannel: ReadonlyMap<string, number>;
-  readonly max: number;
+export class Divergence {
+  private constructor(
+    readonly perChannel: ReadonlyMap<string, number>,
+    readonly max: number,
+  ) {}
+
+  /** @internal */
+  static _create(perChannel: ReadonlyMap<string, number>, max: number): Divergence {
+    return new Divergence(perChannel, max);
+  }
+
+  /** The divergence with the map as a plain record, the form `JSON.stringify` uses. */
+  toJSON(): DivergenceJson {
+    return { perChannel: Object.fromEntries(this.perChannel), max: this.max };
+  }
 }

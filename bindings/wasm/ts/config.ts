@@ -115,8 +115,13 @@ export interface FuseConfig {
  *
  *     Fuser.create(channels, { coupling: { enabled: true } })
  *
- * Validation runs when a `Fuser` is built, so an out-of-range knob fails at
- * construction with `ConfigError` rather than mid-query.
+ * An unknown key anywhere in the partial throws `TypeError` when the configuration
+ * is resolved: TypeScript's excess-property check only covers object literals, and
+ * a typo'd knob that merged silently would run the query at the default value with
+ * no error. A knob with the right name but a malformed value (wrong type,
+ * non-integer where an integer is expected) also surfaces as `TypeError`, at the
+ * engine boundary; a well-formed knob whose value is out of range fails at `Fuser`
+ * construction with `ConfigError`.
  */
 export interface FuseConfigInit {
   readonly discrimination?: Partial<DiscriminationConfig>;
@@ -131,14 +136,41 @@ export function defaultConfig(): FuseConfig {
   return resolveConfig();
 }
 
+// The allowed keys come from the engine's own default configuration, so the check
+// can never drift from the knobs the engine actually reads.
+function checkKeys(section: string, given: object, allowed: object): void {
+  for (const key of Object.keys(given)) {
+    if (!(key in allowed)) {
+      throw new TypeError(`unknown ${section} key ${JSON.stringify(key)}`);
+    }
+  }
+}
+
 /**
  * The full configuration a partial one resolves to: each group is the engine's
- * defaults with the given fields laid over them.
+ * defaults with the given fields laid over them. Unknown keys are refused with
+ * `TypeError`; the wasm boundary itself ignores unknown fields, so this check is
+ * the one that catches a typo'd knob.
  *
  * @internal
  */
 export function resolveConfig(init?: FuseConfigInit): FuseConfig {
   const defaults: FuseConfigDto = core.defaultConfig();
+  if (init !== undefined) {
+    checkKeys("configuration", init, defaults);
+    if (init.discrimination !== undefined) {
+      checkKeys("discrimination", init.discrimination, defaults.discrimination);
+    }
+    if (init.coupling !== undefined) {
+      checkKeys("coupling", init.coupling, defaults.coupling);
+    }
+    if (init.fusion !== undefined) {
+      checkKeys("fusion", init.fusion, defaults.fusion);
+    }
+    if (init.decay !== undefined) {
+      checkKeys("decay", init.decay, defaults.decay);
+    }
+  }
   return Object.freeze({
     discrimination: Object.freeze({
       ...defaults.discrimination,

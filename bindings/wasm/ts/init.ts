@@ -2,9 +2,12 @@
  * Loads and instantiates the wasm artifact.
  *
  * The package entry awaits this at module scope (top-level await), so the module is
- * ready to use once imported, in Node 20+ and in browsers and bundlers alike. Under
- * Node the artifact is read from disk; everywhere else it is fetched from the URL
- * the bundler or browser resolves for it.
+ * ready to use once imported, in Node 20+, in browsers, and under bundlers that
+ * support top-level await (Vite, esbuild, Rollup; webpack behind its
+ * `experiments.topLevelAwait` flag). Under Node the artifact is read from disk;
+ * everywhere else it is fetched from the URL the bundler or browser resolves for
+ * it, so a runtime with neither `node:fs` nor `fetch`-able module URLs cannot load
+ * the package.
  *
  * @internal
  */

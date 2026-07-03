@@ -8,14 +8,14 @@ import {
   type InputDto,
 } from "./boundary.js";
 import { resolveConfig, type FuseConfig, type FuseConfigInit } from "./config.js";
-import { rethrow } from "./errors.js";
+import { rethrow, RuffleError } from "./errors.js";
 import { Anchor } from "./anchor.js";
 import { RuffleState } from "./state.js";
 import {
   Direction,
+  Fused,
   type ChannelConfig,
   type ChannelInput,
-  type Fused,
 } from "./types.js";
 
 function channelDtos(channels: readonly ChannelConfig[]): ChannelDto[] {
@@ -39,6 +39,14 @@ function inputDtos(
 ): InputDto[] {
   return inputs.map((input) => {
     if ("scored" in input) {
+      // The union says one or the other; a plain-JS caller supplying both would
+      // otherwise get silent scored-wins instead of the engine's refusal.
+      if ("ranked" in input) {
+        throw new TypeError(
+          `channel input ${JSON.stringify(input.key)} carries both scored and ` +
+            "ranked items; an input is one or the other",
+        );
+      }
       // An unregistered key is skipped entirely by the engine, so its orientation
       // is never read; the fallback only keeps the boundary shape total.
       const direction = directions.get(input.key) ?? Direction.HigherIsBetter;
@@ -49,14 +57,14 @@ function inputDtos(
 }
 
 function fusedFromDto(dto: FusedDto): Fused {
-  return {
+  return Fused._create({
     ranking: dto.ranking,
     weights: dto.weights,
     flags: dto.flags,
     discrimination: dto.discrimination,
     confidence: dto.confidence,
     conflict: dto.conflict,
-  };
+  });
 }
 
 /**
@@ -77,6 +85,7 @@ function fusedFromDto(dto: FusedDto): Fused {
  */
 export class Fuser {
   #core: CoreFuser;
+  #freed = false;
   readonly #channels: readonly ChannelConfig[];
   readonly #config: FuseConfig;
   readonly #directions: ReadonlyMap<string, Direction>;
@@ -153,6 +162,7 @@ export class Fuser {
    * duplicate would double-count the channel's vote under a single weight.
    */
   fuse(inputs: readonly ChannelInput[]): Fused {
+    this.#alive();
     try {
       return fusedFromDto(this.#core.fuse(inputDtos(inputs, this.#directions)));
     } catch (e) {
@@ -204,6 +214,7 @@ export class Fuser {
    * `coupling.enabled` is set.
    */
   refreshCoupling(anchor: Anchor): void {
+    this.#alive();
     try {
       this.#core.refreshCoupling(anchor._toDto());
     } catch (e) {
@@ -214,10 +225,12 @@ export class Fuser {
   /**
    * A snapshot of the persistent baseline state, for serialization and inspection.
    *
-   * Each access returns an independent snapshot; later fuses do not mutate a
-   * previously returned state. The snapshot is restored through `Fuser.resume`.
+   * Each access crosses into the engine and returns an independent snapshot; later
+   * fuses do not mutate a previously returned state. The snapshot is restored
+   * through `Fuser.resume`.
    */
   get state(): RuffleState {
+    this.#alive();
     try {
       return RuffleState._fromCanonical(this.#core.stateJson());
     } catch (e) {
@@ -236,15 +249,28 @@ export class Fuser {
   }
 
   /**
-   * Releases the wasm-side allocation. The fuser is unusable afterwards; JS garbage
+   * Releases the wasm-side allocation. The fuser is unusable afterwards (every
+   * method throws `RuffleError`), and a second `free` is a no-op; JS garbage
    * collection does not free wasm linear memory deterministically, so a long-lived
    * host frees fusers it is done with (or holds them with `using`).
    */
   free(): void {
+    if (this.#freed) {
+      return;
+    }
+    this.#freed = true;
     this.#core.free();
   }
 
   [Symbol.dispose](): void {
     this.free();
+  }
+
+  #alive(): void {
+    if (this.#freed) {
+      throw new RuffleError(
+        "this fuser has been freed; its engine allocation is gone",
+      );
+    }
   }
 }

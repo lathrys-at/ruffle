@@ -69,11 +69,21 @@ fn merge_err(e: rf::Mismatch) -> JsValue {
     throw("merge", e.to_string())
 }
 
+fn state_err(message: String) -> JsValue {
+    throw("state", message)
+}
+
 fn internal_err(e: impl std::fmt::Display) -> JsValue {
     throw("internal", format!("internal serialization failure: {e}"))
 }
 
 // --- the typed boundary DTOs (mirrored by `ts/boundary.ts`) --------------------------
+//
+// `deny_unknown_fields` is inert under serde-wasm-bindgen, which reads known field
+// names off the JS object rather than iterating its keys, so an unknown key is
+// silently ignored here. The attribute stays for any future serde_json path, but the
+// check that catches a typo'd configuration knob lives in the TypeScript layer
+// (`resolveConfig` in `ts/config.ts`), validated against the engine's own defaults.
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -388,7 +398,7 @@ fn divergence_out(d: &rf::Divergence) -> DivergenceOut {
 }
 
 fn parse_state(s: &str) -> Result<rf::RuffleState, JsValue> {
-    serde_json::from_str(s).map_err(|e| value_err(format!("invalid ruffle state JSON: {e}")))
+    serde_json::from_str(s).map_err(|e| state_err(format!("invalid ruffle state JSON: {e}")))
 }
 
 fn state_json(state: &rf::RuffleState) -> Result<String, JsValue> {

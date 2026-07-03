@@ -18,9 +18,12 @@ import {
   RuffleError,
   RuffleState,
   STAT_VERSION,
+  StateError,
   defaultConfig,
   version,
   type ChannelConfig,
+  type ChannelInput,
+  type FuseConfigInit,
 } from "../ts/index.js";
 
 function channel(
@@ -204,7 +207,6 @@ describe("state", () => {
     const state = makeState();
     const pretty = state.toJson().replaceAll(",", ", ");
     expect(RuffleState.fromJson(pretty).toJson()).toBe(state.toJson());
-    expect(() => RuffleState.fromJson("{not json")).toThrowError(TypeError);
     expect(() => RuffleState.fromJson("{not json")).toThrowError(
       /invalid ruffle state/,
     );
@@ -235,23 +237,25 @@ describe("state", () => {
     expect(state.formatVersion).toBe(FORMAT_VERSION);
   });
 
-  test("decay halves counts and preserves means", () => {
+  test("decay returns a new state and preserves means", () => {
     const state = makeState();
     const before = state.channels.get("s")!.separation;
-    state.decay(0.5);
-    const after = state.channels.get("s")!.separation;
+    const decayed = state.decay(0.5);
+    const after = decayed.channels.get("s")!.separation;
     expect(after.count).toBeCloseTo(before.count * 0.5, 12);
     expect(after.mean).toBe(before.mean);
+    expect(state.channels.get("s")!.separation.count).toBe(before.count);
   });
 
-  test("rekey moves summaries", () => {
+  test("rekey returns a new state with the summaries moved", () => {
     const state = makeState();
-    state.rekey("s", "dense");
-    expect(state.channels.has("s")).toBe(false);
-    expect(state.channels.get("dense")!.tag).toBe("v1");
-    expect(state.fingerprint.directions.get("dense")).toBe(
+    const rekeyed = state.rekey("s", "dense");
+    expect(rekeyed.channels.has("s")).toBe(false);
+    expect(rekeyed.channels.get("dense")!.tag).toBe("v1");
+    expect(rekeyed.fingerprint.directions.get("dense")).toBe(
       Direction.HigherIsBetter,
     );
+    expect(state.channels.has("s")).toBe(true);
   });
 
   test("merge pools counts", () => {
@@ -261,6 +265,13 @@ describe("state", () => {
     );
     expect(merged.channels.get("s")!.separation.count).toBe(2.0);
     expect(divergence.max).toBe(0.0);
+  });
+
+  test("fromJson garbage raises StateError inside the hierarchy", () => {
+    expect(() => RuffleState.fromJson("{not json")).toThrowError(StateError);
+    expect(() => RuffleState.fromJson('{"format_version": 1}')).toThrowError(
+      RuffleError,
+    );
   });
 });
 
@@ -312,6 +323,105 @@ describe("anchor", () => {
   });
 });
 
+describe("results", () => {
+  test("JSON.stringify serializes the whole result through toJSON", () => {
+    const fuser = Fuser.create([channel("s")]);
+    try {
+      const fused = fuser.fuse([{ key: "s", scored: spikedPool() }]);
+      const parsed = JSON.parse(JSON.stringify(fused)) as {
+        ranking: Array<[string, number]>;
+        weights: Record<string, number>;
+        discrimination: Record<string, { g: number }>;
+        confidence: number;
+      };
+      expect(parsed.ranking).toEqual(fused.ranking.map((entry) => [...entry]));
+      expect(parsed.weights["s"]).toBe(fused.weights.get("s"));
+      expect(parsed.discrimination["s"]!.g).toBe(
+        fused.discrimination.get("s")!.g,
+      );
+      expect(parsed.confidence).toBe(fused.confidence);
+    } finally {
+      fuser.free();
+    }
+  });
+
+  test("divergence stringifies through toJSON", () => {
+    const a = makeState();
+    const b = makeState();
+    const parsed = JSON.parse(JSON.stringify(a.divergence(b))) as {
+      perChannel: Record<string, number>;
+      max: number;
+    };
+    expect(parsed.perChannel).toHaveProperty("s");
+    expect(parsed.max).toBe(0);
+  });
+});
+
+describe("error causes", () => {
+  test("boundary errors carry the raw value as cause", () => {
+    let caught: unknown;
+    try {
+      Fuser.create([channel("s")], {
+        discrimination: { gFloor: 5.0, gUpperBound: 4.0 },
+      });
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(ConfigError);
+    const cause = (caught as ConfigError).cause as { kind: string };
+    expect(cause.kind).toBe("config");
+  });
+});
+
+describe("input validation", () => {
+  test("an input with both scored and ranked is refused", () => {
+    const fuser = Fuser.create([channel("s")]);
+    try {
+      const both = {
+        key: "s",
+        scored: [["a", 1.0]],
+        ranked: ["a"],
+      } as unknown as ChannelInput;
+      expect(() => fuser.fuse([both])).toThrowError(TypeError);
+      expect(() => fuser.fuse([both])).toThrowError(/one or the other/);
+    } finally {
+      fuser.free();
+    }
+  });
+
+  test("an unknown configuration key is refused, top-level and nested", () => {
+    const typo = {
+      discrimination: { topeps: 0.1 },
+    } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], typo)).toThrowError(TypeError);
+    expect(() => Fuser.create([channel("s")], typo)).toThrowError(/topeps/);
+    const rogue = { copuling: {} } as unknown as FuseConfigInit;
+    expect(() => Fuser.create([channel("s")], rogue)).toThrowError(/copuling/);
+  });
+});
+
+describe("scale", () => {
+  test("a large scored payload fuses deterministically", () => {
+    const n = 20_000;
+    const pool: Array<[string, number]> = Array.from({ length: n }, (_, i) => [
+      `doc-${i}`,
+      Math.sin(i) * 100,
+    ]);
+    const run = (): readonly (readonly [string, number])[] => {
+      const fuser = Fuser.create([channel("s")]);
+      try {
+        return fuser.fuse([{ key: "s", scored: pool }]).ranking;
+      } finally {
+        fuser.free();
+      }
+    };
+    const first = run();
+    const second = run();
+    expect(first).toHaveLength(n);
+    expect(second).toEqual(first);
+  });
+});
+
 describe("lifecycle", () => {
   test("Symbol.dispose frees the handle", () => {
     let stateJson: string;
@@ -323,9 +433,24 @@ describe("lifecycle", () => {
     expect(stateJson).toContain('"s"');
   });
 
-  test("a freed fuser throws rather than corrupting", () => {
+  test("every operation on a freed fuser throws RuffleError", () => {
+    const fuser = Fuser.create([channel("s")]);
+    const anchor = Anchor.build(["c0"], [channel("s")], () => 1.0);
+    fuser.free();
+    expect(() => fuser.fuse([{ key: "s", scored: [["a", 1.0]] }])).toThrowError(
+      RuffleError,
+    );
+    expect(() => fuser.fuse([{ key: "s", scored: [["a", 1.0]] }])).toThrowError(
+      /freed/,
+    );
+    expect(() => fuser.state).toThrowError(/freed/);
+    expect(() => fuser.refreshCoupling(anchor)).toThrowError(/freed/);
+  });
+
+  test("free is idempotent, including through Symbol.dispose", () => {
     const fuser = Fuser.create([channel("s")]);
     fuser.free();
-    expect(() => fuser.fuse([{ key: "s", scored: [["a", 1.0]] }])).toThrow();
+    expect(() => fuser.free()).not.toThrow();
+    expect(() => fuser[Symbol.dispose]()).not.toThrow();
   });
 });

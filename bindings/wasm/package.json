@@ -19,23 +19,30 @@
     "wasm"
   ],
   "type": "module",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "ts",
     "pkg/ruffle_wasm.js",
     "pkg/ruffle_wasm.d.ts",
     "pkg/ruffle_wasm_bg.wasm",
-    "pkg/ruffle_wasm_bg.wasm.d.ts"
+    "pkg/ruffle_wasm_bg.wasm.d.ts",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
   ],
   "engines": {
     "node": ">=20"
   },
-  "sideEffects": true,
+  "sideEffects": [
+    "./dist/index.js"
+  ],
   "scripts": {
     "build": "npm run build:wasm && npm run build:ts",
     "build:wasm": "wasm-pack build --target web --out-dir pkg --no-pack --release",

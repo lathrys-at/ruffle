@@ -27,7 +27,9 @@ npm install @lathrys-at/ruffle
 ```
 
 The module instantiates its wasm at import (top-level await), so everything is ready
-to use synchronously after `import`.
+to use synchronously after `import`. This works in Node 20+, in browsers, and under
+bundlers that support top-level await: Vite, esbuild, and Rollup out of the box, and
+webpack 5 behind its `experiments.topLevelAwait` flag.
 
 ## Quick start
 

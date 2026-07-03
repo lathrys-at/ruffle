@@ -11,6 +11,15 @@ invariants (one engine, state interoperability, determinism, version lockstep,
 parity suite) are stated in full in [`python-bindings.md`](python-bindings.md) and
 apply here unchanged; the `libm` prerequisite is done in the core crate.
 
+Departures from the draft after review: `RuffleState` is an immutable value
+(`rekey` and `decay` return new states), matching the Python binding; result
+objects are classes whose `toJSON` converts their ES `Map`s to plain records, so
+`JSON.stringify` serializes them whole; a `StateError` covers a state document that
+does not parse; and unknown configuration keys are refused with `TypeError` in the
+TypeScript layer, because serde-wasm-bindgen reads known fields off a JS object and
+ignores the rest, so `deny_unknown_fields` cannot catch a typo'd knob at the
+boundary.
+
 ## Why wasm, and why it is a good home for ruffle
 
 A TypeScript binding means compiling the crate to WebAssembly. The alternative for

@@ -27,3 +27,8 @@ wasm-bindgen = "0.2"
 [lints.rust]
 unsafe_code = "forbid"
 unsafe_op_in_unsafe_fn = "deny"
+
+# Size-optimize the shipped artifact; wasm-opt preserves wasm's exact IEEE-754
+# semantics, and the parity suite asserts the output is still bit-identical.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz"]

@@ -5,6 +5,7 @@
     "declaration": true,
     "sourceMap": true,
     "declarationMap": true,
+    "stripInternal": true,
     "outDir": "dist",
     "rootDir": "ts"
   },

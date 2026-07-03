@@ -4,8 +4,8 @@ import type { BoundaryError } from "./boundary.js";
 
 /** The base class for every error Ruffle raises. */
 export class RuffleError extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = new.target.name;
   }
 }
@@ -31,6 +31,12 @@ export class ResumeError extends RuffleError {}
  */
 export class MergeError extends RuffleError {}
 
+/**
+ * A serialized state document could not be parsed: it is not JSON, or not the state
+ * schema.
+ */
+export class StateError extends RuffleError {}
+
 function isBoundaryError(e: unknown): e is BoundaryError {
   return (
     typeof e === "object" &&
@@ -49,15 +55,27 @@ export function rethrow(e: unknown): never {
   if (isBoundaryError(e)) {
     switch (e.kind) {
       case "config":
-        throw new ConfigError(e.message);
+        throw new ConfigError(e.message, { cause: e });
       case "resume":
-        throw new ResumeError(e.message);
+        throw new ResumeError(e.message, { cause: e });
       case "merge":
-        throw new MergeError(e.message);
+        throw new MergeError(e.message, { cause: e });
+      case "state":
+        throw new StateError(e.message, { cause: e });
       case "value":
-        throw new TypeError(e.message);
+        throw new TypeError(e.message, { cause: e });
       case "internal":
-        throw new RuffleError(e.message);
+        throw new RuffleError(e.message, { cause: e });
+      default: {
+        // Compile-time exhaustiveness over ErrorKind; at runtime a kind this
+        // build does not know still lands in the hierarchy instead of escaping
+        // as a raw object.
+        const unhandled: never = e.kind;
+        throw new RuffleError(
+          `unknown error kind ${String(unhandled)}: ${e.message}`,
+          { cause: e },
+        );
+      }
     }
   }
   throw e;

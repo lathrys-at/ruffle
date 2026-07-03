@@ -95,13 +95,13 @@ test("merge reconciles and is commutative", () => {
 test("state ops: rekey then decay", () => {
   const fixture = loadFixture("state_ops_rekey_decay.json");
   expect(fixture.kind).toBe("state_ops");
-  const state = RuffleState.fromJson(fixture.start_state!);
+  let state = RuffleState.fromJson(fixture.start_state!);
 
   for (const op of fixture.ops ?? []) {
     if (op.op === "rekey") {
-      state.rekey(op.from, op.to);
+      state = state.rekey(op.from, op.to);
     } else {
-      state.decay(op.factor);
+      state = state.decay(op.factor);
     }
   }
 

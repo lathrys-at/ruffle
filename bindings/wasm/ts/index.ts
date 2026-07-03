@@ -47,7 +47,13 @@ export {
   type FuseConfigInit,
   type RrfConfig,
 } from "./config.js";
-export { ConfigError, MergeError, ResumeError, RuffleError } from "./errors.js";
+export {
+  ConfigError,
+  MergeError,
+  ResumeError,
+  RuffleError,
+  StateError,
+} from "./errors.js";
 export { Fuser } from "./fuser.js";
 export {
   MeanVar,
@@ -61,13 +67,15 @@ export {
   BaselineMode,
   ChannelFlag,
   Direction,
+  Divergence,
+  Fused,
   MergePolicy,
   type ChannelConfig,
   type ChannelDiscrimination,
   type ChannelId,
   type ChannelInput,
-  type Divergence,
-  type Fused,
+  type DivergenceJson,
+  type FusedJson,
   type GoodScore,
 } from "./types.js";
 

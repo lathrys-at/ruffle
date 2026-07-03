@@ -11,30 +11,38 @@
 
 import { core } from "./boundary.js";
 import { rethrow } from "./errors.js";
-import {
-  MergePolicy,
-  Direction,
-  BaselineMode,
-  type Divergence,
-} from "./types.js";
+import { MergePolicy, Direction, BaselineMode, Divergence } from "./types.js";
 
 /**
  * Confidence-weighted streaming mean and variance, as persisted by the engine.
  *
  * `count` is the effective observation count, fractional to support pseudo-counts
  * and decay; `mean` is the running mean; `m2` is the sum of squared deviations from
- * the mean, so the population variance is `m2 / count`.
+ * the mean, so the population variance is `m2 / count`. Instances come from the
+ * state views; there is no public constructor.
  */
 export class MeanVar {
-  constructor(
+  private constructor(
     readonly count: number,
     readonly mean: number,
     readonly m2: number,
   ) {}
 
+  /** @internal */
+  static _fromPersisted(raw: {
+    count: number;
+    mean: number;
+    m2: number;
+  }): MeanVar {
+    return new MeanVar(raw.count, raw.mean, raw.m2);
+  }
+
   /**
    * The population variance `m2 / count`, zero for an empty summary and clamped so
    * rounding never yields a negative value.
+   *
+   * This mirrors the engine's definition (a derived read, not a persisted field);
+   * the persisted quantities are `count`, `mean`, and `m2` alone.
    */
   get variance(): number {
     if (this.count <= 0) {
@@ -121,7 +129,7 @@ const PERSISTED_DIRECTIONS = {
 const PERSISTED_BASELINE_MODES = { ZScore: BaselineMode.ZScore } as const;
 
 function meanVar(raw: PersistedMeanVar): MeanVar {
-  return new MeanVar(raw.count, raw.mean, raw.m2);
+  return MeanVar._fromPersisted(raw);
 }
 
 /**
@@ -131,7 +139,10 @@ function meanVar(raw: PersistedMeanVar): MeanVar {
  *
  * A state comes from `Fuser.state`, from `RuffleState.fromJson`, or from
  * `RuffleState.merge`; there is no public constructor, since an empty state is
- * created by building a `Fuser`. Its single merge operation serves three roles:
+ * created by building a `Fuser`. A state is an immutable value: every operation
+ * (`merge`, `rekey`, `decay`) returns a new state, `equals` follows the canonical
+ * bytes, and equal states are interchangeable. Its single merge operation serves
+ * three roles:
  * streaming update as new queries arrive, operator prior seeded before any traffic,
  * and cross-deployment reconciliation of states accumulated on separate machines.
  * Every merge is gated on a required per-channel model-version tag, so a model
@@ -143,18 +154,21 @@ function meanVar(raw: PersistedMeanVar): MeanVar {
  * bytes identical across platforms and runtimes.
  */
 export class RuffleState {
-  #json: string;
+  readonly #json: string;
+  #parsedCache: PersistedState | undefined;
 
   private constructor(canonical: string) {
     this.#json = canonical;
   }
 
   /**
-   * Loads a state from its JSON serialization, validating it in the process.
+   * Loads a state from its JSON serialization.
    *
    * The input is re-serialized canonically, so `toJson` on the result yields the
-   * engine's canonical bytes even when the input was formatted differently. Throws
-   * `TypeError` when the input is not a well-formed serialized state.
+   * engine's canonical bytes even when the input was formatted differently. Loading
+   * checks the document's shape against the state schema, not its versions; the
+   * format and statistic version gates run at `Fuser.resume` and `merge`. Throws
+   * `StateError` when the input is not a well-formed serialized state.
    */
   static fromJson(data: string): RuffleState {
     try {
@@ -199,7 +213,7 @@ export class RuffleState {
       const out = core.stateMerge(parts.map((p) => p.#json));
       return [
         new RuffleState(out.merged),
-        { perChannel: out.divergence.perChannel, max: out.divergence.max },
+        Divergence._create(out.divergence.perChannel, out.divergence.max),
       ];
     } catch (e) {
       rethrow(e);
@@ -219,43 +233,45 @@ export class RuffleState {
   divergence(other: RuffleState): Divergence {
     try {
       const out = core.stateDivergence(this.#json, other.#json);
-      return { perChannel: out.perChannel, max: out.max };
+      return Divergence._create(out.perChannel, out.max);
     } catch (e) {
       rethrow(e);
     }
   }
 
   /**
-   * Renames a channel's key, moving all of its statistics with it: the channel
-   * summary, every pair summary that referenced the old key, and the channel's
-   * orientation in the fingerprint.
+   * Returns a state with a channel's key renamed and all of its statistics moved
+   * with it: the channel summary, every pair summary that referenced the old key,
+   * and the channel's orientation in the fingerprint. The original state is
+   * unchanged.
    *
    * When the destination already exists, the moved data and the existing data are
    * merged, and the destination keeps its own model-version tag and orientation:
    * the caller is asserting that the old key's history belongs to the channel
-   * already living under the new one. A no-op rename leaves the state unchanged.
+   * already living under the new one. A no-op rename returns an equal state.
    * Unlike `merge`, rekey runs no tag gate; it is a deliberate rename and cannot
    * fail.
    */
-  rekey(fromKey: string, toKey: string): void {
+  rekey(fromKey: string, toKey: string): RuffleState {
     try {
-      this.#json = core.stateRekey(this.#json, fromKey, toKey);
+      return new RuffleState(core.stateRekey(this.#json, fromKey, toKey));
     } catch (e) {
       rethrow(e);
     }
   }
 
   /**
-   * Scales the confidence of every persisted summary down by `factor`, shrinking
-   * effective counts while leaving means and variances unchanged.
+   * Returns a state with the confidence of every persisted summary scaled down by
+   * `factor`, shrinking effective counts while leaving means and variances
+   * unchanged. The original state is unchanged.
    *
    * `factor` is clamped to `[0, 1]`. Decay is the one operation that breaks the
    * exactness of `merge`: decaying then merging no longer gives the same result as
    * merging then decaying.
    */
-  decay(factor: number): void {
+  decay(factor: number): RuffleState {
     try {
-      this.#json = core.stateDecay(this.#json, factor);
+      return new RuffleState(core.stateDecay(this.#json, factor));
     } catch (e) {
       rethrow(e);
     }
@@ -283,10 +299,7 @@ export class RuffleState {
     };
   }
 
-  /**
-   * The per-channel summaries, keyed by join handle. A snapshot: later mutations of
-   * the state are not reflected in a previously returned map.
-   */
+  /** The per-channel summaries, keyed by join handle. */
   get channels(): ReadonlyMap<string, ChannelSummary> {
     const out = new Map<string, ChannelSummary>();
     for (const [key, raw] of Object.entries(this.#parsed().channels)) {
@@ -299,10 +312,7 @@ export class RuffleState {
     return out;
   }
 
-  /**
-   * The per-pair coupling summaries, one entry per canonical (sorted) channel pair.
-   * A snapshot, like `channels`.
-   */
+  /** The per-pair coupling summaries, one entry per canonical (sorted) channel pair. */
   get pairs(): readonly PairEntry[] {
     return this.#parsed().pairs.map(([pair, raw]) => ({
       channels: [pair[0], pair[1]],
@@ -317,7 +327,9 @@ export class RuffleState {
 
   #parsed(): PersistedState {
     // The bytes come from the engine's canonical serializer (every constructor
-    // funnels through it), so the shape assertion holds by construction.
-    return JSON.parse(this.#json) as PersistedState;
+    // funnels through it), so the shape assertion holds by construction. The state
+    // is immutable, so the parse is done once and cached.
+    this.#parsedCache ??= JSON.parse(this.#json) as PersistedState;
+    return this.#parsedCache;
   }
 }

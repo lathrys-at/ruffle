@@ -18,7 +18,13 @@ export type FlagValue =
   | "ranks_only_default_weighted"
   | "degenerate_separation"
   | "no_reference";
-export type ErrorKind = "config" | "resume" | "merge" | "value" | "internal";
+export type ErrorKind =
+  | "config"
+  | "resume"
+  | "merge"
+  | "state"
+  | "value"
+  | "internal";
 
 export interface GoodScoreDto {
   readonly typical: number;
