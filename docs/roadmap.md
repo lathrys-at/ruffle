@@ -4,50 +4,41 @@ A living list of planned and candidate changes. Items move out of this document
 when they ship (into the changelog) or when they are rejected (with a note here
 recording why, so the reasoning is not lost).
 
-## Planned for 0.3
-
-### Operator-declared base weights
-
-A `base_weight` field on `ChannelConfig` (default 1.0), multiplied into the
-channel's weight alongside the adaptive discrimination factor, so the final
-per-query weight is `base_weight * g`.
-
-Ruffle deliberately does not learn that one channel is globally better than
-another: that is cross-channel, label-bound information outside what per-channel
-statistics can identify. But an operator who has run a labeled evaluation holds
-exactly that information, and today the API gives them nowhere to put it. The
-field lets the operator declare a fixed cross-channel tilt while Ruffle keeps
-adapting per query around it, the same division of labor as `GoodScore`: the
-engine learns what it can from traffic, the operator declares what only labels
-can establish.
-
-The motivating case from the evaluation harness is fiqa under a strong dense
-model, where the dense channel alone far outscores equal-weight fusion and the
-label-fitted oracle puts all its weight on dense. No calibration-free method can
-see that from the inside. With `base_weight`, the oracle's fixed weights become
-a configuration any operator with an evaluation set can reach, and Ruffle's
-per-query adjustment composes on top.
-
-Scope notes: config, not persisted state, so no state format version bump. The
-bindings read defaults from the engine, so they pick the field up without
-drift. The evaluation harness should gain a condition that sets oracle-derived
-base weights and measures the composed result against the oracle ceiling.
-
 ## Proposed for 0.4
 
-### Feedback-learned channel weights
+### Label-efficient cross-channel weighting
 
-A cumulative version of `base_weight`: the engine consumes explicit relevance
-judgments whenever they exist, in any quantity, and maintains the
-cross-channel tilt itself as a bounded, shrunk, mergeable per-channel
-statistic. Includes active grading guidance (the conflict diagnostic as an
-acquisition function for which queries to grade) and explicitly excludes
-implicit click feedback until presentation bias has its own evaluation. First
-state format bump since v2. Full design in
-[`proposals/feedback-learned-weights.md`](proposals/feedback-learned-weights.md);
-adversarial review pending before an implementation issue is opened.
+Two stages. The first ships the demonstrated benefit with no engine change; the
+second is an experiment that decides whether a persisted layer follows.
+
+Stage 1 is an offline fit helper: graded queries and their per-channel runs go
+in, a fitted `base_weight` per channel (floored at a small positive value) comes
+out. It writes channel configuration, not state, so it needs no format change.
+It carries the fitted-weights experiment's demonstrated gain, most of the
+label-fitted ceiling from a few dozen graded queries on dominant-channel
+collections, into a deployable tool.
+
+Stage 2 is an estimator bake-off in the harness: which statistic a cumulative
+feedback layer should learn, tested against the Stage 1 helper at equal judgment
+budget with a do-no-harm tail gate against warm Ruffle. It runs against the
+helper and the harness, with no engine or state change.
+
+A cumulative, persisted feedback layer follows only if an estimator survives
+Stage 2. It is tracked as a candidate below until then. Full design and the open
+questions are in
+[`proposals/feedback-learned-weights.md`](proposals/feedback-learned-weights.md).
 
 ## Candidate, not yet committed
+
+### Persisted feedback-learned weights
+
+The cumulative form of the 0.4 offline helper: the engine consumes explicit
+relevance judgments and maintains the cross-channel tilt itself as a bounded,
+shrunk, mergeable statistic, with a state format bump and a state migration path.
+Committed only if the 0.4 bake-off selects an estimator that beats the offline
+helper at equal judgment budget and passes the do-no-harm tail gate. It would be
+the first state format bump since v2. Design and open questions in
+[`proposals/feedback-learned-weights.md`](proposals/feedback-learned-weights.md).
 
 ### Heterogeneous-channel evaluation
 
