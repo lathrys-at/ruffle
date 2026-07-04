@@ -82,12 +82,10 @@ outnumber losses in every column and the 5th-percentile delta stays near
 zero, so the mean gains are not bought with per-query damage.
 
 The clean-benchmark setting is also the regime where adaptive weighting has
-the least to offer, because healthy channels reading the same text rise and
-fall together. The degraded-channel experiment in [RESULTS.md](RESULTS.md)
-measures the other regime: when a channel intermittently fails, plain RRF
-absorbs the full damage on every affected query, while Ruffle detects the
-departure from that channel's own norm and recovers most of the loss. The
-failure mode it cannot see, a channel serving internally healthy scores over
-the wrong content, is measured there too.
+the least to offer: healthy channels reading the same text rise and fall
+together, so there is little per-query variation in channel usefulness for
+the weighting to work with. Deployments with a more heterogeneous channel mix
+present more of that variation; measuring Ruffle under such a mix is future
+work.
 
 MS MARCO passage (8.8M documents, dev plus TREC-DL 2019/2020) is rerunning under the current dense model and will be added when it completes.
