@@ -75,6 +75,32 @@ class TestConfig:
         with pytest.raises(ruffle.ConfigError, match="g_upper_bound"):
             Fuser([semantic], bad)
 
+    def test_base_weight_default_is_neutral(self) -> None:
+        semantic = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER)
+        assert semantic.base_weight == 1.0
+
+    def test_base_weight_tilts_fused_weights(self) -> None:
+        a = ChannelConfig(ChannelId("a", "v1"), Direction.HIGHER_IS_BETTER, base_weight=3.0)
+        b = ChannelConfig(ChannelId("b", "v1"), Direction.HIGHER_IS_BETTER)
+        prior = Fuser([a, b]).state
+        fused = Fuser.fuse_stateless(
+            [
+                ChannelInput.scored(a, spiked_pool()),
+                ChannelInput.scored(b, spiked_pool()),
+            ],
+            [a, b],
+            prior,
+        )
+        # Cold adaptive weights are neutral, so the fused weights are the declared
+        # 3:1 tilt renormalized to sum to the channel count.
+        assert fused.weights["a"] == pytest.approx(1.5)
+        assert fused.weights["b"] == pytest.approx(0.5)
+
+    def test_invalid_base_weight_raises_at_construction(self) -> None:
+        bad = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER, base_weight=-1.0)
+        with pytest.raises(ruffle.ConfigError, match="base weight"):
+            Fuser([bad])
+
     def test_invalid_good_score_raises_at_construction(self) -> None:
         bad = ChannelConfig(
             ChannelId("s", "v1"),

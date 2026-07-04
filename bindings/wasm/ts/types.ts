@@ -94,12 +94,19 @@ export interface ChannelId {
  * `id` and `direction` are declared once at channel configuration rather than per
  * query. `goodScore` is the optional declared reference for the absolute-goodness
  * statistic; when absent, the reference is learned from early traffic and the
- * absolute-goodness statistic cold-starts.
+ * absolute-goodness statistic cold-starts. `baseWeight` is an operator-declared
+ * static multiplier on the channel's adaptive per-query weight (the fused weight
+ * is `baseWeight * g`, renormalized over the present channels); the engine never
+ * learns cross-channel quality, so a tilt established from labeled evaluation is
+ * declared here and the per-query adaptation composes on top. Defaults to `1.0`;
+ * `0` silences the channel's votes while its baselines keep updating. Must be
+ * finite and non-negative.
  */
 export interface ChannelConfig {
   readonly id: ChannelId;
   readonly direction: Direction;
   readonly goodScore?: GoodScore | undefined;
+  readonly baseWeight?: number | undefined;
 }
 
 /**

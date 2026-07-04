@@ -89,6 +89,7 @@ struct ChannelArg {
     tag: String,
     direction: String,
     good_score: Option<GoodScoreArg>,
+    base_weight: f64,
 }
 
 #[derive(FromPyObject)]
@@ -160,7 +161,8 @@ fn to_channel_configs(channels: Vec<ChannelArg>) -> PyResult<Vec<rf::ChannelConf
                 parse_direction(&c.direction)?,
                 c.good_score
                     .map(|g| rf::GoodScore::new(g.typical, g.good, g.weight)),
-            ))
+            )
+            .with_base_weight(c.base_weight))
         })
         .collect()
 }

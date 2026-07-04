@@ -405,6 +405,11 @@ fn validate_registrations(configs: &[ChannelConfig], cfg: &FuseConfig) -> Result
                 });
             }
         }
+        if !c.base_weight.is_finite() || c.base_weight < 0.0 {
+            return Err(ConfigError::InvalidBaseWeight {
+                channel: c.id.key.clone(),
+            });
+        }
     }
     Ok(())
 }
@@ -446,6 +451,42 @@ fn validate_against_state(
         }
     }
     Ok(())
+}
+
+/// Applies the operator-declared base weights on top of the redundancy-discounted
+/// adaptive weights, then renormalizes so the weights again sum to `N`, the number of
+/// present channels (the fusion invariant; ratios alone decide the ranking).
+///
+/// The multiplier sits outside the coupling stage on purpose: the redundancy discount
+/// reasons about evidence the channels produced, and a declared tilt is not evidence.
+/// When every product is zero (all present channels declared silent, or silenced
+/// channels carried all the adaptive weight) the weights are left as the zero map
+/// rather than renormalized, and the fusion yields the empty-evidence ordering.
+fn apply_base_weights(
+    mut weights: BTreeMap<String, f64>,
+    configs: &BTreeMap<String, ChannelConfig>,
+) -> BTreeMap<String, f64> {
+    let mut tilted = false;
+    for (key, w) in weights.iter_mut() {
+        // Present channels are always registered (fuse_core skips unregistered inputs),
+        // so the lookup is total; default defensively to neutral anyway.
+        let base = configs.get(key).map_or(1.0, |c| c.base_weight);
+        if base != 1.0 {
+            tilted = true;
+        }
+        *w *= base;
+    }
+    if !tilted {
+        return weights;
+    }
+    let total: f64 = weights.values().sum();
+    if total > 0.0 {
+        let scale = weights.len() as f64 / total;
+        for w in weights.values_mut() {
+            *w *= scale;
+        }
+    }
+    weights
 }
 
 /// Builds the per-channel lookup keyed by each config's join handle `id.key`.
@@ -577,15 +618,16 @@ fn fuse_core<Id: Hash + Eq + Clone>(
         })
         .collect();
     let coupled = coupled_weights(&g_map, &redundancy, &keys, &cfg.coupling);
+    let weights = apply_base_weights(coupled.weights, configs);
 
     // Step 4: fuse by weighted RRF. Fuse only the registered inputs; in the common
     // case every input is registered and the input slice is reused as-is, so the
     // potentially-large score vectors are not cloned.
     let ranking = if registered.len() == obs.len() {
-        weighted_rrf(obs, &coupled.weights, &cfg.fusion)
+        weighted_rrf(obs, &weights, &cfg.fusion)
     } else {
         let filtered: Vec<ChannelInput<Id>> = registered.iter().map(|o| (*o).clone()).collect();
-        weighted_rrf(&filtered, &coupled.weights, &cfg.fusion)
+        weighted_rrf(&filtered, &weights, &cfg.fusion)
     };
 
     // Step 6: diagnostics from set membership over the discriminating channels (§5.5),
@@ -598,7 +640,7 @@ fn fuse_core<Id: Hash + Eq + Clone>(
 
     let fused = Fused {
         ranking,
-        weights: coupled.weights,
+        weights,
         flags,
         discrimination: reads.clone(),
         confidence,
@@ -1110,6 +1152,81 @@ mod tests {
             "the discriminating channel should carry more weight: {:?}",
             fused.weights
         );
+    }
+
+    // --- 5b. operator base weights --------------------------------------------------
+
+    #[test]
+    fn base_weight_default_leaves_weights_untouched() {
+        let a = chan("a", None);
+        let b = chan("b", None);
+        assert_abs_diff_eq!(a.base_weight, 1.0, epsilon = 1e-12);
+        let cfgs = [a.clone(), b.clone()];
+        let prior = empty_state();
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 0)];
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &prior, &FuseConfig::default()).unwrap();
+        for w in fused.weights.values() {
+            assert_abs_diff_eq!(*w, 1.0, epsilon = 1e-9);
+        }
+    }
+
+    #[test]
+    fn base_weight_tilts_and_renormalizes() {
+        // A declared 3:1 tilt over cold channels: the adaptive weights are neutral, so
+        // the fused weights are the renormalized declaration itself, summing to N.
+        let a = chan("a", None).with_base_weight(3.0);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let prior = empty_state();
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 0)];
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &prior, &FuseConfig::default()).unwrap();
+
+        let total: f64 = fused.weights.values().sum();
+        assert_abs_diff_eq!(total, 2.0, epsilon = 1e-9);
+        assert_abs_diff_eq!(fused.weights[&key("a")], 1.5, epsilon = 1e-9);
+        assert_abs_diff_eq!(fused.weights[&key("b")], 0.5, epsilon = 1e-9);
+        // The ranking is the weighted RRF under exactly those weights.
+        let direct = weighted_rrf(&obs, &fused.weights, &FuseConfig::default().fusion);
+        assert_eq!(fused.ranking, direct);
+    }
+
+    #[test]
+    fn base_weight_zero_silences_a_channel() {
+        // Channel a is muted; the fusion is decided by b alone, and a's weight reads 0.
+        let a = chan("a", None).with_base_weight(0.0);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let prior = empty_state();
+        let obs = vec![scored_obs(&a, 3), scored_obs(&b, 0)];
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &prior, &FuseConfig::default()).unwrap();
+
+        assert_abs_diff_eq!(fused.weights[&key("a")], 0.0, epsilon = 1e-12);
+        let solo = vec![scored_obs(&b, 0)];
+        let direct = weighted_rrf(
+            &solo,
+            &BTreeMap::from([(key("b"), 1.0)]),
+            &FuseConfig::default().fusion,
+        );
+        // The muted channel's candidates still enter the union, carrying zero votes,
+        // so they trail the list; the scored prefix is b's ordering exactly.
+        let direct_ids: Vec<u32> = direct.iter().map(|r| r.0).collect();
+        let fused_ids: Vec<u32> = fused.ranking.iter().map(|r| r.0).collect();
+        assert_eq!(fused_ids[..direct_ids.len()], direct_ids[..]);
+        for entry in &fused.ranking[direct_ids.len()..] {
+            assert_abs_diff_eq!(entry.1, 0.0, epsilon = 1e-12);
+        }
+    }
+
+    #[test]
+    fn base_weight_rejects_non_finite_and_negative() {
+        for bad in [f64::NAN, f64::INFINITY, -0.5] {
+            let a = chan("a", None).with_base_weight(bad);
+            let err = Fuser::new(&[a], FuseConfig::default()).unwrap_err();
+            assert!(
+                matches!(err, ConfigError::InvalidBaseWeight { ref channel } if channel == &key("a")),
+                "expected InvalidBaseWeight, got {err:?}"
+            );
+        }
     }
 
     #[test]

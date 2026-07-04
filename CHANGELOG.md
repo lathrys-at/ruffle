@@ -7,6 +7,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `ChannelConfig.base_weight` (Rust `with_base_weight`, Python `base_weight`,
+  TypeScript `baseWeight`): an operator-declared static weight multiplier on the
+  channel's adaptive per-query weight. The fused weight is `base_weight * g`,
+  renormalized over the channels present on the query, with the redundancy discount
+  still operating on the adaptive part alone. The engine never learns that one
+  channel is globally better than another, since that is cross-channel information
+  only relevance labels can establish; the field is where an operator who holds such
+  labels declares the tilt, and the per-query adaptation composes on top. Defaults
+  to `1.0` (no declaration); `0.0` legally silences a channel's votes while its
+  baselines keep updating; non-finite and negative values are refused at
+  construction. Configuration, not persisted state: no state format change.
+
 ### Changed
 
 - Four discrimination defaults are retuned from a configuration search against the
