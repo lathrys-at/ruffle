@@ -929,14 +929,22 @@ mod tests {
     fn diagnostic_pool_exactly_at_top_m_reads_whole_pool() {
         // A qualifying pool of EXACTLY top_m items: the top-m set is the whole pool, no
         // selection needed, and the fuse must not panic on the boundary (an off-by-one
-        // in the selection guard indexes out of bounds here).
+        // in the selection guard indexes out of bounds here). top_m is pinned to the
+        // pool size so the boundary holds regardless of the shipped default.
+        let cfg = FuseConfig {
+            discrimination: DiscriminationConfig {
+                top_m: 10,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
         let pool: Vec<(u32, f64)> = (0..10u32).map(|i| (i, i as f64)).collect();
-        assert_eq!(pool.len(), DiscriminationConfig::default().top_m);
+        assert_eq!(pool.len(), cfg.discrimination.top_m);
 
         let a = chan("a", None);
         let b = chan("b", None);
         let state = warm_state_for(&["a", "b"], raw_sep_of_pool(&pool));
-        let mut f = Fuser::resume(&[a.clone(), b.clone()], state, FuseConfig::default()).unwrap();
+        let mut f = Fuser::resume(&[a.clone(), b.clone()], state, cfg).unwrap();
 
         let fused = f.fuse(&[
             ChannelInput {

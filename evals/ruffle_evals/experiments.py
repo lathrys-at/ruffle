@@ -32,7 +32,7 @@ import random
 from ruffle_evals import SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Run
 from ruffle_evals.evaluate import evaluate, paired_p
-from ruffle_evals.fusion import channel_configs, rrf, ruffle_warm
+from ruffle_evals.fusion import aggressive_config, channel_configs, rrf, ruffle_warm
 
 __all__ = ["CURVE_SIZES", "DEGRADED_MODES", "degraded", "learning_curve"]
 
@@ -98,10 +98,16 @@ def degraded(
 
         broken_rrf = rrf(runs4, eval_qids, keys=keys4)
         warm = ruffle_warm(runs4, warm_qids, eval_qids, configs=configs4)
+        # Aggressive profile without live channel models: the sharpened
+        # discrimination runs, the redundancy discount stays gated off.
+        aggressive = ruffle_warm(
+            runs4, warm_qids, eval_qids, configs=configs4, config=aggressive_config()
+        )
 
         conditions: dict = {}
         broken_metrics, broken_ndcg = evaluate(qrels, broken_rrf.rankings)
         warm_metrics, warm_ndcg = evaluate(qrels, warm.rankings)
+        aggressive_metrics, aggressive_ndcg = evaluate(qrels, aggressive.rankings)
         conditions["rrf-clean"] = {
             "metrics": clean_metrics,
             "p_vs_rrf_broken": paired_p(broken_ndcg, clean_ndcg),
@@ -116,6 +122,12 @@ def degraded(
             "mean_weights": warm.mean_weights(keys4),
             "mean_conflict": warm.mean_conflict(),
         }
+        conditions["ruffle-warm-aggressive"] = {
+            "metrics": aggressive_metrics,
+            "p_vs_rrf_broken": paired_p(broken_ndcg, aggressive_ndcg),
+            "mean_weights": aggressive.mean_weights(keys4),
+            "mean_conflict": aggressive.mean_conflict(),
+        }
         entry: dict = {"conditions": conditions}
         if failures:
             eval_failed = [q for q in eval_qids if q in failures]
@@ -125,6 +137,12 @@ def degraded(
             ) / max(len(eval_failed), 1)
             entry["broken_weight_on_healthy"] = sum(
                 warm.weights[q][_BROKEN] for q in eval_healthy
+            ) / max(len(eval_healthy), 1)
+            entry["aggressive_broken_weight_on_failed"] = sum(
+                aggressive.weights[q][_BROKEN] for q in eval_failed
+            ) / max(len(eval_failed), 1)
+            entry["aggressive_broken_weight_on_healthy"] = sum(
+                aggressive.weights[q][_BROKEN] for q in eval_healthy
             ) / max(len(eval_healthy), 1)
             entry["failed_eval_queries"] = len(eval_failed)
         result["modes"][mode] = entry

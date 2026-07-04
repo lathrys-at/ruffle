@@ -21,6 +21,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   baselines keep updating; non-finite and negative values are refused at
   construction. Configuration, not persisted state: no state format change.
 
+### Changed
+
+- Four discrimination defaults are retuned from a configuration search against the
+  BEIR evaluation harness (`evals/`): `top_eps` 0.05 → 0.10, `top_m` 10 → 5,
+  `winsor_z` 4.0 → 2.5, and `denom_floor_frac` 0.5 → 0.75. All four change how the
+  statistics are measured, none change how strongly the weights respond: the top
+  slice is wider, the goodness read averages a sharper fixed count, outlier reads
+  are clamped earlier, and a near-tied bulk is floored harder. On the harness's six
+  collection groups the retuned defaults match or beat the previous ones on every
+  group (macro nDCG@10 0.4853 against 0.4838, with the largest gain on MS MARCO
+  dev, p = 0.0004), with the same recall-safe floor: stateless fusion with an empty
+  prior still reduces exactly to unweighted RRF. Persisted state is unaffected; the
+  values are configuration, not format.
+
 ## [0.2.0] - 2026-07-03
 
 The first bindings release: the same engine, callable from Python and TypeScript,

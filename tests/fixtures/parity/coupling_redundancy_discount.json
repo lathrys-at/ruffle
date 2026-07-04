@@ -35,23 +35,23 @@
       "factor": 0.98
     },
     "discrimination": {
-      "denom_floor_frac": 0.5,
+      "denom_floor_frac": 0.75,
       "g_floor": 0.25,
       "g_slope": 1.0,
       "g_upper_bound": 4.0,
       "min_count_for_z": 5.0,
       "min_distinct_values": 8,
       "shrink_pool_size": 20,
-      "top_eps": 0.05,
-      "top_m": 10,
-      "winsor_z": 4.0
+      "top_eps": 0.1,
+      "top_m": 5,
+      "winsor_z": 2.5
     },
     "fusion": {
       "rrf_eta": 60.0
     }
   },
   "description": "Coupling enabled: two anchor refreshes accumulate a strongly correlated alpha-beta pair and a near-independent gamma, clearing the reliability, refresh, and stability gates, so the discount moves weight at the following fuses.",
-  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"alpha\":\"HigherIsBetter\",\"beta\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{\"alpha\":{\"separation\":{\"count\":2.0,\"mean\":20.176395530357645,\"m2\":1.3572412955464226},\"reference\":{\"count\":2.0,\"mean\":2.2849692038357947,\"m2\":0.0149476363042542},\"tag\":\"dense-v1\"},\"beta\":{\"separation\":{\"count\":2.0,\"mean\":27.474320784283734,\"m2\":202.70857838561116},\"reference\":{\"count\":2.0,\"mean\":2.313595959384349,\"m2\":0.01981886254400705},\"tag\":\"dense-v2-distilled\"},\"gamma\":{\"separation\":{\"count\":2.0,\"mean\":8.553008273160003,\"m2\":0.7215020460511252},\"reference\":{\"count\":2.0,\"mean\":0.17513723147407062,\"m2\":0.00021053942055927717},\"tag\":\"recount-v1\"}},\"pairs\":[[[\"alpha\",\"beta\"],{\"redundancy\":{\"count\":80.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":2.0}],[[\"alpha\",\"gamma\"],{\"redundancy\":{\"count\":68.0,\"mean\":0.1494601871728485,\"m2\":0.0},\"refreshes\":2.0}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":68.0,\"mean\":0.14594980834439514,\"m2\":0.0},\"refreshes\":2.0}]]}",
+  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"alpha\":\"HigherIsBetter\",\"beta\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{\"alpha\":{\"separation\":{\"count\":2.0,\"mean\":10.620703147899528,\"m2\":0.4517840148956977},\"reference\":{\"count\":2.0,\"mean\":3.0807549652617334,\"m2\":0.019168160463513977},\"tag\":\"dense-v1\"},\"beta\":{\"separation\":{\"count\":2.0,\"mean\":11.123471345987435,\"m2\":8.949052792392365},\"reference\":{\"count\":2.0,\"mean\":3.1053392424137094,\"m2\":0.01845391326337451},\"tag\":\"dense-v2-distilled\"},\"gamma\":{\"separation\":{\"count\":2.0,\"mean\":4.63282679460304,\"m2\":0.21660482186690913},\"reference\":{\"count\":2.0,\"mean\":1.6461321301201814,\"m2\":0.000032447003783786154},\"tag\":\"recount-v1\"}},\"pairs\":[[[\"alpha\",\"beta\"],{\"redundancy\":{\"count\":80.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":2.0}],[[\"alpha\",\"gamma\"],{\"redundancy\":{\"count\":68.0,\"mean\":0.1494601871728485,\"m2\":0.0},\"refreshes\":2.0}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":68.0,\"mean\":0.14594980834439514,\"m2\":0.0},\"refreshes\":2.0}]]}",
   "kind": "session",
   "name": "coupling_redundancy_discount",
   "steps": [
@@ -423,23 +423,23 @@
           "alpha": {
             "degenerate_separation": false,
             "g": 1.0,
-            "raw_separation": 19.352611184929053,
+            "raw_separation": 10.145422170531562,
             "reference_cold": true,
-            "top_m_average": 2.1985179565797424
+            "top_m_average": 2.982856649485838
           },
           "beta": {
             "degenerate_separation": true,
             "g": 1.0,
-            "raw_separation": 37.54180752094277,
+            "raw_separation": 13.23877898228911,
             "reference_cold": true,
-            "top_m_average": 2.2140498330307663
+            "top_m_average": 3.0092821935745575
           },
           "gamma": {
             "degenerate_separation": false,
             "g": 1.0,
-            "raw_separation": 9.153633799611853,
+            "raw_separation": 4.961920111055159,
             "reference_cold": true,
-            "top_m_average": 0.18539733431369357
+            "top_m_average": 1.6501599709675703
           }
         },
         "flags": {
@@ -1018,23 +1018,23 @@
           "alpha": {
             "degenerate_separation": false,
             "g": 1.0,
-            "raw_separation": 21.000179875786234,
+            "raw_separation": 11.095984125267494,
             "reference_cold": true,
-            "top_m_average": 2.371420451091847
+            "top_m_average": 3.1786532810376293
           },
           "beta": {
             "degenerate_separation": false,
             "g": 1.0,
-            "raw_separation": 17.4068340476247,
+            "raw_separation": 9.008163709685759,
             "reference_cold": true,
-            "top_m_average": 2.4131420857379324
+            "top_m_average": 3.2013962912528617
           },
           "gamma": {
             "degenerate_separation": false,
             "g": 1.0,
-            "raw_separation": 7.952382746708152,
+            "raw_separation": 4.303733478150921,
             "reference_cold": true,
-            "top_m_average": 0.1648771286344477
+            "top_m_average": 1.6421042892727928
           }
         },
         "flags": {

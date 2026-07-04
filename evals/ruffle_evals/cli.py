@@ -18,16 +18,21 @@ import sys
 import ruffle
 
 from ruffle_evals import RESULTS_DIR, SEED
-from ruffle_evals.baselines import borda, combmnz, combsum, isr, oracle_rrf
 from ruffle_evals.channels import CHANNEL_KEYS, Channels
 from ruffle_evals.datasets import DATASETS, DEFAULT_DATASETS, load
-from ruffle_evals.evaluate import evaluate, paired_p
 from ruffle_evals.experiments import DEGRADED_MODES, degraded, learning_curve
-from ruffle_evals.fusion import FusionOutcome, rrf, ruffle_cold, ruffle_warm, split_queries
+from ruffle_evals.fusion import split_queries
+from ruffle_evals.heavy import run_cqadupstack, run_msmarco
+from ruffle_evals.protocol import main_conditions
 
 __all__ = ["main"]
 
-_BASELINE = "rrf"
+# The heavy collections run through dedicated runners (composite aggregation,
+# multi-evaluation-set warm transfer) rather than the generic per-dataset path,
+# and skip the degraded/curve experiments.
+_HEAVY = {"cqadupstack": run_cqadupstack, "msmarco": run_msmarco}
+
+_SUMMARY_ORDER = (*DATASETS, *_HEAVY)
 
 
 def _rounded(value):
@@ -42,67 +47,29 @@ def _rounded(value):
     return value
 
 
-def _main_conditions(runs, channels, qrels, warm_qids, eval_qids, refreshes) -> dict:
-    rankings: dict[str, dict] = {}
-    outcomes: dict[str, FusionOutcome | None] = {}
-    for key in CHANNEL_KEYS:
-        rankings[key] = {qid: runs[key].get(qid, []) for qid in eval_qids}
-        outcomes[key] = None
-    for name, ranking in (
-        ("borda", borda(runs, eval_qids)),
-        ("isr", isr(runs, eval_qids)),
-        ("combsum", combsum(runs, eval_qids)),
-        ("combmnz", combmnz(runs, eval_qids)),
-    ):
-        rankings[name] = ranking
-        outcomes[name] = None
-    for name, outcome in (
-        (_BASELINE, rrf(runs, eval_qids)),
-        ("ruffle-cold", ruffle_cold(runs, eval_qids)),
-        ("ruffle-warm", ruffle_warm(runs, warm_qids, eval_qids)),
-        (
-            "ruffle-warm-coupled",
-            ruffle_warm(
-                runs, warm_qids, eval_qids, channels=channels, coupling=True, refreshes=refreshes
-            ),
-        ),
-    ):
-        rankings[name] = outcome.rankings
-        outcomes[name] = outcome
-    oracle_rankings, oracle_weights = oracle_rrf(runs, qrels, eval_qids)
-    rankings["rrf-oracle"] = oracle_rankings
-    outcomes["rrf-oracle"] = None
-
-    conditions = {}
-    per_queries = {}
-    baseline_per_query = None
-    for condition, ranking in rankings.items():
-        aggregate, per_query = evaluate(qrels, ranking)
-        outcome = outcomes[condition]
-        # The per-query nDCG vector feeds the paired test but is not persisted:
-        # it is thousands of lines per collection in the committed results, and
-        # regenerable exactly from the fixed seed and the cached runs.
-        per_queries[condition] = per_query
-        conditions[condition] = {
-            "metrics": aggregate,
-            "mean_weights": None if outcome is None else outcome.mean_weights(CHANNEL_KEYS),
-            "mean_conflict": None if outcome is None else outcome.mean_conflict(),
-        }
-        if condition == _BASELINE:
-            baseline_per_query = per_query
-    # The oracle's fixed simplex weights render in the weights column; they are
-    # fitted on the judgments, which is what makes the row a ceiling.
-    conditions["rrf-oracle"]["mean_weights"] = oracle_weights
-    for condition, entry in conditions.items():
-        entry["p_vs_rrf"] = (
-            None
-            if condition == _BASELINE
-            else paired_p(baseline_per_query, per_queries[condition])
-        )
-    return conditions
+def _environment() -> dict:
+    # The four searched discrimination defaults are recorded alongside the
+    # version: results must say which defaults produced them even when the
+    # version string alone does not.
+    d = ruffle.DiscriminationConfig()
+    return {
+        "ruffle_version": ruffle.__version__,
+        "python": platform.python_version(),
+        "engine_defaults": {
+            "top_eps": d.top_eps,
+            "top_m": d.top_m,
+            "winsor_z": d.winsor_z,
+            "denom_floor_frac": d.denom_floor_frac,
+        },
+    }
 
 
 def _run_dataset(name: str, k: int, warm_frac: float, refreshes: int) -> None:
+    if name in _HEAVY:
+        result = _HEAVY[name](k, refreshes)
+        _write(name, "", {**result, **_environment()})
+        return
+
     print(f"[{name}] loading collection", flush=True)
     dataset = load(name)
     print(
@@ -110,7 +77,7 @@ def _run_dataset(name: str, k: int, warm_frac: float, refreshes: int) -> None:
         f"{len(dataset.qrels)} judged",
         flush=True,
     )
-    channels = Channels(dataset)
+    channels = Channels.for_dataset(dataset)
     runs = channels.runs(k)
     warm_qids, eval_qids = split_queries(dataset, warm_frac)
     print(f"[{name}] split: {len(warm_qids)} warmup, {len(eval_qids)} evaluation", flush=True)
@@ -122,11 +89,10 @@ def _run_dataset(name: str, k: int, warm_frac: float, refreshes: int) -> None:
         "seed": SEED,
         "warm_queries": len(warm_qids),
         "eval_queries": len(eval_qids),
-        "ruffle_version": ruffle.__version__,
-        "python": platform.python_version(),
+        **_environment(),
     }
 
-    conditions = _main_conditions(runs, channels, dataset.qrels, warm_qids, eval_qids, refreshes)
+    conditions, _ = main_conditions(runs, channels, dataset.qrels, warm_qids, eval_qids, refreshes)
     _write(name, "", {**envelope, "coupling_refreshes": refreshes, "conditions": conditions})
 
     print(f"[{name}] degraded-channel experiment", flush=True)
@@ -153,19 +119,19 @@ def _weights_cell(mean_weights: dict[str, float] | None, keys) -> str:
     return " / ".join(f"{mean_weights[key]:.3f}" for key in keys)
 
 
-def _main_table(result: dict) -> list[str]:
+def _delta_cell(profile: dict | None) -> str:
+    if profile is None:
+        return ""
+    return f"{profile['win'] * 100:.0f}% / {profile['loss'] * 100:.0f}%"
+
+
+def _conditions_table(conditions: dict, keys: list[str]) -> list[str]:
     lines = [
-        f"### {result['dataset']}",
-        "",
-        f"{result['eval_queries']} evaluation queries "
-        f"({result['warm_queries']} warmup), top-{result['k']} per channel, "
-        f"ruffle {result['ruffle_version']}.",
-        "",
-        "| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | mean weights (bm25 / tfidf / dense) |",
-        "|---|---|---|---|---|---|",
+        f"| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights ({' / '.join(keys)}) |",
+        "|---|---|---|---|---|---|---|",
     ]
     order = [
-        *CHANNEL_KEYS,
+        *keys,
         "rrf",
         "borda",
         "isr",
@@ -174,19 +140,56 @@ def _main_table(result: dict) -> list[str]:
         "ruffle-cold",
         "ruffle-warm",
         "ruffle-warm-coupled",
+        "ruffle-warm-aggressive",
+        "rrf-fitted",
+        "ruffle-warm-fitted",
         "rrf-oracle",
     ]
     for condition in order:
-        entry = result["conditions"].get(condition)
+        entry = conditions.get(condition)
         if entry is None:
             continue
         metrics = entry["metrics"]
         lines.append(
             f"| {condition} | {_fmt(metrics.get('nDCG@10'))} | {_fmt(metrics.get('R@100'))} "
             f"| {_fmt(metrics.get('RR@10'))} | {_fmt(entry.get('p_vs_rrf'), 3)} "
-            f"| {_weights_cell(entry.get('mean_weights'), CHANNEL_KEYS)} |"
+            f"| {_delta_cell(entry.get('delta_vs_rrf'))} "
+            f"| {_weights_cell(entry.get('mean_weights'), keys)} |"
         )
     lines.append("")
+    return lines
+
+
+def _main_table(result: dict) -> list[str]:
+    keys = list(result.get("channel_keys", CHANNEL_KEYS))
+    lines = [
+        f"### {result['dataset']}",
+        "",
+        f"{result['eval_queries']} evaluation queries "
+        f"({result['warm_queries']} warmup), top-{result['k']} per channel, "
+        f"ruffle {result['ruffle_version']}.",
+        "",
+    ]
+    if result.get("note"):
+        lines.extend([result["note"], ""])
+    lines.extend(_conditions_table(result["conditions"], keys))
+    return lines
+
+
+def _msmarco_tables(result: dict) -> list[str]:
+    keys = list(result.get("channel_keys", CHANNEL_KEYS))
+    lines = [
+        f"### {result['dataset']}",
+        "",
+        f"{result['corpus_docs']} passages, top-{result['k']} per channel, "
+        f"ruffle {result['ruffle_version']}.",
+        "",
+    ]
+    if result.get("note"):
+        lines.extend([result["note"], ""])
+    for name, block in result["eval_sets"].items():
+        lines.extend([f"#### {name} ({block['eval_queries']} evaluation queries)", ""])
+        lines.extend(_conditions_table(block["conditions"], keys))
     return lines
 
 
@@ -207,8 +210,10 @@ def _degraded_table(result: dict) -> list[str]:
         entry = result["modes"].get(mode)
         if entry is None:
             continue
-        for condition in ("rrf-clean", "rrf", "ruffle-warm"):
-            data = entry["conditions"][condition]
+        for condition in ("rrf-clean", "rrf", "ruffle-warm", "ruffle-warm-aggressive"):
+            data = entry["conditions"].get(condition)
+            if data is None:
+                continue
             metrics = data["metrics"]
             weights = data.get("mean_weights")
             broken = "" if weights is None else f"{weights['broken']:.3f}"
@@ -228,6 +233,12 @@ def _degraded_table(result: dict) -> list[str]:
                 f"{flaky['broken_weight_on_failed']:.3f}, against "
                 f"{flaky['broken_weight_on_healthy']:.3f} on the healthy ones.",
             ]
+        )
+    if "aggressive_broken_weight_on_failed" in flaky:
+        lines.append(
+            f"Under the aggressive profile that split widens to "
+            f"{flaky['aggressive_broken_weight_on_failed']:.3f} against "
+            f"{flaky['aggressive_broken_weight_on_healthy']:.3f}."
         )
     lines.append("")
     return lines
@@ -270,12 +281,13 @@ def _regenerate_summary() -> None:
         "",
     ]
     wrote_any = False
-    for name in DATASETS:
+    for name in _SUMMARY_ORDER:
         main_path = RESULTS_DIR / f"{name}.json"
         if not main_path.exists():
             continue
         wrote_any = True
-        lines.extend(_main_table(json.loads(main_path.read_text())))
+        result = json.loads(main_path.read_text())
+        lines.extend(_msmarco_tables(result) if "eval_sets" in result else _main_table(result))
         degraded_path = RESULTS_DIR / f"{name}-degraded.json"
         if degraded_path.exists():
             lines.extend(_degraded_table(json.loads(degraded_path.read_text())))
@@ -309,15 +321,19 @@ def main(argv: list[str] | None = None) -> int:
         "--refreshes", type=int, default=10, help="anchor refreshes in the coupled condition"
     )
     args = parser.parse_args(argv)
-    unknown = [name for name in args.datasets if name not in DATASETS]
+    known = {**DATASETS, **_HEAVY}
+    unknown = [name for name in args.datasets if name not in known]
     if unknown:
         parser.error(
-            f"unknown collection(s) {', '.join(unknown)}; available: {', '.join(DATASETS)}"
+            f"unknown collection(s) {', '.join(unknown)}; available: {', '.join(known)}"
         )
 
     for name in args.datasets:
         _run_dataset(name, args.k, args.warm_frac, args.refreshes)
     _regenerate_summary()
+    from ruffle_evals.summarize import write_summary
+
+    write_summary()
     return 0
 
 

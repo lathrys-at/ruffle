@@ -3,7 +3,9 @@
 This directory measures Ruffle as a rank fusion engine on standard BEIR test
 collections, against plain reciprocal-rank fusion and against each retrieval
 channel on its own. It is a development harness, not part of any published
-package; the numbers of record live in [`results/RESULTS.md`](results/RESULTS.md).
+package. The headline comparison lives in
+[`results/SUMMARY.md`](results/SUMMARY.md); the full per-collection tables are
+in [`results/RESULTS.md`](results/RESULTS.md).
 
 ## Protocol
 
@@ -12,7 +14,10 @@ scales and with a deliberate redundancy between the two lexical channels:
 
 - `bm25`: Lucene-style BM25 over word tokens ([bm25s](https://github.com/xhluca/bm25s)).
 - `tfidf`: cosine over sublinear TF-IDF of character 3-5-grams (scikit-learn).
-- `dense`: cosine over `sentence-transformers/all-MiniLM-L6-v2` embeddings.
+- `dense`: cosine over `Alibaba-NLP/gte-modernbert-base` embeddings (768-d,
+  Apache-2.0, ungated; sequences truncate at 512 tokens). A current
+  retrieval-focused model in the mid-50s BEIR nDCG@10 range, so the dense
+  channel carries the signal an on-device deployment would actually have.
 
 The queries of each collection are shuffled with a fixed seed and split in half.
 The first half warms Ruffle's baselines; every condition is scored on the second
@@ -40,6 +45,15 @@ The conditions:
   what any fixed per-channel weighting could achieve with these runs, and the
   table reads as a bracket, the RRF floor to the oracle ceiling, with Ruffle's
   label-free weights in between.
+- `rrf-fitted`, `ruffle-warm-fitted`: the approximate oracle. Fixed weights are
+  grid-searched the same way, but on a small graded subsample of the warmup
+  split (5% of its judged queries, floored at 10 and capped at 100; the
+  evaluation labels stay untouched), repeated over three seeded draws with the
+  first draw feeding the condition rows and every draw recorded in the result
+  file. `rrf-fitted` uses the weights as-is: what grading a few dozen queries
+  once buys. `ruffle-warm-fitted` declares the same weights as `base_weight` on
+  the channel registrations, so the labeled static tilt and the label-free
+  per-query adaptation compose.
 - `ruffle-cold`: `Fuser.fuse_stateless` with an empty prior, per query. With no
   accumulated baselines and no declared references this reduces to unweighted
   RRF by construction; the condition verifies that reduction on real runs.
@@ -51,12 +65,28 @@ The conditions:
   random draw of 256 corpus documents under every channel for one warmup query; a
   random draw rather than any channel's top-k, because a top-k pool is a selected
   sample that biases the correlation estimate.
+- `ruffle-warm-aggressive`: the same estimators with the conservatism turned
+  down and every evidence gate intact: discrimination reacts more sharply to a
+  departure from a channel's own norm (`g_slope` 2.5, `g_floor` 0.1) and the
+  redundancy discount, once gated in, may remove most of a duplicated signal
+  (`discount_cap` 0.9, `shrink_to_identity` 0.2), with anchor refreshes as in
+  the coupled condition. The profile prices the conservative defaults: what a
+  harder tilt buys where one channel dominates, and what it costs on the
+  degraded channels. No setting of these knobs learns that one channel is
+  globally better than another; that is cross-channel, label-bound information
+  outside the engine's contract.
 
-Metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
-[ir_measures](https://github.com/terrierteam/ir_measures). Each fused condition
+Headline metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
+[ir_measures](https://github.com/terrierteam/ir_measures); AP@100 and Recall@10
+are computed into the result files without a table column. Each fused condition
 carries a two-sided paired t-test on per-query nDCG@10 against the `rrf`
-baseline, and the mean per-channel weights the engine actually used on the
-evaluation queries.
+baseline, the mean per-channel weights the engine actually used on the
+evaluation queries, and a per-query delta profile against `rrf`: the
+win/loss/tie rates, the mean delta, and the 5th-percentile delta. The profile
+is what the aggregates hide; whether a mean gain is a small improvement
+everywhere or large wins bought with real per-query damage, and the loss tail
+is the empirical per-query do-no-harm statement. The tables show win/loss; the
+full profile is in the result files.
 
 ## Targeted experiments
 
@@ -95,11 +125,27 @@ first use into `cache/`:
 | fiqa | `beir/fiqa/test` | 57K | 648 |
 | quora | `beir/quora/test` | 523K | 10,000 |
 | trec-covid | `beir/trec-covid` | 171K | 50 |
+| cqadupstack | `beir/cqadupstack/*` | 457K over 12 corpora | 13,145 |
+| msmarco | `msmarco-passage` | 8.8M | 6,980 dev + 43 dl19 + 54 dl20 |
 
 The default run covers the first four; quora is the statistical-power
 collection, leaving 5,000 evaluation queries after the split. trec-covid has
 too few queries for a meaningful warm/eval split and runs only when named
 explicitly.
+
+cqadupstack and msmarco run through dedicated runners, only when named
+explicitly, and produce the main comparison only (the degraded and curve
+experiments answer mechanism questions already covered on the standard
+collections). cqadupstack follows the BEIR reporting convention: each subforum
+is its own corpus with its own channels, warmup, and oracle, metrics are
+macro-averaged over the twelve, and the paired test pools per-query values.
+msmarco uses two channels (BM25 and dense, the canonical hybrid pair; a
+character-ngram TF-IDF matrix is not workable at 8.8M passages), with corpus
+embeddings in an on-disk float32 memmap and blockwise top-k scoring. Its
+dev/small queries split into warmup and evaluation halves, and the TREC-DL
+2019/2020 judged sets are evaluated by fusers resumed from the same dev-warmed
+state snapshot, a transfer of warm baselines to a foreign query set over the
+shared corpus.
 
 ## Running
 
@@ -122,14 +168,24 @@ and run depth, so re-runs only re-execute the fusion and the metrics. Each run
 writes `results/<dataset>.json` (the main comparison: aggregate metrics, mean
 weights, p-values, and the environment),
 `results/<dataset>-degraded.json`, and `results/<dataset>-curve.json`, then
-regenerates `results/RESULTS.md` from all result files present.
+regenerates `results/RESULTS.md`, `results/SUMMARY.md`, and the summary chart
+from all result files present.
 
 ## Deferred
 
-A fourth channel using a stronger embedding model (`BAAI/bge-small-en-v1.5`,
-which wants a query instruction prefix at encode time) is noted but deferred
-until after the larger-corpus collections (cqadupstack, MS MARCO / TREC-DL) are
-in. As a replacement for MiniLM it would mostly shift collections into the
-dense-dominant regime fiqa already covers; the interesting configuration is as
-an addition, giving a redundant dense pair for the coupling estimator alongside
-the existing lexical pair, and a strong/weak mix within one modality.
+Two extensions are noted for a future round.
+
+A rerun with a larger embedding model as the dense channel, for example
+`Qwen/Qwen3-Embedding-0.6B` (Apache-2.0, currently the strongest small open
+retrieval model, and one that wants a query instruction prefix at encode time,
+which the channel's prompt constants support). The blocker is compute: with
+`gte-modernbert-base` the full benchmark takes about two and a half days on
+Apple Silicon, most of it embedding MS MARCO (roughly 45 hours at ~54
+passages/s), and a 0.6B model multiplies that several times over. Before that
+rerun the memmap embedding path should gain resume support and fp16 inference:
+at these corpus sizes a restart from zero is unacceptable, and half precision
+roughly halves the GPU time at negligible cost to retrieval quality.
+
+A fourth channel using a second embedding model, giving a redundant dense pair
+for the coupling estimator alongside the existing lexical pair, and a
+strong/weak mix within one modality.
