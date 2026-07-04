@@ -34,6 +34,7 @@ class ChannelDict(TypedDict):
     tag: str
     direction: DirectionValue
     good_score: GoodScoreDict | None
+    base_weight: float
 
 
 class DiscriminationConfigDict(TypedDict):

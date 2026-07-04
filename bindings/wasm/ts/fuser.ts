@@ -24,6 +24,7 @@ function channelDtos(channels: readonly ChannelConfig[]): ChannelDto[] {
     tag: c.id.tag,
     direction: c.direction,
     goodScore: c.goodScore,
+    baseWeight: c.baseWeight ?? 1.0,
   }));
 }
 

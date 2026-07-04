@@ -37,6 +37,7 @@ export interface ChannelDto {
   readonly tag: string;
   readonly direction: DirectionValue;
   readonly goodScore: GoodScoreDto | undefined;
+  readonly baseWeight: number;
 }
 
 export interface DiscriminationConfigDto {

@@ -95,6 +95,15 @@ pub enum ConfigError {
         /// The key that appears more than once.
         key: String,
     },
+
+    /// A channel's declared base weight is non-finite or negative. A negative multiplier
+    /// would invert the channel's votes and a non-finite one would poison every fused
+    /// score, so both are refused at construction.
+    #[error("channel {channel}: base weight must be finite and non-negative")]
+    InvalidBaseWeight {
+        /// The channel key whose declaration is rejected.
+        channel: String,
+    },
 }
 
 /// A reason a [`Fuser`](crate::Fuser) cannot resume from a persisted state.

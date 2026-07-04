@@ -101,6 +101,12 @@ struct ChannelDto {
     direction: String,
     #[serde(default)]
     good_score: Option<GoodScoreDto>,
+    #[serde(default = "default_base_weight")]
+    base_weight: f64,
+}
+
+fn default_base_weight() -> f64 {
+    1.0
 }
 
 #[derive(Serialize, Deserialize)]
@@ -240,7 +246,8 @@ fn to_channel_configs(channels: JsValue) -> Result<Vec<rf::ChannelConfig>, JsVal
                 parse_direction(&c.direction)?,
                 c.good_score
                     .map(|g| rf::GoodScore::new(g.typical, g.good, g.weight)),
-            ))
+            )
+            .with_base_weight(c.base_weight))
         })
         .collect()
 }

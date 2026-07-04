@@ -100,11 +100,22 @@ class ChannelConfig:
     is the optional declared reference for the absolute-goodness statistic; when
     absent, the reference is learned from early traffic and the absolute-goodness
     statistic cold-starts.
+
+    ``base_weight`` is an operator-declared static multiplier on the channel's
+    adaptive per-query weight: the fused weight is ``base_weight * g``,
+    renormalized over the channels present on the query. The engine never learns
+    that one channel is globally better than another (that is cross-channel
+    information only relevance labels can establish), so a tilt established from
+    a labeled evaluation is declared here and the per-query adaptation composes
+    on top. Only the ratios between channels matter. The default ``1.0`` declares
+    nothing; ``0.0`` silences the channel's votes while its baselines keep
+    updating. Must be finite and non-negative.
     """
 
     id: ChannelId
     direction: Direction
     good_score: GoodScore | None = None
+    base_weight: float = 1.0
 
 
 class ChannelInput:
@@ -273,6 +284,7 @@ def _registrations(channels: Sequence[ChannelConfig]) -> list[ChannelDict]:
                 "good": c.good_score.good,
                 "weight": c.good_score.weight,
             },
+            "base_weight": c.base_weight,
         }
         for c in channels
     ]

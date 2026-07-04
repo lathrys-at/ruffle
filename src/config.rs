@@ -325,17 +325,44 @@ pub struct ChannelConfig {
     /// The optional declared good-score reference for the absolute-goodness statistic, in
     /// native units.
     pub good_score: Option<GoodScore>,
+    /// An operator-declared static weight multiplier on the channel's adaptive per-query
+    /// weight: the fused weight is `base_weight * g`, renormalized over the channels
+    /// present on the query.
+    ///
+    /// The engine never learns that one channel is globally better than another; that is
+    /// cross-channel information only relevance labels can establish. An operator who
+    /// holds such labels (a fitted evaluation, domain knowledge) declares the tilt here,
+    /// and the per-query adaptation composes on top. Only the ratios between channels
+    /// matter. The default `1.0` declares nothing. `0.0` is legal: it silences the
+    /// channel's votes while its baselines keep updating.
+    #[serde(default = "default_base_weight")]
+    pub base_weight: f64,
+}
+
+fn default_base_weight() -> f64 {
+    1.0
 }
 
 impl ChannelConfig {
     /// Builds a channel registration. A `Some` `good_score` enables absolute goodness
-    /// from the first query; `None` learns the reference from traffic.
+    /// from the first query; `None` learns the reference from traffic. The base weight
+    /// starts neutral at `1.0`; declare a tilt with
+    /// [`with_base_weight`](Self::with_base_weight).
     pub fn new(id: ChannelId, direction: Direction, good_score: Option<GoodScore>) -> Self {
         Self {
             id,
             direction,
             good_score,
+            base_weight: default_base_weight(),
         }
+    }
+
+    /// Declares the static weight multiplier. The value must be finite and non-negative;
+    /// [`Fuser`](crate::Fuser) construction rejects anything else.
+    #[must_use]
+    pub fn with_base_weight(mut self, base_weight: f64) -> Self {
+        self.base_weight = base_weight;
+        self
     }
 }
 

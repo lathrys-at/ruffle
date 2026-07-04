@@ -97,6 +97,32 @@ describe("configuration", () => {
     ).toThrowError(/g_upper_bound/);
   });
 
+  test("a base weight tilt renormalizes over present channels", () => {
+    const a: ChannelConfig = { ...channel("a"), baseWeight: 3.0 };
+    const b = channel("b");
+    const holder = Fuser.create([a, b]);
+    const prior = holder.state;
+    holder.free();
+    const fused = Fuser.fuseStateless(
+      [
+        { key: "a", scored: spikedPool() },
+        { key: "b", scored: spikedPool() },
+      ],
+      [a, b],
+      prior,
+    );
+    // Cold adaptive weights are neutral, so the fused weights are the declared
+    // 3:1 tilt renormalized to sum to the channel count.
+    expect(fused.weights.get("a")).toBeCloseTo(1.5, 9);
+    expect(fused.weights.get("b")).toBeCloseTo(0.5, 9);
+  });
+
+  test("an invalid base weight is refused at construction", () => {
+    const bad: ChannelConfig = { ...channel("s"), baseWeight: -1.0 };
+    expect(() => Fuser.create([bad])).toThrowError(ConfigError);
+    expect(() => Fuser.create([bad])).toThrowError(/base weight/);
+  });
+
   test("an unusable good score is refused at construction", () => {
     const bad: ChannelConfig = {
       ...channel("s"),

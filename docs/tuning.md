@@ -77,6 +77,30 @@ suits evidence gathered from careful measurement. After enough traffic has accum
 consider comparing the inferred reference mean in the Ruffle state to the declared prior
 `typical` value and make any necessary adjustments.
 
+## Declared base weights
+
+Ruffle never learns that one channel is globally better than another. Its statistics
+read each channel against that channel's own history, which is the only comparison
+possible without relevance labels; a global quality ordering between channels is
+label-bound information. If you hold that information, from a labeled evaluation of
+your own corpus or from domain knowledge, declare it as `base_weight` on the channel's
+registration. The fused weight becomes `base_weight * g`, renormalized over the
+channels present on the query, so the static tilt you declare and the per-query
+adaptation compose rather than compete.
+
+Only the ratios between channels matter; `(2, 1, 1)` and `(1, 0.5, 0.5)` are the same
+declaration. The default `1.0` declares nothing. A `base_weight` of `0.0` silences a
+channel's votes entirely while its baselines keep updating, which suits a channel you
+want to observe in telemetry before letting it affect rankings. Base weights are
+configuration, not persisted state: changing them takes effect on the next
+construction and requires no state migration.
+
+A reasonable procedure for setting them: run your channels over a set of queries with
+graded relevance, grid-search fixed per-channel RRF weights on that set, and declare
+the winner. Even a few dozen graded queries produce a usable tilt when one channel is
+clearly stronger. Revisit the declaration when a channel's model changes, since the
+tilt encodes a comparison between specific model versions.
+
 ## Reading knobs
 
 The following knobs control whether Ruffle's statistics are healthy for your
