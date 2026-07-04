@@ -233,19 +233,20 @@ fn operator_prior_powers_d_abs_from_the_first_query() {
     let y = cfg("y", "ty", None);
     let cfgs = [x.clone(), y.clone()];
 
-    // First query: the prior channel already has a usable reference (no NoReference
-    // flag), while the no-prior channel is flagged NoReference (§4, §8).
+    // First query: the prior channel already has a usable reference, while the
+    // no-prior channel cold-starts without one (§4, §8). The discrimination read's
+    // `reference_cold` field carries this directly; the flags map cannot, because a
+    // channel gets at most one flag and a degenerate separation read outranks
+    // NoReference there.
     let mut f = Fuser::new(&cfgs, FuseConfig::default()).unwrap();
     let mut rng = ChaCha8Rng::seed_from_u64(11);
     let first = f.fuse(&query(&mut rng, &cfgs, 5.0));
-    assert_ne!(
-        first.flags.get(&key("x")),
-        Some(&ruffle::ChannelFlag::NoReference),
+    assert!(
+        !first.discrimination[&key("x")].reference_cold,
         "the declared prior makes D^abs available from the first query"
     );
-    assert_eq!(
-        first.flags.get(&key("y")),
-        Some(&ruffle::ChannelFlag::NoReference),
+    assert!(
+        first.discrimination[&key("y")].reference_cold,
         "the no-prior channel cold-starts without D^abs"
     );
     // The prior reference was seeded with its pseudo-count, not learned from traffic.

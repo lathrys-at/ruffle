@@ -52,11 +52,11 @@ pub struct DiscriminationConfig {
 impl Default for DiscriminationConfig {
     fn default() -> Self {
         Self {
-            top_eps: 0.05,
-            top_m: 10,
+            top_eps: 0.10,
+            top_m: 5,
             min_distinct_values: 8,
-            denom_floor_frac: 0.5,
-            winsor_z: 4.0,
+            denom_floor_frac: 0.75,
+            winsor_z: 2.5,
             min_count_for_z: 5.0,
             shrink_pool_size: 20,
             g_upper_bound: 4.0,
