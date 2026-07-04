@@ -1,5 +1,10 @@
 # ruffle
 
+[![CI](https://github.com/lathrys-at/ruffle/actions/workflows/test.yaml/badge.svg)](https://github.com/lathrys-at/ruffle/actions/workflows/test.yaml)
+[![PyPI](https://img.shields.io/pypi/v/ruffle.svg)](https://pypi.org/project/ruffle/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ruffle)](https://pypi.org/project/ruffle/)
+[![License](https://img.shields.io/pypi/l/ruffle)](https://github.com/lathrys-at/ruffle#license)
+
 Weighted, adaptive, calibration-free Reciprocal Rank Fusion (RRF) for Python.
 
 Ruffle fuses the output of several retrieval channels into one ranking. It does this
