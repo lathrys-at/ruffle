@@ -96,9 +96,18 @@ weaker lexical channels, and the oracle converges on the dominant channel.
 Ruffle narrows the gap to the oracle but cannot close it: knowing that one
 channel is globally better than another requires labels, which is exactly the
 information the engine's contract excludes. The fitted rows are the
-operational answer: an operator who grades a few dozen queries once recovers
-most of the oracle's tilt, and declaring it as `base_weight` keeps the
-per-query adaptation on top.
+operational answer: with a few dozen graded queries the fit recovers most of
+the oracle's gain, and on the larger budgets nearly all of it.
+
+The per-draw records in the result files show what composing adds: when a
+draw fits well, the composed condition tracks the static fit closely; when a
+draw fits badly, the adaptation pulls the result back toward plain warm
+Ruffle instead of following the bad fit down. The exception is a fitted
+weight of exactly zero, which silences a channel outright, so no per-query
+evidence can revive it; the nfcorpus fitted row, where a 10-query fit chose
+a single channel and landed below the RRF floor, is that failure mode in the
+table. An operator declaring weights from a small fit should floor them at a
+small positive value rather than zero, unless exclusion is the intent.
 
 Across the label-free rules, no method wins everywhere. ISR's steeper rank
 discount and the score-based CombSUM profit in the dominant-channel regime,

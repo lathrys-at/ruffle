@@ -131,6 +131,61 @@
       },
       "p_vs_rrf": null
     },
+    "rrf-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.16,
+        "mean": 0.024619,
+        "p5": -0.36907,
+        "tie": 0.633333,
+        "win": 0.206667
+      },
+      "fit": {
+        "budget": 10,
+        "draws": [
+          {
+            "rrf_fitted_ndcg10": 0.763921,
+            "ruffle_warm_fitted_ndcg10": 0.760086,
+            "weights": {
+              "bm25": 0.1,
+              "dense": 0.9,
+              "tfidf": 0.0
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.756782,
+            "ruffle_warm_fitted_ndcg10": 0.760602,
+            "weights": {
+              "bm25": 0.0,
+              "dense": 0.9,
+              "tfidf": 0.1
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.739593,
+            "ruffle_warm_fitted_ndcg10": 0.757381,
+            "weights": {
+              "bm25": 0.4,
+              "dense": 0.4,
+              "tfidf": 0.2
+            }
+          }
+        ]
+      },
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.1,
+        "dense": 0.9,
+        "tfidf": 0.0
+      },
+      "metrics": {
+        "AP@100": 0.71893,
+        "R@10": 0.903111,
+        "R@100": 0.98,
+        "RR@10": 0.726328,
+        "nDCG@10": 0.763921
+      },
+      "p_vs_rrf": 0.183167
+    },
     "rrf-oracle": {
       "delta_vs_rrf": {
         "loss": 0.1,
@@ -245,6 +300,61 @@
         "nDCG@10": 0.754457
       },
       "p_vs_rrf": 0.006219
+    },
+    "ruffle-warm-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.153333,
+        "mean": 0.020785,
+        "p5": -0.36907,
+        "tie": 0.646667,
+        "win": 0.2
+      },
+      "fit": {
+        "budget": 10,
+        "draws": [
+          {
+            "rrf_fitted_ndcg10": 0.763921,
+            "ruffle_warm_fitted_ndcg10": 0.760086,
+            "weights": {
+              "bm25": 0.1,
+              "dense": 0.9,
+              "tfidf": 0.0
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.756782,
+            "ruffle_warm_fitted_ndcg10": 0.760602,
+            "weights": {
+              "bm25": 0.0,
+              "dense": 0.9,
+              "tfidf": 0.1
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.739593,
+            "ruffle_warm_fitted_ndcg10": 0.757381,
+            "weights": {
+              "bm25": 0.4,
+              "dense": 0.4,
+              "tfidf": 0.2
+            }
+          }
+        ]
+      },
+      "mean_conflict": 0.226431,
+      "mean_weights": {
+        "bm25": 0.349065,
+        "dense": 2.650935,
+        "tfidf": 0.0
+      },
+      "metrics": {
+        "AP@100": 0.715304,
+        "R@10": 0.899778,
+        "R@100": 0.98,
+        "RR@10": 0.720146,
+        "nDCG@10": 0.760086
+      },
+      "p_vs_rrf": 0.261493
     },
     "tfidf": {
       "delta_vs_rrf": {
