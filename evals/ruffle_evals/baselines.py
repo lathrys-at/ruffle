@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Sequence
-from itertools import product
 
 import numpy as np
 
@@ -100,6 +99,18 @@ def isr(
     return _fuse_by(runs, qids, keys, lambda rank, score, items: 1.0 / (rank * rank))
 
 
+def _compositions(total: int, parts: int) -> list[tuple[int, ...]]:
+    """Every way to split ``total`` integer steps over ``parts`` weights: the
+    simplex grid for any channel count."""
+    if parts == 1:
+        return [(total,)]
+    return [
+        (first, *rest)
+        for first in range(total + 1)
+        for rest in _compositions(total - first, parts - 1)
+    ]
+
+
 def _ndcg10(ranking: list[str], rels: dict[str, int]) -> float:
     dcg = sum(
         rels.get(doc_id, 0) / math.log2(i + 2.0) for i, doc_id in enumerate(ranking[:10])
@@ -144,11 +155,7 @@ def oracle_rrf(
         per_query[qid] = (docs, matrix)
 
     steps = int(round(1.0 / step))
-    grid = [
-        np.array([a, b, steps - a - b], dtype=float) / steps
-        for a, b in product(range(steps + 1), repeat=2)
-        if a + b <= steps
-    ]
+    grid = [np.array(c, dtype=float) / steps for c in _compositions(steps, len(keys))]
 
     best_weights = grid[0]
     best_score = -1.0

@@ -1,0 +1,578 @@
+{
+  "channel_keys": [
+    "bm25",
+    "tfidf",
+    "dense"
+  ],
+  "conditions": {
+    "bm25": {
+      "delta_vs_rrf": {
+        "loss": 0.253232,
+        "mean": -0.060629,
+        "p5": -0.5,
+        "tie": 0.663422,
+        "win": 0.083346
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.278019,
+        "R@10": 0.388393,
+        "R@100": 0.574375,
+        "RR@10": 0.305588,
+        "nDCG@10": 0.307839
+      },
+      "p_vs_rrf": 0.0
+    },
+    "borda": {
+      "delta_vs_rrf": {
+        "loss": 0.065247,
+        "mean": -0.002717,
+        "p5": -0.024981,
+        "tie": 0.884411,
+        "win": 0.050342
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.331255,
+        "R@10": 0.469058,
+        "R@100": 0.749396,
+        "RR@10": 0.361388,
+        "nDCG@10": 0.366667
+      },
+      "p_vs_rrf": 3.9e-05
+    },
+    "combmnz": {
+      "delta_vs_rrf": {
+        "loss": 0.075437,
+        "mean": 0.016565,
+        "p5": -0.042505,
+        "tie": 0.774601,
+        "win": 0.149962
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.348038,
+        "R@10": 0.48988,
+        "R@100": 0.754786,
+        "RR@10": 0.377698,
+        "nDCG@10": 0.38475
+      },
+      "p_vs_rrf": 0.0
+    },
+    "combsum": {
+      "delta_vs_rrf": {
+        "loss": 0.096426,
+        "mean": 0.025417,
+        "p5": -0.097788,
+        "tie": 0.72365,
+        "win": 0.179924
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.353364,
+        "R@10": 0.510936,
+        "R@100": 0.756261,
+        "RR@10": 0.382836,
+        "nDCG@10": 0.393765
+      },
+      "p_vs_rrf": 0.0
+    },
+    "dense": {
+      "delta_vs_rrf": {
+        "loss": 0.171103,
+        "mean": 0.064181,
+        "p5": -0.36907,
+        "tie": 0.541901,
+        "win": 0.286996
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.389321,
+        "R@10": 0.556153,
+        "R@100": 0.781311,
+        "RR@10": 0.423147,
+        "nDCG@10": 0.434038
+      },
+      "p_vs_rrf": 0.0
+    },
+    "isr": {
+      "delta_vs_rrf": {
+        "loss": 0.149506,
+        "mean": 0.027926,
+        "p5": -0.30103,
+        "tie": 0.641065,
+        "win": 0.20943
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.351791,
+        "R@10": 0.518388,
+        "R@100": 0.750572,
+        "RR@10": 0.382917,
+        "nDCG@10": 0.395307
+      },
+      "p_vs_rrf": 0.0
+    },
+    "rrf": {
+      "delta_vs_rrf": null,
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "AP@100": 0.334239,
+        "R@10": 0.470245,
+        "R@100": 0.749055,
+        "RR@10": 0.363934,
+        "nDCG@10": 0.3695
+      },
+      "p_vs_rrf": null
+    },
+    "rrf-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.146312,
+        "mean": 0.061868,
+        "p5": -0.36907,
+        "tie": 0.57308,
+        "win": 0.280608
+      },
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.05451,
+        "dense": 0.915817,
+        "tfidf": 0.029673
+      },
+      "metrics": {
+        "AP@100": 0.385355,
+        "R@10": 0.556364,
+        "R@100": 0.779568,
+        "RR@10": 0.41853,
+        "nDCG@10": 0.43105
+      },
+      "p_vs_rrf": 0.0
+    },
+    "rrf-oracle": {
+      "delta_vs_rrf": {
+        "loss": 0.141141,
+        "mean": 0.067631,
+        "p5": -0.36907,
+        "tie": 0.569886,
+        "win": 0.288973
+      },
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.04724,
+        "dense": 0.925703,
+        "tfidf": 0.027057
+      },
+      "metrics": {
+        "AP@100": 0.392125,
+        "R@10": 0.560882,
+        "R@100": 0.781311,
+        "RR@10": 0.426116,
+        "nDCG@10": 0.437389
+      },
+      "p_vs_rrf": 0.0
+    },
+    "ruffle-cold": {
+      "delta_vs_rrf": {
+        "loss": 0.0,
+        "mean": 0.0,
+        "p5": 0.0,
+        "tie": 1.0,
+        "win": 0.0
+      },
+      "mean_conflict": 0.0,
+      "mean_weights": {
+        "bm25": 1.0,
+        "dense": 1.0,
+        "tfidf": 1.0
+      },
+      "metrics": {
+        "AP@100": 0.334239,
+        "R@10": 0.470245,
+        "R@100": 0.749055,
+        "RR@10": 0.363934,
+        "nDCG@10": 0.3695
+      },
+      "p_vs_rrf": null
+    },
+    "ruffle-warm": {
+      "delta_vs_rrf": {
+        "loss": 0.088821,
+        "mean": 0.006037,
+        "p5": -0.086714,
+        "tie": 0.796654,
+        "win": 0.114525
+      },
+      "mean_conflict": 0.284194,
+      "mean_weights": {
+        "bm25": 0.991067,
+        "dense": 1.019471,
+        "tfidf": 0.989462
+      },
+      "metrics": {
+        "AP@100": 0.339088,
+        "R@10": 0.475795,
+        "R@100": 0.72093,
+        "RR@10": 0.369818,
+        "nDCG@10": 0.375259
+      },
+      "p_vs_rrf": 2e-06
+    },
+    "ruffle-warm-aggressive": {
+      "delta_vs_rrf": {
+        "loss": 0.148137,
+        "mean": 0.006072,
+        "p5": -0.333333,
+        "tie": 0.688517,
+        "win": 0.163346
+      },
+      "mean_conflict": 0.214444,
+      "mean_weights": {
+        "bm25": 0.958093,
+        "dense": 1.130441,
+        "tfidf": 0.911466
+      },
+      "metrics": {
+        "AP@100": 0.335083,
+        "R@10": 0.478684,
+        "R@100": 0.690996,
+        "RR@10": 0.367132,
+        "nDCG@10": 0.373727
+      },
+      "p_vs_rrf": 0.009291
+    },
+    "ruffle-warm-coupled": {
+      "delta_vs_rrf": {
+        "loss": 0.099163,
+        "mean": 0.008233,
+        "p5": -0.139056,
+        "tie": 0.766844,
+        "win": 0.133992
+      },
+      "mean_conflict": 0.284194,
+      "mean_weights": {
+        "bm25": 0.964871,
+        "dense": 1.089556,
+        "tfidf": 0.945573
+      },
+      "metrics": {
+        "AP@100": 0.340835,
+        "R@10": 0.478026,
+        "R@100": 0.720156,
+        "RR@10": 0.371893,
+        "nDCG@10": 0.37706
+      },
+      "p_vs_rrf": 0.0
+    },
+    "ruffle-warm-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.145703,
+        "mean": 0.061895,
+        "p5": -0.36907,
+        "tie": 0.575513,
+        "win": 0.278783
+      },
+      "mean_conflict": 0.284194,
+      "mean_weights": {
+        "bm25": 0.169298,
+        "dense": 2.729956,
+        "tfidf": 0.100746
+      },
+      "metrics": {
+        "AP@100": 0.386381,
+        "R@10": 0.552763,
+        "R@100": 0.778308,
+        "RR@10": 0.42018,
+        "nDCG@10": 0.431088
+      },
+      "p_vs_rrf": 0.0
+    },
+    "tfidf": {
+      "delta_vs_rrf": {
+        "loss": 0.332319,
+        "mean": -0.112915,
+        "p5": -0.61732,
+        "tie": 0.614905,
+        "win": 0.052776
+      },
+      "mean_conflict": null,
+      "mean_weights": null,
+      "metrics": {
+        "AP@100": 0.225571,
+        "R@10": 0.346007,
+        "R@100": 0.573482,
+        "RR@10": 0.249162,
+        "nDCG@10": 0.25616
+      },
+      "p_vs_rrf": 0.0
+    }
+  },
+  "coupling_refreshes": 10,
+  "dataset": "cqadupstack",
+  "engine_defaults": {
+    "denom_floor_frac": 0.75,
+    "top_eps": 0.1,
+    "top_m": 5,
+    "winsor_z": 2.5
+  },
+  "eval_queries": 6575,
+  "ir_datasets_id": "beir/cqadupstack/*",
+  "k": 100,
+  "note": "Macro-averaged over the 12 subforums, each with its own corpus, channels, warmup, and oracle; the paired test pools per-query nDCG@10 across subforums.",
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "subforums": {
+    "android": {
+      "eval_queries": 350,
+      "ndcg10": {
+        "bm25": 0.34985,
+        "borda": 0.404909,
+        "combmnz": 0.420472,
+        "combsum": 0.438304,
+        "dense": 0.487196,
+        "isr": 0.444472,
+        "rrf": 0.405996,
+        "rrf-fitted": 0.487196,
+        "rrf-oracle": 0.487196,
+        "ruffle-cold": 0.405996,
+        "ruffle-warm": 0.402689,
+        "ruffle-warm-aggressive": 0.399482,
+        "ruffle-warm-coupled": 0.404595,
+        "ruffle-warm-fitted": 0.487196,
+        "tfidf": 0.318416
+      }
+    },
+    "english": {
+      "eval_queries": 785,
+      "ndcg10": {
+        "bm25": 0.332906,
+        "borda": 0.421359,
+        "combmnz": 0.443266,
+        "combsum": 0.45871,
+        "dense": 0.501022,
+        "isr": 0.46327,
+        "rrf": 0.421749,
+        "rrf-fitted": 0.504463,
+        "rrf-oracle": 0.506342,
+        "ruffle-cold": 0.421749,
+        "ruffle-warm": 0.437516,
+        "ruffle-warm-aggressive": 0.448324,
+        "ruffle-warm-coupled": 0.443047,
+        "ruffle-warm-fitted": 0.505945,
+        "tfidf": 0.310955
+      }
+    },
+    "gaming": {
+      "eval_queries": 798,
+      "ndcg10": {
+        "bm25": 0.480637,
+        "borda": 0.546389,
+        "combmnz": 0.569409,
+        "combsum": 0.571043,
+        "dense": 0.619262,
+        "isr": 0.580225,
+        "rrf": 0.550346,
+        "rrf-fitted": 0.619262,
+        "rrf-oracle": 0.619262,
+        "ruffle-cold": 0.550346,
+        "ruffle-warm": 0.550224,
+        "ruffle-warm-aggressive": 0.551054,
+        "ruffle-warm-coupled": 0.55306,
+        "ruffle-warm-fitted": 0.619262,
+        "tfidf": 0.420157
+      }
+    },
+    "gis": {
+      "eval_queries": 443,
+      "ndcg10": {
+        "bm25": 0.294189,
+        "borda": 0.345261,
+        "combmnz": 0.365088,
+        "combsum": 0.37947,
+        "dense": 0.436147,
+        "isr": 0.395129,
+        "rrf": 0.3506,
+        "rrf-fitted": 0.436147,
+        "rrf-oracle": 0.436147,
+        "ruffle-cold": 0.3506,
+        "ruffle-warm": 0.363931,
+        "ruffle-warm-aggressive": 0.357557,
+        "ruffle-warm-coupled": 0.359512,
+        "ruffle-warm-fitted": 0.436147,
+        "tfidf": 0.236547
+      }
+    },
+    "mathematica": {
+      "eval_queries": 402,
+      "ndcg10": {
+        "bm25": 0.210534,
+        "borda": 0.268142,
+        "combmnz": 0.280749,
+        "combsum": 0.289811,
+        "dense": 0.344931,
+        "isr": 0.302011,
+        "rrf": 0.271268,
+        "rrf-fitted": 0.342274,
+        "rrf-oracle": 0.344931,
+        "ruffle-cold": 0.271268,
+        "ruffle-warm": 0.28099,
+        "ruffle-warm-aggressive": 0.285802,
+        "ruffle-warm-coupled": 0.287439,
+        "ruffle-warm-fitted": 0.340766,
+        "tfidf": 0.186451
+      }
+    },
+    "physics": {
+      "eval_queries": 520,
+      "ndcg10": {
+        "bm25": 0.324976,
+        "borda": 0.40514,
+        "combmnz": 0.423387,
+        "combsum": 0.436409,
+        "dense": 0.49504,
+        "isr": 0.436787,
+        "rrf": 0.405484,
+        "rrf-fitted": 0.49504,
+        "rrf-oracle": 0.49504,
+        "ruffle-cold": 0.405484,
+        "ruffle-warm": 0.408109,
+        "ruffle-warm-aggressive": 0.414054,
+        "ruffle-warm-coupled": 0.410722,
+        "ruffle-warm-fitted": 0.49504,
+        "tfidf": 0.287541
+      }
+    },
+    "programmers": {
+      "eval_queries": 438,
+      "ndcg10": {
+        "bm25": 0.270993,
+        "borda": 0.347402,
+        "combmnz": 0.361829,
+        "combsum": 0.373063,
+        "dense": 0.420685,
+        "isr": 0.361232,
+        "rrf": 0.349174,
+        "rrf-fitted": 0.404574,
+        "rrf-oracle": 0.420685,
+        "ruffle-cold": 0.349174,
+        "ruffle-warm": 0.356759,
+        "ruffle-warm-aggressive": 0.358974,
+        "ruffle-warm-coupled": 0.357463,
+        "ruffle-warm-fitted": 0.399044,
+        "tfidf": 0.231679
+      }
+    },
+    "stats": {
+      "eval_queries": 326,
+      "ndcg10": {
+        "bm25": 0.271666,
+        "borda": 0.323371,
+        "combmnz": 0.340017,
+        "combsum": 0.343924,
+        "dense": 0.351865,
+        "isr": 0.329948,
+        "rrf": 0.324412,
+        "rrf-fitted": 0.323394,
+        "rrf-oracle": 0.361612,
+        "ruffle-cold": 0.324412,
+        "ruffle-warm": 0.324459,
+        "ruffle-warm-aggressive": 0.310295,
+        "ruffle-warm-coupled": 0.325408,
+        "ruffle-warm-fitted": 0.327523,
+        "tfidf": 0.208244
+      }
+    },
+    "tex": {
+      "eval_queries": 1453,
+      "ndcg10": {
+        "bm25": 0.240644,
+        "borda": 0.274231,
+        "combmnz": 0.296256,
+        "combsum": 0.301744,
+        "dense": 0.316876,
+        "isr": 0.302055,
+        "rrf": 0.278339,
+        "rrf-fitted": 0.316876,
+        "rrf-oracle": 0.32408,
+        "ruffle-cold": 0.278339,
+        "ruffle-warm": 0.280861,
+        "ruffle-warm-aggressive": 0.279046,
+        "ruffle-warm-coupled": 0.283087,
+        "ruffle-warm-fitted": 0.316876,
+        "tfidf": 0.169781
+      }
+    },
+    "unix": {
+      "eval_queries": 536,
+      "ndcg10": {
+        "bm25": 0.285109,
+        "borda": 0.34012,
+        "combmnz": 0.357462,
+        "combsum": 0.369272,
+        "dense": 0.428246,
+        "isr": 0.37588,
+        "rrf": 0.339266,
+        "rrf-fitted": 0.418245,
+        "rrf-oracle": 0.428246,
+        "ruffle-cold": 0.339266,
+        "ruffle-warm": 0.35746,
+        "ruffle-warm-aggressive": 0.360363,
+        "ruffle-warm-coupled": 0.359628,
+        "ruffle-warm-fitted": 0.418936,
+        "tfidf": 0.230345
+      }
+    },
+    "webmasters": {
+      "eval_queries": 253,
+      "ndcg10": {
+        "bm25": 0.317784,
+        "borda": 0.383231,
+        "combmnz": 0.394892,
+        "combsum": 0.391059,
+        "dense": 0.423812,
+        "isr": 0.388016,
+        "rrf": 0.389702,
+        "rrf-fitted": 0.423812,
+        "rrf-oracle": 0.423812,
+        "ruffle-cold": 0.389702,
+        "ruffle-warm": 0.39548,
+        "ruffle-warm-aggressive": 0.382012,
+        "ruffle-warm-coupled": 0.396389,
+        "ruffle-warm-fitted": 0.423812,
+        "tfidf": 0.282553
+      }
+    },
+    "wordpress": {
+      "eval_queries": 271,
+      "ndcg10": {
+        "bm25": 0.314783,
+        "borda": 0.340452,
+        "combmnz": 0.364174,
+        "combsum": 0.37237,
+        "dense": 0.383369,
+        "isr": 0.364662,
+        "rrf": 0.347667,
+        "rrf-fitted": 0.401312,
+        "rrf-oracle": 0.401312,
+        "ruffle-cold": 0.347667,
+        "ruffle-warm": 0.344628,
+        "ruffle-warm-aggressive": 0.337764,
+        "ruffle-warm-coupled": 0.344367,
+        "ruffle-warm-fitted": 0.402512,
+        "tfidf": 0.19125
+      }
+    }
+  },
+  "warm_queries": 6570
+}

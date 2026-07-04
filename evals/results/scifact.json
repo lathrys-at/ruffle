@@ -1,66 +1,121 @@
 {
   "conditions": {
     "bm25": {
+      "delta_vs_rrf": {
+        "loss": 0.3,
+        "mean": -0.072292,
+        "p5": -0.430677,
+        "tie": 0.633333,
+        "win": 0.066667
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
+        "AP@100": 0.626913,
+        "R@10": 0.796556,
         "R@100": 0.923111,
         "RR@10": 0.634212,
         "nDCG@10": 0.66701
       },
-      "p_vs_rrf": 0.078486
+      "p_vs_rrf": 0.000159
     },
     "borda": {
+      "delta_vs_rrf": {
+        "loss": 0.066667,
+        "mean": -0.0046,
+        "p5": -0.017868,
+        "tie": 0.926667,
+        "win": 0.006667
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
-        "R@100": 0.983333,
-        "RR@10": 0.658153,
-        "nDCG@10": 0.700462
+        "AP@100": 0.688301,
+        "R@10": 0.879778,
+        "R@100": 0.993333,
+        "RR@10": 0.701045,
+        "nDCG@10": 0.734702
       },
-      "p_vs_rrf": 0.823912
+      "p_vs_rrf": 0.077874
     },
     "combmnz": {
+      "delta_vs_rrf": {
+        "loss": 0.093333,
+        "mean": 0.013882,
+        "p5": -0.069323,
+        "tie": 0.786667,
+        "win": 0.12
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
-        "R@100": 0.983333,
-        "RR@10": 0.673444,
-        "nDCG@10": 0.713351
+        "AP@100": 0.70804,
+        "R@10": 0.894778,
+        "R@100": 0.993333,
+        "RR@10": 0.715894,
+        "nDCG@10": 0.753183
       },
-      "p_vs_rrf": 0.071607
+      "p_vs_rrf": 0.11601
     },
     "combsum": {
+      "delta_vs_rrf": {
+        "loss": 0.12,
+        "mean": 0.015812,
+        "p5": -0.074469,
+        "tie": 0.746667,
+        "win": 0.133333
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
-        "R@100": 0.983333,
-        "RR@10": 0.676278,
-        "nDCG@10": 0.717899
+        "AP@100": 0.709681,
+        "R@10": 0.898111,
+        "R@100": 0.993333,
+        "RR@10": 0.716735,
+        "nDCG@10": 0.755113
       },
-      "p_vs_rrf": 0.03491
+      "p_vs_rrf": 0.108438
     },
     "dense": {
+      "delta_vs_rrf": {
+        "loss": 0.213333,
+        "mean": -0.002518,
+        "p5": -0.386853,
+        "tie": 0.613333,
+        "win": 0.173333
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
-        "R@100": 0.923333,
-        "RR@10": 0.58346,
-        "nDCG@10": 0.625455
+        "AP@100": 0.692195,
+        "R@10": 0.879778,
+        "R@100": 0.98,
+        "RR@10": 0.695934,
+        "nDCG@10": 0.736784
       },
-      "p_vs_rrf": 0.000208
+      "p_vs_rrf": 0.908837
     },
     "isr": {
+      "delta_vs_rrf": {
+        "loss": 0.146667,
+        "mean": 0.020347,
+        "p5": -0.200253,
+        "tie": 0.686667,
+        "win": 0.166667
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
-        "R@100": 0.983333,
-        "RR@10": 0.687431,
-        "nDCG@10": 0.728868
+        "AP@100": 0.710087,
+        "R@10": 0.911444,
+        "R@100": 0.993333,
+        "RR@10": 0.718421,
+        "nDCG@10": 0.759648
       },
-      "p_vs_rrf": 0.026044
+      "p_vs_rrf": 0.100785
     },
     "rrf": {
+      "delta_vs_rrf": null,
       "mean_conflict": null,
       "mean_weights": {
         "bm25": 1.0,
@@ -68,27 +123,100 @@
         "tfidf": 1.0
       },
       "metrics": {
-        "R@100": 0.976667,
-        "RR@10": 0.660439,
-        "nDCG@10": 0.699829
+        "AP@100": 0.693837,
+        "R@10": 0.879778,
+        "R@100": 0.993333,
+        "RR@10": 0.702989,
+        "nDCG@10": 0.739301
       },
       "p_vs_rrf": null
     },
-    "rrf-oracle": {
+    "rrf-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.16,
+        "mean": 0.024619,
+        "p5": -0.36907,
+        "tie": 0.633333,
+        "win": 0.206667
+      },
+      "fit": {
+        "budget": 10,
+        "draws": [
+          {
+            "rrf_fitted_ndcg10": 0.763921,
+            "ruffle_warm_fitted_ndcg10": 0.760086,
+            "weights": {
+              "bm25": 0.1,
+              "dense": 0.9,
+              "tfidf": 0.0
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.756782,
+            "ruffle_warm_fitted_ndcg10": 0.760602,
+            "weights": {
+              "bm25": 0.0,
+              "dense": 0.9,
+              "tfidf": 0.1
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.739593,
+            "ruffle_warm_fitted_ndcg10": 0.757381,
+            "weights": {
+              "bm25": 0.4,
+              "dense": 0.4,
+              "tfidf": 0.2
+            }
+          }
+        ]
+      },
       "mean_conflict": null,
       "mean_weights": {
-        "bm25": 0.7,
-        "dense": 0.2,
-        "tfidf": 0.1
+        "bm25": 0.1,
+        "dense": 0.9,
+        "tfidf": 0.0
       },
       "metrics": {
-        "R@100": 0.933111,
-        "RR@10": 0.673294,
-        "nDCG@10": 0.70672
+        "AP@100": 0.71893,
+        "R@10": 0.903111,
+        "R@100": 0.98,
+        "RR@10": 0.726328,
+        "nDCG@10": 0.763921
       },
-      "p_vs_rrf": 0.483265
+      "p_vs_rrf": 0.183167
+    },
+    "rrf-oracle": {
+      "delta_vs_rrf": {
+        "loss": 0.1,
+        "mean": 0.028589,
+        "p5": -0.122785,
+        "tie": 0.706667,
+        "win": 0.193333
+      },
+      "mean_conflict": null,
+      "mean_weights": {
+        "bm25": 0.1,
+        "dense": 0.6,
+        "tfidf": 0.3
+      },
+      "metrics": {
+        "AP@100": 0.723904,
+        "R@10": 0.908111,
+        "R@100": 0.986667,
+        "RR@10": 0.730894,
+        "nDCG@10": 0.767891
+      },
+      "p_vs_rrf": 0.009757
     },
     "ruffle-cold": {
+      "delta_vs_rrf": {
+        "loss": 0.0,
+        "mean": 0.0,
+        "p5": 0.0,
+        "tie": 1.0,
+        "win": 0.0
+      },
       "mean_conflict": 0.0,
       "mean_weights": {
         "bm25": 1.0,
@@ -96,53 +224,166 @@
         "tfidf": 1.0
       },
       "metrics": {
-        "R@100": 0.976667,
-        "RR@10": 0.660439,
-        "nDCG@10": 0.699829
+        "AP@100": 0.693837,
+        "R@10": 0.879778,
+        "R@100": 0.993333,
+        "RR@10": 0.702989,
+        "nDCG@10": 0.739301
       },
       "p_vs_rrf": null
     },
     "ruffle-warm": {
-      "mean_conflict": 0.205106,
+      "delta_vs_rrf": {
+        "loss": 0.04,
+        "mean": 0.016603,
+        "p5": 0.0,
+        "tie": 0.826667,
+        "win": 0.133333
+      },
+      "mean_conflict": 0.226431,
       "mean_weights": {
-        "bm25": 1.048843,
-        "dense": 0.986991,
-        "tfidf": 0.964167
+        "bm25": 1.004648,
+        "dense": 1.068496,
+        "tfidf": 0.926856
       },
       "metrics": {
-        "R@100": 0.983333,
-        "RR@10": 0.67296,
-        "nDCG@10": 0.712081
+        "AP@100": 0.713098,
+        "R@10": 0.888111,
+        "R@100": 0.986667,
+        "RR@10": 0.722294,
+        "nDCG@10": 0.755904
       },
-      "p_vs_rrf": 0.031977
+      "p_vs_rrf": 0.004087
+    },
+    "ruffle-warm-aggressive": {
+      "delta_vs_rrf": {
+        "loss": 0.1,
+        "mean": 0.009355,
+        "p5": -0.226294,
+        "tie": 0.76,
+        "win": 0.14
+      },
+      "mean_conflict": 0.183175,
+      "mean_weights": {
+        "bm25": 1.018675,
+        "dense": 1.308816,
+        "tfidf": 0.672509
+      },
+      "metrics": {
+        "AP@100": 0.705008,
+        "R@10": 0.884778,
+        "R@100": 0.97,
+        "RR@10": 0.710651,
+        "nDCG@10": 0.748657
+      },
+      "p_vs_rrf": 0.379523
     },
     "ruffle-warm-coupled": {
-      "mean_conflict": 0.205106,
+      "delta_vs_rrf": {
+        "loss": 0.046667,
+        "mean": 0.015156,
+        "p5": 0.0,
+        "tie": 0.82,
+        "win": 0.133333
+      },
+      "mean_conflict": 0.226431,
       "mean_weights": {
-        "bm25": 1.043824,
-        "dense": 1.064548,
-        "tfidf": 0.891628
+        "bm25": 0.984282,
+        "dense": 1.164562,
+        "tfidf": 0.851156
       },
       "metrics": {
-        "R@100": 0.976667,
-        "RR@10": 0.676164,
-        "nDCG@10": 0.714748
+        "AP@100": 0.711269,
+        "R@10": 0.888111,
+        "R@100": 0.98,
+        "RR@10": 0.72023,
+        "nDCG@10": 0.754457
       },
-      "p_vs_rrf": 0.018019
+      "p_vs_rrf": 0.006219
+    },
+    "ruffle-warm-fitted": {
+      "delta_vs_rrf": {
+        "loss": 0.153333,
+        "mean": 0.020785,
+        "p5": -0.36907,
+        "tie": 0.646667,
+        "win": 0.2
+      },
+      "fit": {
+        "budget": 10,
+        "draws": [
+          {
+            "rrf_fitted_ndcg10": 0.763921,
+            "ruffle_warm_fitted_ndcg10": 0.760086,
+            "weights": {
+              "bm25": 0.1,
+              "dense": 0.9,
+              "tfidf": 0.0
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.756782,
+            "ruffle_warm_fitted_ndcg10": 0.760602,
+            "weights": {
+              "bm25": 0.0,
+              "dense": 0.9,
+              "tfidf": 0.1
+            }
+          },
+          {
+            "rrf_fitted_ndcg10": 0.739593,
+            "ruffle_warm_fitted_ndcg10": 0.757381,
+            "weights": {
+              "bm25": 0.4,
+              "dense": 0.4,
+              "tfidf": 0.2
+            }
+          }
+        ]
+      },
+      "mean_conflict": 0.226431,
+      "mean_weights": {
+        "bm25": 0.349065,
+        "dense": 2.650935,
+        "tfidf": 0.0
+      },
+      "metrics": {
+        "AP@100": 0.715304,
+        "R@10": 0.899778,
+        "R@100": 0.98,
+        "RR@10": 0.720146,
+        "nDCG@10": 0.760086
+      },
+      "p_vs_rrf": 0.261493
     },
     "tfidf": {
+      "delta_vs_rrf": {
+        "loss": 0.306667,
+        "mean": -0.071482,
+        "p5": -0.386853,
+        "tie": 0.6,
+        "win": 0.093333
+      },
       "mean_conflict": null,
       "mean_weights": null,
       "metrics": {
+        "AP@100": 0.609131,
+        "R@10": 0.847889,
         "R@100": 0.938667,
         "RR@10": 0.61932,
         "nDCG@10": 0.667819
       },
-      "p_vs_rrf": 0.04036
+      "p_vs_rrf": 7e-06
     }
   },
   "coupling_refreshes": 10,
   "dataset": "scifact",
+  "engine_defaults": {
+    "denom_floor_frac": 0.75,
+    "top_eps": 0.1,
+    "top_m": 5,
+    "winsor_z": 2.5
+  },
   "eval_queries": 150,
   "ir_datasets_id": "beir/scifact/test",
   "k": 100,

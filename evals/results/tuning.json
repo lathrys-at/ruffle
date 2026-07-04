@@ -1,0 +1,479 @@
+{
+  "protocol": {
+    "candidates_evaluated": 522,
+    "floor_constraint": -0.001,
+    "objective": "macro-mean nDCG@10 delta vs plain RRF on reversed splits",
+    "rrf_eta": "fixed at 60",
+    "seed": 0,
+    "space": {
+      "denom_floor_frac": [
+        "discrimination",
+        "float",
+        [
+          0.2,
+          0.8
+        ]
+      ],
+      "discount_cap": [
+        "coupling",
+        "float",
+        [
+          0.2,
+          0.95
+        ]
+      ],
+      "enabled": [
+        "coupling",
+        "bool",
+        null
+      ],
+      "g_floor": [
+        "discrimination",
+        "float",
+        [
+          0.05,
+          0.5
+        ]
+      ],
+      "g_slope": [
+        "discrimination",
+        "logfloat",
+        [
+          0.5,
+          4.0
+        ]
+      ],
+      "g_upper_bound": [
+        "discrimination",
+        "float",
+        [
+          2.0,
+          8.0
+        ]
+      ],
+      "min_count_for_z": [
+        "discrimination",
+        "float",
+        [
+          3.0,
+          12.0
+        ]
+      ],
+      "min_distinct_values": [
+        "discrimination",
+        "choice",
+        [
+          5,
+          8,
+          12
+        ]
+      ],
+      "min_overlap": [
+        "coupling",
+        "choice",
+        [
+          10,
+          20,
+          30,
+          50
+        ]
+      ],
+      "min_refreshes": [
+        "coupling",
+        "float",
+        [
+          1.0,
+          8.0
+        ]
+      ],
+      "min_reliability": [
+        "coupling",
+        "float",
+        [
+          5.0,
+          50.0
+        ]
+      ],
+      "shrink_pool_size": [
+        "discrimination",
+        "choice",
+        [
+          10,
+          20,
+          40,
+          80
+        ]
+      ],
+      "shrink_to_identity": [
+        "coupling",
+        "float",
+        [
+          0.1,
+          0.7
+        ]
+      ],
+      "stratum_stability_max_var": [
+        "coupling",
+        "float",
+        [
+          0.1,
+          0.5
+        ]
+      ],
+      "top_eps": [
+        "discrimination",
+        "float",
+        [
+          0.02,
+          0.15
+        ]
+      ],
+      "top_m": [
+        "discrimination",
+        "choice",
+        [
+          5,
+          8,
+          10,
+          15,
+          20
+        ]
+      ],
+      "winsor_z": [
+        "discrimination",
+        "float",
+        [
+          2.5,
+          6.0
+        ]
+      ]
+    }
+  },
+  "reference_objectives": {
+    "defaults": 0.002862,
+    "defaults_coupled": 0.004236
+  },
+  "validation_std_direction": {
+    "cqadupstack": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.747679,
+          "RR@10": 0.35565,
+          "nDCG@10": 0.362321
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.722727,
+          "RR@10": 0.36032,
+          "nDCG@10": 0.366603
+        }
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.722559,
+          "RR@10": 0.361644,
+          "nDCG@10": 0.368758
+        }
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.713106,
+          "RR@10": 0.3642,
+          "nDCG@10": 0.371318
+        }
+      }
+    },
+    "fiqa": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.680657,
+          "RR@10": 0.368169,
+          "nDCG@10": 0.30767
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.648584,
+          "RR@10": 0.374701,
+          "nDCG@10": 0.311142
+        },
+        "p_vs_rrf": 0.518638
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.646321,
+          "RR@10": 0.373901,
+          "nDCG@10": 0.31354
+        },
+        "p_vs_rrf": 0.370889
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.631278,
+          "RR@10": 0.387167,
+          "nDCG@10": 0.32198
+        },
+        "p_vs_rrf": 0.081456
+      }
+    },
+    "msmarco": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.842311,
+          "RR@10": 0.270936,
+          "nDCG@10": 0.330112
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.831423,
+          "RR@10": 0.273209,
+          "nDCG@10": 0.334139
+        },
+        "p_vs_rrf": 0.042489
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.83171,
+          "RR@10": 0.273547,
+          "nDCG@10": 0.334615
+        },
+        "p_vs_rrf": 0.025317
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.822827,
+          "RR@10": 0.2767,
+          "nDCG@10": 0.338082
+        },
+        "p_vs_rrf": 0.000327
+      }
+    },
+    "nfcorpus": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.323538,
+          "RR@10": 0.521904,
+          "nDCG@10": 0.330342
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.325757,
+          "RR@10": 0.530269,
+          "nDCG@10": 0.334768
+        },
+        "p_vs_rrf": 0.189207
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.327643,
+          "RR@10": 0.52706,
+          "nDCG@10": 0.337135
+        },
+        "p_vs_rrf": 0.053777
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.31991,
+          "RR@10": 0.534392,
+          "nDCG@10": 0.336128
+        },
+        "p_vs_rrf": 0.162363
+      }
+    },
+    "quora": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.994578,
+          "RR@10": 0.832165,
+          "nDCG@10": 0.839214
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.993594,
+          "RR@10": 0.835997,
+          "nDCG@10": 0.844253
+        },
+        "p_vs_rrf": 2e-05
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.993607,
+          "RR@10": 0.839014,
+          "nDCG@10": 0.84758
+        },
+        "p_vs_rrf": 0.0
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.990956,
+          "RR@10": 0.840696,
+          "nDCG@10": 0.850514
+        },
+        "p_vs_rrf": 0.0
+      }
+    },
+    "scifact": {
+      "rrf": {
+        "metrics": {
+          "R@100": 0.976667,
+          "RR@10": 0.660439,
+          "nDCG@10": 0.699829
+        }
+      },
+      "ruffle-warm": {
+        "metrics": {
+          "R@100": 0.983333,
+          "RR@10": 0.67296,
+          "nDCG@10": 0.712081
+        },
+        "p_vs_rrf": 0.031977
+      },
+      "ruffle-warm-coupled": {
+        "metrics": {
+          "R@100": 0.976667,
+          "RR@10": 0.676164,
+          "nDCG@10": 0.714748
+        },
+        "p_vs_rrf": 0.018019
+      },
+      "ruffle-warm-tuned": {
+        "metrics": {
+          "R@100": 0.97,
+          "RR@10": 0.670008,
+          "nDCG@10": 0.708671
+        },
+        "p_vs_rrf": 0.272613
+      }
+    }
+  },
+  "winner": {
+    "changed_vs_defaults": {
+      "coupling.discount_cap": {
+        "default": 0.5,
+        "tuned": 0.656783
+      },
+      "coupling.enabled": {
+        "default": false,
+        "tuned": true
+      },
+      "coupling.min_overlap": {
+        "default": 30,
+        "tuned": 20
+      },
+      "coupling.min_refreshes": {
+        "default": 2.0,
+        "tuned": 2.221474
+      },
+      "coupling.min_reliability": {
+        "default": 10.0,
+        "tuned": 35.730522
+      },
+      "coupling.shrink_to_identity": {
+        "default": 0.5,
+        "tuned": 0.177108
+      },
+      "coupling.stratum_stability_max_var": {
+        "default": 0.25,
+        "tuned": 0.146688
+      },
+      "discrimination.denom_floor_frac": {
+        "default": 0.5,
+        "tuned": 0.79377
+      },
+      "discrimination.g_floor": {
+        "default": 0.25,
+        "tuned": 0.183894
+      },
+      "discrimination.g_slope": {
+        "default": 1.0,
+        "tuned": 1.014293
+      },
+      "discrimination.g_upper_bound": {
+        "default": 4.0,
+        "tuned": 6.864165
+      },
+      "discrimination.min_count_for_z": {
+        "default": 5.0,
+        "tuned": 4.917627
+      },
+      "discrimination.min_distinct_values": {
+        "default": 8,
+        "tuned": 12
+      },
+      "discrimination.shrink_pool_size": {
+        "default": 20,
+        "tuned": 80
+      },
+      "discrimination.top_eps": {
+        "default": 0.05,
+        "tuned": 0.10707
+      },
+      "discrimination.top_m": {
+        "default": 10,
+        "tuned": 5
+      },
+      "discrimination.winsor_z": {
+        "default": 4.0,
+        "tuned": 2.534691
+      }
+    },
+    "deltas_rev": {
+      "cqadupstack": 0.013573,
+      "fiqa": 0.01166,
+      "msmarco": 0.0088,
+      "nfcorpus": 0.015075,
+      "quora": 0.010505,
+      "scifact": 0.002091
+    },
+    "knobs": {
+      "coupling": {
+        "discount_cap": 0.656783,
+        "enabled": true,
+        "min_overlap": 20,
+        "min_refreshes": 2.221474,
+        "min_reliability": 35.730522,
+        "shrink_to_identity": 0.177108,
+        "stratum_stability_max_var": 0.146688
+      },
+      "discrimination": {
+        "denom_floor_frac": 0.79377,
+        "g_floor": 0.183894,
+        "g_slope": 1.014293,
+        "g_upper_bound": 6.864165,
+        "min_count_for_z": 4.917627,
+        "min_distinct_values": 12,
+        "shrink_pool_size": 80,
+        "top_eps": 0.10707,
+        "top_m": 5,
+        "winsor_z": 2.534691
+      }
+    },
+    "objective": 0.010284
+  },
+  "wrong_query_check": {
+    "fiqa": {
+      "rrf": 0.306643,
+      "warm-default": 0.296501,
+      "warm-tuned": 0.296392
+    },
+    "nfcorpus": {
+      "rrf": 0.326218,
+      "warm-default": 0.324873,
+      "warm-tuned": 0.321672
+    },
+    "quora": {
+      "rrf": 0.839153,
+      "warm-default": 0.814376,
+      "warm-tuned": 0.798997
+    },
+    "scifact": {
+      "rrf": 0.685259,
+      "warm-default": 0.650306,
+      "warm-tuned": 0.641182
+    }
+  }
+}
