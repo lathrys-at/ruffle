@@ -33,6 +33,20 @@ bindings read defaults from the engine, so they pick the field up without
 drift. The evaluation harness should gain a condition that sets oracle-derived
 base weights and measures the composed result against the oracle ceiling.
 
+## Proposed for 0.4
+
+### Feedback-learned channel weights
+
+A cumulative version of `base_weight`: the engine consumes explicit relevance
+judgments whenever they exist, in any quantity, and maintains the
+cross-channel tilt itself as a bounded, shrunk, mergeable per-channel
+statistic. Includes active grading guidance (the conflict diagnostic as an
+acquisition function for which queries to grade) and explicitly excludes
+implicit click feedback until presentation bias has its own evaluation. First
+state format bump since v2. Full design in
+[`proposals/feedback-learned-weights.md`](proposals/feedback-learned-weights.md);
+adversarial review pending before an implementation issue is opened.
+
 ## Candidate, not yet committed
 
 ### Heterogeneous-channel evaluation
