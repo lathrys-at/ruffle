@@ -1,5 +1,10 @@
 # @lathrys-at/ruffle
 
+[![CI](https://github.com/lathrys-at/ruffle/actions/workflows/test.yaml/badge.svg)](https://github.com/lathrys-at/ruffle/actions/workflows/test.yaml)
+[![npm](https://img.shields.io/npm/v/%40lathrys-at%2Fruffle.svg)](https://www.npmjs.com/package/@lathrys-at/ruffle)
+[![node](https://img.shields.io/node/v/%40lathrys-at%2Fruffle)](https://www.npmjs.com/package/@lathrys-at/ruffle)
+[![types](https://img.shields.io/npm/types/%40lathrys-at%2Fruffle)](https://www.npmjs.com/package/@lathrys-at/ruffle)
+
 Weighted, adaptive, calibration-free Reciprocal Rank Fusion (RRF) for TypeScript and
 JavaScript.
 
