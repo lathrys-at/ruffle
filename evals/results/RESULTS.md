@@ -70,19 +70,19 @@ on this split is nDCG@10 0.7393, R@100 0.9933.
 
 | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|---|---|
-| bm25 | 0.2945 | 0.2375 | 0.5108 | 0.001 |  |  |
-| tfidf | 0.3070 | 0.2709 | 0.5138 | 0.008 |  |  |
-| dense | 0.3126 | 0.3121 | 0.5073 | 0.216 |  |  |
-| rrf | 0.3303 | 0.3235 | 0.5219 |  |  | 1.000 / 1.000 / 1.000 |
-| borda | 0.3170 | 0.3231 | 0.5066 | 0.013 |  |  |
-| isr | 0.3302 | 0.3279 | 0.5318 | 0.990 |  |  |
-| combsum | 0.3368 | 0.3321 | 0.5305 | 0.290 |  |  |
-| combmnz | 0.3343 | 0.3329 | 0.5298 | 0.425 |  |  |
-| ruffle-cold | 0.3303 | 0.3235 | 0.5219 |  |  | 1.000 / 1.000 / 1.000 |
-| ruffle-warm | 0.3348 | 0.3258 | 0.5303 | 0.189 |  | 1.088 / 0.957 / 0.955 |
-| ruffle-warm-coupled | 0.3371 | 0.3276 | 0.5271 | 0.054 |  | 1.083 / 0.891 / 1.026 |
-| ruffle-warm-aggressive | 0.3451 | 0.3147 | 0.5399 | 0.031 |  | 1.328 / 0.735 / 0.937 |
-| rrf-oracle | 0.3332 | 0.3323 | 0.5284 | 0.321 |  | 0.300 / 0.300 / 0.400 |
+| bm25 | 0.2945 | 0.2375 | 0.5108 | 0.000 | 13% / 41% |  |
+| tfidf | 0.3070 | 0.2709 | 0.5138 | 0.000 | 17% / 40% |  |
+| dense | 0.3255 | 0.3128 | 0.5096 | 0.144 | 29% / 38% |  |
+| rrf | 0.3427 | 0.3158 | 0.5501 |  |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.3383 | 0.3159 | 0.5406 | 0.220 | 20% / 19% |  |
+| isr | 0.3309 | 0.3180 | 0.5453 | 0.063 | 25% / 33% |  |
+| combsum | 0.3411 | 0.3209 | 0.5584 | 0.765 | 28% / 20% |  |
+| combmnz | 0.3449 | 0.3215 | 0.5580 | 0.588 | 25% / 19% |  |
+| ruffle-cold | 0.3427 | 0.3158 | 0.5501 |  | 0% / 0% | 1.000 / 1.000 / 1.000 |
+| ruffle-warm | 0.3434 | 0.3112 | 0.5485 | 0.862 | 20% / 15% | 1.094 / 0.957 / 0.949 |
+| ruffle-warm-coupled | 0.3432 | 0.3149 | 0.5485 | 0.901 | 22% / 17% | 1.073 / 0.892 / 1.035 |
+| ruffle-warm-aggressive | 0.3444 | 0.3055 | 0.5514 | 0.771 | 25% / 24% | 1.325 / 0.721 / 0.954 |
+| rrf-oracle | 0.3461 | 0.3240 | 0.5558 | 0.114 | 20% / 12% | 0.300 / 0.300 / 0.400 |
 
 #### Degraded fourth channel
 
@@ -94,33 +94,33 @@ four-channel RRF, so it reads what each fusion recovers of the damage.
 
 | mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
 |---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.3303 | 0.3235 | 0.5219 | 0.084 |  |  |
-| wrong-query | rrf | 0.3255 | 0.3084 | 0.5176 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.3247 | 0.3072 | 0.5055 | 0.858 | 1.054 | 0.351 |
-| wrong-query | ruffle-warm-aggressive | 0.3111 | 0.2950 | 0.4749 | 0.074 | 1.157 | 0.256 |
-| flaky | rrf-clean | 0.3303 | 0.3235 | 0.5219 | 0.009 |  |  |
-| flaky | rrf | 0.3131 | 0.3036 | 0.5056 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.3210 | 0.3076 | 0.5203 | 0.049 | 1.062 | 0.266 |
-| flaky | ruffle-warm-aggressive | 0.3280 | 0.3115 | 0.5258 | 0.015 | 1.199 | 0.193 |
+| wrong-query | rrf-clean | 0.3427 | 0.3158 | 0.5501 | 0.025 |  |  |
+| wrong-query | rrf | 0.3365 | 0.3093 | 0.5444 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.3257 | 0.2948 | 0.5123 | 0.043 | 1.050 | 0.364 |
+| wrong-query | ruffle-warm-aggressive | 0.3095 | 0.2847 | 0.4840 | 0.003 | 1.185 | 0.282 |
+| flaky | rrf-clean | 0.3427 | 0.3158 | 0.5501 | 0.000 |  |  |
+| flaky | rrf | 0.3220 | 0.3004 | 0.5239 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.3369 | 0.2957 | 0.5470 | 0.001 | 1.056 | 0.268 |
+| flaky | ruffle-warm-aggressive | 0.3394 | 0.2943 | 0.5486 | 0.002 | 1.201 | 0.213 |
 
-In the flaky mode the broken channel's mean weight on the 81 failed evaluation queries is 0.795, against 1.329 on the healthy ones.
-Under the aggressive profile that split widens to 0.746 against 1.653.
+In the flaky mode the broken channel's mean weight on the 81 failed evaluation queries is 0.768, against 1.343 on the healthy ones.
+Under the aggressive profile that split widens to 0.713 against 1.688.
 
 #### Warmup learning curve
 
 Ruffle warm (default configuration) on the fixed evaluation split, warmed
 on increasing prefixes of the warmup split. Size zero is online-from-cold:
 the fuser adapts across the evaluation queries themselves. The RRF floor
-on this split is nDCG@10 0.3303, R@100 0.3235.
+on this split is nDCG@10 0.3427, R@100 0.3158.
 
 | warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|
-| 0 | 0.3324 | 0.3216 | 0.541 | 1.062 / 0.994 / 0.944 |
-| 10 | 0.3332 | 0.3203 | 0.397 | 1.058 / 0.998 / 0.944 |
-| 25 | 0.3344 | 0.3245 | 0.219 | 1.030 / 1.003 / 0.967 |
-| 50 | 0.3342 | 0.3245 | 0.227 | 1.074 / 0.983 / 0.943 |
-| 100 | 0.3342 | 0.3262 | 0.242 | 1.077 / 0.968 / 0.955 |
-| 161 | 0.3348 | 0.3258 | 0.189 | 1.088 / 0.957 / 0.955 |
+| 0 | 0.3432 | 0.3134 | 0.886 | 1.061 / 0.992 / 0.947 |
+| 10 | 0.3421 | 0.3113 | 0.887 | 1.066 / 1.007 / 0.927 |
+| 25 | 0.3420 | 0.3094 | 0.864 | 1.049 / 1.022 / 0.929 |
+| 50 | 0.3429 | 0.3116 | 0.961 | 1.079 / 0.980 / 0.941 |
+| 100 | 0.3427 | 0.3117 | 0.999 | 1.081 / 0.966 / 0.953 |
+| 161 | 0.3434 | 0.3112 | 0.862 | 1.094 / 0.957 / 0.949 |
 
 ### fiqa
 
@@ -128,19 +128,19 @@ on this split is nDCG@10 0.3303, R@100 0.3235.
 
 | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|---|---|
-| bm25 | 0.2454 | 0.5059 | 0.3076 | 0.000 |  |  |
-| tfidf | 0.1684 | 0.4724 | 0.2082 | 0.000 |  |  |
-| dense | 0.3720 | 0.7197 | 0.4478 | 0.000 |  |  |
-| rrf | 0.3077 | 0.6807 | 0.3682 |  |  | 1.000 / 1.000 / 1.000 |
-| borda | 0.3056 | 0.6816 | 0.3630 | 0.445 |  |  |
-| isr | 0.3296 | 0.6849 | 0.3911 | 0.027 |  |  |
-| combsum | 0.3334 | 0.6864 | 0.3931 | 0.000 |  |  |
-| combmnz | 0.3297 | 0.6814 | 0.3932 | 0.000 |  |  |
-| ruffle-cold | 0.3077 | 0.6807 | 0.3682 |  |  | 1.000 / 1.000 / 1.000 |
-| ruffle-warm | 0.3111 | 0.6486 | 0.3747 | 0.519 |  | 0.976 / 0.989 / 1.035 |
-| ruffle-warm-coupled | 0.3135 | 0.6463 | 0.3739 | 0.371 |  | 0.947 / 0.955 / 1.098 |
-| ruffle-warm-aggressive | 0.3100 | 0.6132 | 0.3727 | 0.821 |  | 0.916 / 0.927 / 1.156 |
-| rrf-oracle | 0.3795 | 0.7197 | 0.4511 | 0.000 |  | 0.200 / 0.000 / 0.800 |
+| bm25 | 0.2454 | 0.5059 | 0.3076 | 0.000 | 5% / 41% |  |
+| tfidf | 0.1684 | 0.4724 | 0.2082 | 0.000 | 3% / 52% |  |
+| dense | 0.5406 | 0.8468 | 0.6155 | 0.000 | 57% / 14% |  |
+| rrf | 0.3476 | 0.7873 | 0.4190 |  |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.3419 | 0.7920 | 0.4076 | 0.060 | 7% / 13% |  |
+| isr | 0.4092 | 0.7923 | 0.4625 | 0.000 | 40% / 22% |  |
+| combsum | 0.3872 | 0.7927 | 0.4496 | 0.000 | 31% / 17% |  |
+| combmnz | 0.3741 | 0.7892 | 0.4408 | 0.000 | 27% / 10% |  |
+| ruffle-cold | 0.3476 | 0.7873 | 0.4190 |  | 0% / 0% | 1.000 / 1.000 / 1.000 |
+| ruffle-warm | 0.3538 | 0.7426 | 0.4179 | 0.384 | 20% / 14% | 0.969 / 0.990 / 1.041 |
+| ruffle-warm-coupled | 0.3586 | 0.7385 | 0.4260 | 0.196 | 23% / 15% | 0.943 / 0.948 / 1.109 |
+| ruffle-warm-aggressive | 0.3556 | 0.6850 | 0.4122 | 0.522 | 27% / 22% | 0.896 / 0.924 / 1.179 |
+| rrf-oracle | 0.5406 | 0.8468 | 0.6155 | 0.000 | 57% / 14% | 0.000 / 0.000 / 1.000 |
 
 #### Degraded fourth channel
 
@@ -152,34 +152,34 @@ four-channel RRF, so it reads what each fusion recovers of the damage.
 
 | mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
 |---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.3077 | 0.6807 | 0.3682 | 0.284 |  |  |
-| wrong-query | rrf | 0.3067 | 0.6452 | 0.3678 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.2965 | 0.5993 | 0.3619 | 0.153 | 1.031 | 0.412 |
-| wrong-query | ruffle-warm-aggressive | 0.2700 | 0.5533 | 0.3297 | 0.002 | 1.077 | 0.324 |
-| flaky | rrf-clean | 0.3077 | 0.6807 | 0.3682 | 0.000 |  |  |
-| flaky | rrf | 0.2860 | 0.6225 | 0.3426 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.3005 | 0.6006 | 0.3634 | 0.007 | 1.024 | 0.368 |
-| flaky | ruffle-warm-aggressive | 0.2978 | 0.5927 | 0.3646 | 0.132 | 1.115 | 0.286 |
+| wrong-query | rrf-clean | 0.3476 | 0.7873 | 0.4190 | 0.058 |  |  |
+| wrong-query | rrf | 0.3450 | 0.7597 | 0.4168 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.3278 | 0.6810 | 0.3917 | 0.067 | 1.046 | 0.421 |
+| wrong-query | ruffle-warm-aggressive | 0.3122 | 0.6059 | 0.3604 | 0.011 | 1.092 | 0.336 |
+| flaky | rrf-clean | 0.3476 | 0.7873 | 0.4190 | 0.000 |  |  |
+| flaky | rrf | 0.3230 | 0.7161 | 0.3877 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.3366 | 0.6664 | 0.4084 | 0.062 | 1.036 | 0.371 |
+| flaky | ruffle-warm-aggressive | 0.3404 | 0.6411 | 0.4097 | 0.078 | 1.133 | 0.302 |
 
-In the flaky mode the broken channel's mean weight on the 159 failed evaluation queries is 0.614, against 1.418 on the healthy ones.
-Under the aggressive profile that split widens to 0.367 against 1.837.
+In the flaky mode the broken channel's mean weight on the 159 failed evaluation queries is 0.608, against 1.448 on the healthy ones.
+Under the aggressive profile that split widens to 0.393 against 1.847.
 
 #### Warmup learning curve
 
 Ruffle warm (default configuration) on the fixed evaluation split, warmed
 on increasing prefixes of the warmup split. Size zero is online-from-cold:
 the fuser adapts across the evaluation queries themselves. The RRF floor
-on this split is nDCG@10 0.3077, R@100 0.6807.
+on this split is nDCG@10 0.3476, R@100 0.7873.
 
 | warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|
-| 0 | 0.3151 | 0.6425 | 0.182 | 0.988 / 0.976 / 1.036 |
-| 10 | 0.3138 | 0.6453 | 0.268 | 0.985 / 0.984 / 1.031 |
-| 25 | 0.3138 | 0.6446 | 0.265 | 0.971 / 0.988 / 1.041 |
-| 50 | 0.3123 | 0.6475 | 0.384 | 0.989 / 0.988 / 1.023 |
-| 100 | 0.3127 | 0.6457 | 0.349 | 0.990 / 0.985 / 1.025 |
-| 250 | 0.3112 | 0.6492 | 0.516 | 0.982 / 0.982 / 1.036 |
-| 324 | 0.3111 | 0.6486 | 0.519 | 0.976 / 0.989 / 1.035 |
+| 0 | 0.3510 | 0.7376 | 0.642 | 1.004 / 0.988 / 1.008 |
+| 10 | 0.3522 | 0.7324 | 0.514 | 1.005 / 0.998 / 0.997 |
+| 25 | 0.3532 | 0.7397 | 0.433 | 0.981 / 0.995 / 1.024 |
+| 50 | 0.3517 | 0.7337 | 0.561 | 0.995 / 0.998 / 1.007 |
+| 100 | 0.3516 | 0.7352 | 0.577 | 0.981 / 1.000 / 1.019 |
+| 250 | 0.3558 | 0.7445 | 0.261 | 0.968 / 0.984 / 1.048 |
+| 324 | 0.3538 | 0.7426 | 0.384 | 0.969 / 0.990 / 1.041 |
 
 ### quora
 
@@ -187,19 +187,19 @@ on this split is nDCG@10 0.3077, R@100 0.6807.
 
 | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|---|---|
-| bm25 | 0.7462 | 0.9498 | 0.7392 | 0.000 |  |  |
-| tfidf | 0.7662 | 0.9714 | 0.7573 | 0.000 |  |  |
-| dense | 0.8778 | 0.9945 | 0.8691 | 0.000 |  |  |
-| rrf | 0.8392 | 0.9946 | 0.8322 |  |  | 1.000 / 1.000 / 1.000 |
-| borda | 0.8361 | 0.9950 | 0.8285 | 0.000 |  |  |
-| isr | 0.8587 | 0.9949 | 0.8513 | 0.000 |  |  |
-| combsum | 0.8610 | 0.9950 | 0.8523 | 0.000 |  |  |
-| combmnz | 0.8557 | 0.9951 | 0.8487 | 0.000 |  |  |
-| ruffle-cold | 0.8392 | 0.9946 | 0.8322 |  |  | 1.000 / 1.000 / 1.000 |
-| ruffle-warm | 0.8443 | 0.9936 | 0.8360 | 0.000 |  | 1.024 / 0.984 / 0.992 |
-| ruffle-warm-coupled | 0.8476 | 0.9936 | 0.8390 | 0.000 |  | 0.972 / 0.938 / 1.090 |
-| ruffle-warm-aggressive | 0.8458 | 0.9870 | 0.8365 | 0.003 |  | 1.028 / 0.910 / 1.062 |
-| rrf-oracle | 0.8820 | 0.9945 | 0.8743 | 0.000 |  | 0.000 / 0.100 / 0.900 |
+| bm25 | 0.7462 | 0.9498 | 0.7392 | 0.000 | 5% / 33% |  |
+| tfidf | 0.7662 | 0.9714 | 0.7573 | 0.000 | 8% / 29% |  |
+| dense | 0.8879 | 0.9974 | 0.8784 | 0.000 | 23% / 12% |  |
+| rrf | 0.8416 | 0.9962 | 0.8349 |  |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.8383 | 0.9971 | 0.8320 | 0.000 | 4% / 6% |  |
+| isr | 0.8656 | 0.9971 | 0.8572 | 0.000 | 16% / 11% |  |
+| combsum | 0.8676 | 0.9974 | 0.8602 | 0.000 | 16% / 6% |  |
+| combmnz | 0.8616 | 0.9972 | 0.8554 | 0.000 | 14% / 6% |  |
+| ruffle-cold | 0.8416 | 0.9962 | 0.8349 |  | 0% / 0% | 1.000 / 1.000 / 1.000 |
+| ruffle-warm | 0.8474 | 0.9940 | 0.8383 | 0.000 | 10% / 8% | 1.014 / 0.986 / 1.001 |
+| ruffle-warm-coupled | 0.8518 | 0.9934 | 0.8418 | 0.000 | 13% / 8% | 0.967 / 0.947 / 1.087 |
+| ruffle-warm-aggressive | 0.8489 | 0.9883 | 0.8387 | 0.002 | 15% / 14% | 0.998 / 0.928 / 1.074 |
+| rrf-oracle | 0.8932 | 0.9974 | 0.8856 | 0.000 | 23% / 9% | 0.000 / 0.100 / 0.900 |
 
 #### Degraded fourth channel
 
@@ -211,37 +211,37 @@ four-channel RRF, so it reads what each fusion recovers of the damage.
 
 | mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
 |---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.8392 | 0.9946 | 0.8322 | 0.090 |  |  |
-| wrong-query | rrf | 0.8389 | 0.9929 | 0.8318 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.8143 | 0.9897 | 0.8048 | 0.000 | 1.022 | 0.371 |
-| wrong-query | ruffle-warm-aggressive | 0.7095 | 0.9324 | 0.6993 | 0.000 | 1.061 | 0.246 |
-| flaky | rrf-clean | 0.8392 | 0.9946 | 0.8322 | 0.000 |  |  |
-| flaky | rrf | 0.7968 | 0.9906 | 0.7804 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.8174 | 0.9899 | 0.8067 | 0.000 | 1.028 | 0.264 |
-| flaky | ruffle-warm-aggressive | 0.8083 | 0.9841 | 0.7968 | 0.000 | 1.141 | 0.178 |
+| wrong-query | rrf-clean | 0.8416 | 0.9962 | 0.8349 | 0.167 |  |  |
+| wrong-query | rrf | 0.8414 | 0.9938 | 0.8347 |  | 1.000 |  |
+| wrong-query | ruffle-warm | 0.8025 | 0.9895 | 0.7924 | 0.000 | 1.023 | 0.383 |
+| wrong-query | ruffle-warm-aggressive | 0.7104 | 0.9185 | 0.7003 | 0.000 | 1.051 | 0.272 |
+| flaky | rrf-clean | 0.8416 | 0.9962 | 0.8349 | 0.000 |  |  |
+| flaky | rrf | 0.8005 | 0.9921 | 0.7854 |  | 1.000 |  |
+| flaky | ruffle-warm | 0.8195 | 0.9892 | 0.8084 | 0.000 | 1.028 | 0.265 |
+| flaky | ruffle-warm-aggressive | 0.8119 | 0.9832 | 0.8008 | 0.000 | 1.132 | 0.194 |
 
-In the flaky mode the broken channel's mean weight on the 2490 failed evaluation queries is 0.669, against 1.385 on the healthy ones.
-Under the aggressive profile that split widens to 0.466 against 1.810.
+In the flaky mode the broken channel's mean weight on the 2490 failed evaluation queries is 0.635, against 1.418 on the healthy ones.
+Under the aggressive profile that split widens to 0.425 against 1.833.
 
 #### Warmup learning curve
 
 Ruffle warm (default configuration) on the fixed evaluation split, warmed
 on increasing prefixes of the warmup split. Size zero is online-from-cold:
 the fuser adapts across the evaluation queries themselves. The RRF floor
-on this split is nDCG@10 0.8392, R@100 0.9946.
+on this split is nDCG@10 0.8416, R@100 0.9962.
 
 | warmup queries | nDCG@10 | R@100 | p vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|
-| 0 | 0.8443 | 0.9937 | 0.000 | 1.018 / 0.986 / 0.995 |
-| 10 | 0.8443 | 0.9937 | 0.000 | 1.018 / 0.986 / 0.997 |
-| 25 | 0.8444 | 0.9936 | 0.000 | 1.017 / 0.987 / 0.996 |
-| 50 | 0.8445 | 0.9936 | 0.000 | 1.015 / 0.988 / 0.996 |
-| 100 | 0.8445 | 0.9937 | 0.000 | 1.013 / 0.991 / 0.997 |
-| 250 | 0.8447 | 0.9937 | 0.000 | 1.010 / 0.992 / 0.998 |
-| 500 | 0.8445 | 0.9937 | 0.000 | 1.015 / 0.990 / 0.995 |
-| 1000 | 0.8443 | 0.9936 | 0.000 | 1.020 / 0.984 / 0.997 |
-| 2500 | 0.8444 | 0.9936 | 0.000 | 1.021 / 0.985 / 0.994 |
-| 5000 | 0.8443 | 0.9936 | 0.000 | 1.024 / 0.984 / 0.992 |
+| 0 | 0.8474 | 0.9940 | 0.000 | 1.010 / 0.987 / 1.003 |
+| 10 | 0.8475 | 0.9940 | 0.000 | 1.010 / 0.985 / 1.004 |
+| 25 | 0.8475 | 0.9940 | 0.000 | 1.010 / 0.987 / 1.003 |
+| 50 | 0.8476 | 0.9940 | 0.000 | 1.009 / 0.990 / 1.002 |
+| 100 | 0.8475 | 0.9940 | 0.000 | 1.008 / 0.994 / 0.998 |
+| 250 | 0.8476 | 0.9939 | 0.000 | 1.006 / 0.995 / 0.999 |
+| 500 | 0.8475 | 0.9939 | 0.000 | 1.010 / 0.993 / 0.997 |
+| 1000 | 0.8474 | 0.9939 | 0.000 | 1.016 / 0.987 / 0.997 |
+| 2500 | 0.8475 | 0.9940 | 0.000 | 1.014 / 0.986 / 1.000 |
+| 5000 | 0.8474 | 0.9940 | 0.000 | 1.014 / 0.986 / 1.001 |
 
 ### cqadupstack
 
@@ -251,73 +251,16 @@ Macro-averaged over the 12 subforums, each with its own corpus, channels, warmup
 
 | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / tfidf / dense) |
 |---|---|---|---|---|---|---|
-| bm25 | 0.3078 | 0.5744 | 0.3056 | 0.000 |  |  |
-| tfidf | 0.2562 | 0.5735 | 0.2492 | 0.000 |  |  |
-| dense | 0.4066 | 0.7852 | 0.3936 | 0.000 |  |  |
-| rrf | 0.3623 | 0.7477 | 0.3557 |  |  | 1.000 / 1.000 / 1.000 |
-| borda | 0.3593 | 0.7497 | 0.3517 | 0.000 |  |  |
-| isr | 0.3814 | 0.7501 | 0.3694 | 0.000 |  |  |
-| combsum | 0.3851 | 0.7548 | 0.3763 | 0.000 |  |  |
-| combmnz | 0.3789 | 0.7553 | 0.3723 | 0.000 |  |  |
-| ruffle-cold | 0.3623 | 0.7477 | 0.3557 |  |  | 1.000 / 1.000 / 1.000 |
-| ruffle-warm | 0.3666 | 0.7227 | 0.3603 | 0.001 |  | 1.002 / 0.987 / 1.010 |
-| ruffle-warm-coupled | 0.3688 | 0.7226 | 0.3616 | 0.000 |  | 0.974 / 0.942 / 1.084 |
-| ruffle-warm-aggressive | 0.3641 | 0.6875 | 0.3572 | 0.182 |  | 1.000 / 0.895 / 1.106 |
-| rrf-oracle | 0.4153 | 0.7856 | 0.4011 | 0.000 |  | 0.084 / 0.035 / 0.881 |
-
-### msmarco
-
-8841823 passages, top-100 per channel, ruffle 0.2.0.
-
-Two channels (the canonical BM25 + dense hybrid pair). Warmed on 3490 dev queries; dl19/dl20 are fused from the same dev-warmed state snapshot, a cross-query-set transfer over the shared corpus.
-
-#### dev (3490 evaluation queries)
-
-| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
-|---|---|---|---|---|---|---|
-| bm25 | 0.2111 | 0.6248 | 0.1673 | 0.000 |  |  |
-| dense | 0.3615 | 0.8507 | 0.3045 | 0.000 |  |  |
-| rrf | 0.3301 | 0.8423 | 0.2709 |  |  | 1.000 / 1.000 |
-| borda | 0.3284 | 0.8415 | 0.2672 | 0.101 |  |  |
-| isr | 0.3358 | 0.8420 | 0.2744 | 0.163 |  |  |
-| combsum | 0.3535 | 0.8470 | 0.2895 | 0.000 |  |  |
-| combmnz | 0.3454 | 0.8473 | 0.2841 | 0.000 |  |  |
-| ruffle-cold | 0.3301 | 0.8423 | 0.2709 |  |  | 1.000 / 1.000 |
-| ruffle-warm | 0.3341 | 0.8314 | 0.2732 | 0.042 |  | 1.008 / 0.992 |
-| ruffle-warm-coupled | 0.3346 | 0.8317 | 0.2735 | 0.025 |  | 1.008 / 0.992 |
-| ruffle-warm-aggressive | 0.3328 | 0.8020 | 0.2718 | 0.339 |  | 1.032 / 0.968 |
-| rrf-oracle | 0.3651 | 0.8507 | 0.3052 | 0.000 |  | 0.100 / 0.900 |
-
-#### dl19 (43 evaluation queries)
-
-| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
-|---|---|---|---|---|---|---|
-| bm25 | 0.4238 | 0.4033 | 0.7207 | 0.000 |  |  |
-| dense | 0.6356 | 0.4663 | 0.9360 | 0.190 |  |  |
-| rrf | 0.6052 | 0.5105 | 0.8905 |  |  | 1.000 / 1.000 |
-| borda | 0.5930 | 0.5097 | 0.8886 | 0.046 |  |  |
-| isr | 0.5499 | 0.5107 | 0.8987 | 0.014 |  |  |
-| combsum | 0.5950 | 0.5091 | 0.8915 | 0.488 |  |  |
-| combmnz | 0.6061 | 0.5108 | 0.8905 | 0.897 |  |  |
-| ruffle-cold | 0.6052 | 0.5105 | 0.8905 |  |  | 1.000 / 1.000 |
-| ruffle-warm | 0.5999 | 0.4850 | 0.8444 | 0.597 |  | 0.954 / 1.046 |
-| ruffle-warm-coupled | 0.5982 | 0.4843 | 0.8444 | 0.486 |  | 0.953 / 1.047 |
-| ruffle-warm-aggressive | 0.5982 | 0.4605 | 0.8524 | 0.653 |  | 0.913 / 1.087 |
-| rrf-oracle | 0.6423 | 0.4663 | 0.8740 | 0.040 |  | 0.200 / 0.800 |
-
-#### dl20 (54 evaluation queries)
-
-| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
-|---|---|---|---|---|---|---|
-| bm25 | 0.4775 | 0.4260 | 0.8223 | 0.000 |  |  |
-| dense | 0.6565 | 0.5298 | 0.9213 | 0.023 |  |  |
-| rrf | 0.5999 | 0.5725 | 0.8792 |  |  | 1.000 / 1.000 |
-| borda | 0.5990 | 0.5700 | 0.8798 | 0.820 |  |  |
-| isr | 0.6187 | 0.5711 | 0.9005 | 0.213 |  |  |
-| combsum | 0.6443 | 0.5755 | 0.9043 | 0.001 |  |  |
-| combmnz | 0.6279 | 0.5771 | 0.8849 | 0.001 |  |  |
-| ruffle-cold | 0.5999 | 0.5725 | 0.8792 |  |  | 1.000 / 1.000 |
-| ruffle-warm | 0.5908 | 0.5274 | 0.8875 | 0.217 |  | 1.013 / 0.987 |
-| ruffle-warm-coupled | 0.5908 | 0.5261 | 0.8875 | 0.220 |  | 1.013 / 0.987 |
-| ruffle-warm-aggressive | 0.5835 | 0.4843 | 0.8981 | 0.332 |  | 1.084 / 0.916 |
-| rrf-oracle | 0.6565 | 0.5298 | 0.9213 | 0.023 |  | 0.000 / 1.000 |
+| bm25 | 0.3078 | 0.5744 | 0.3056 | 0.000 | 8% / 25% |  |
+| tfidf | 0.2562 | 0.5735 | 0.2492 | 0.000 | 5% / 33% |  |
+| dense | 0.4340 | 0.7813 | 0.4231 | 0.000 | 29% / 17% |  |
+| rrf | 0.3695 | 0.7491 | 0.3639 |  |  | 1.000 / 1.000 / 1.000 |
+| borda | 0.3667 | 0.7494 | 0.3614 | 0.000 | 5% / 7% |  |
+| isr | 0.3953 | 0.7506 | 0.3829 | 0.000 | 21% / 15% |  |
+| combsum | 0.3938 | 0.7563 | 0.3828 | 0.000 | 18% / 10% |  |
+| combmnz | 0.3847 | 0.7548 | 0.3777 | 0.000 | 15% / 8% |  |
+| ruffle-cold | 0.3695 | 0.7491 | 0.3639 |  | 0% / 0% | 1.000 / 1.000 / 1.000 |
+| ruffle-warm | 0.3753 | 0.7209 | 0.3698 | 0.000 | 11% / 9% | 0.991 / 0.989 / 1.019 |
+| ruffle-warm-coupled | 0.3771 | 0.7202 | 0.3719 | 0.000 | 13% / 10% | 0.965 / 0.945 / 1.090 |
+| ruffle-warm-aggressive | 0.3737 | 0.6910 | 0.3671 | 0.009 | 16% / 15% | 0.958 / 0.911 / 1.131 |
+| rrf-oracle | 0.4374 | 0.7813 | 0.4261 | 0.000 | 29% / 14% | 0.047 / 0.027 / 0.926 |

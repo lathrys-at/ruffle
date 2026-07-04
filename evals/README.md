@@ -3,7 +3,9 @@
 This directory measures Ruffle as a rank fusion engine on standard BEIR test
 collections, against plain reciprocal-rank fusion and against each retrieval
 channel on its own. It is a development harness, not part of any published
-package; the numbers of record live in [`results/RESULTS.md`](results/RESULTS.md).
+package. The headline comparison lives in
+[`results/SUMMARY.md`](results/SUMMARY.md); the full per-collection tables are
+in [`results/RESULTS.md`](results/RESULTS.md).
 
 ## Protocol
 
@@ -157,7 +159,8 @@ and run depth, so re-runs only re-execute the fusion and the metrics. Each run
 writes `results/<dataset>.json` (the main comparison: aggregate metrics, mean
 weights, p-values, and the environment),
 `results/<dataset>-degraded.json`, and `results/<dataset>-curve.json`, then
-regenerates `results/RESULTS.md` from all result files present.
+regenerates `results/RESULTS.md`, `results/SUMMARY.md`, and the summary chart
+from all result files present.
 
 ## Deferred
 
@@ -166,9 +169,13 @@ Two extensions are noted for a future round.
 A rerun with a larger embedding model as the dense channel, for example
 `Qwen/Qwen3-Embedding-0.6B` (Apache-2.0, currently the strongest small open
 retrieval model, and one that wants a query instruction prefix at encode time,
-which the channel's prompt constants support). The blocker is compute, not
-plumbing: at 0.6B parameters the MS MARCO corpus alone is several days of local
-embedding, where `gte-modernbert-base` keeps the full benchmark to about a day.
+which the channel's prompt constants support). The blocker is compute: with
+`gte-modernbert-base` the full benchmark takes about two and a half days on
+Apple Silicon, most of it embedding MS MARCO (roughly 45 hours at ~54
+passages/s), and a 0.6B model multiplies that several times over. Before that
+rerun the memmap embedding path should gain resume support and fp16 inference:
+at these corpus sizes a restart from zero is unacceptable, and half precision
+roughly halves the GPU time at negligible cost to retrieval quality.
 
 A fourth channel using a second embedding model, giving a redundant dense pair
 for the coupling estimator alongside the existing lexical pair, and a

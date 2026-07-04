@@ -329,6 +329,9 @@ def main(argv: list[str] | None = None) -> int:
     for name in args.datasets:
         _run_dataset(name, args.k, args.warm_frac, args.refreshes)
     _regenerate_summary()
+    from ruffle_evals.summarize import write_summary
+
+    write_summary()
     return 0
 
 
