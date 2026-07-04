@@ -933,17 +933,17 @@ mod tests {
         //
         // n = 21 makes the 10/25/50/75th percentiles land on integer indices 2/5/10/15
         // (frac = 0), so the quantiles are exact order statistics: q10=0, q25=5, q50=10,
-        // q75=25 -> bulk_gap = 10, floor = 0.5*(25-5) = 10.
+        // q75=25 -> bulk_gap = 10, floor = 0.5*(25-5) = 10. The fraction is pinned to
+        // 0.5 because the pool is constructed for that exact-equality boundary.
         let pool = [
             0.0, 0.0, 0.0, 2.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 13.0, 16.0, 19.0, 22.0, 25.0,
             26.0, 27.0, 28.0, 29.0, 30.0,
         ];
-        let d = discriminate(
-            &scored(&pool),
-            &MeanVar::new(),
-            &MeanVar::new(),
-            &DiscriminationConfig::default(),
-        );
+        let cfg = DiscriminationConfig {
+            denom_floor_frac: 0.5,
+            ..Default::default()
+        };
+        let d = discriminate(&scored(&pool), &MeanVar::new(), &MeanVar::new(), &cfg);
         assert!(d.raw_separation.is_some());
         assert!(
             !d.degenerate_separation,

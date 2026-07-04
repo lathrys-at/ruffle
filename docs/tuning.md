@@ -85,7 +85,7 @@ and whether baselines warm up. They can be diagnosed from telemetry alone, with 
 labels, and they are worth checking first, because a response knob tuned on top of
 unhealthy readings amplifies their noise.
 
-### `top_m` (default 10)
+### `top_m` (default 5)
 
 `top_m` is the fixed count behind the absolute-goodness statistic, the reference
 refinement, and the diagnostics top-sets. A channel whose pools are usually shallower
@@ -109,7 +109,7 @@ top-versus-bulk shape over few distinct values, lowering toward 5 admits the rea
 The risk is meaningless ratios from genuinely degenerate pools, so going below 4 or 5
 is not advisable, and the winsorize rate is worth watching after lowering.
 
-### `denom_floor_frac` (default 0.5) and `winsor_z` (default 4.0)
+### `denom_floor_frac` (default 0.75) and `winsor_z` (default 2.5)
 
 Both protect the separation baseline from heavy-tailed reads. The floor widens a
 near-tied bulk's denominator toward the inter-quartile gap; the winsor clamps a read
@@ -117,22 +117,24 @@ to the baseline mean ± `winsor_z` standard deviations before it enters the base
 The health check is the clamp rate: how often a logged raw separation falls outside
 the baseline band. A few percent is normal. If reads
 clamp persistently long after warm-up, the channel's separation distribution is
-genuinely heavy-tailed; raising `winsor_z` (5 to 6) lets the baseline learn the true
+genuinely heavy-tailed; raising `winsor_z` (4 to 5) lets the baseline learn the true
 spread, at the cost of slower recovery from a single wild query. If an integer-count
 or otherwise tie-heavy channel produces separation reads that look muted relative to
 what its pools show, the floor may be binding; comparing `q0.5 − q0.1` against
 `denom_floor_frac · (q0.75 − q0.25)` on sample pools confirms it before you lower the
 fraction.
 
-### `top_eps` (default 0.05)
+### `top_eps` (default 0.10)
 
 `top_eps` is the fraction of the pool treated as the extreme top in the separation
 numerator. It should be small relative to the pool but comparable to the number of
-genuinely relevant items a typical query has in the pool. If your queries are broad
-and dozens of pool items are typically relevant, a 5% top sits inside the relevant
-mass and separation under-reads; raising toward 0.1 helps. Diagnosing this without
-judgments is hard: on a handful of judged queries, you can check whether the channels
-with high separation are the channels whose pools actually contain the relevant items.
+genuinely relevant items a typical query has in the pool. If your queries are narrow,
+with one or two relevant items in a deep pool, a 10% top dilutes the extreme top with
+bulk and separation under-reads; lowering toward 0.05 sharpens it. If your queries
+are broad and dozens of pool items are typically relevant, the relevant mass extends
+past the top slice and raising toward 0.15 helps. Diagnosing this without judgments
+is hard: on a handful of judged queries, you can check whether the channels with high
+separation are the channels whose pools actually contain the relevant items.
 If separation ranks the channels wrongly on most judged queries, `top_eps` is worth
 revisiting before any response knob.
 
@@ -242,11 +244,11 @@ becomes `1 / (1 - factor)` observations, so the default of `0.98` holds a window
 
 | Knob | Default | Change when you observe | Check before changing | Risk if wrong |
 |---|---|---|---|---|
-| `top_m` | 10 | `NoReference` persists; reference count stuck | pool-size distribution | noisier D^abs |
+| `top_m` | 5 | `NoReference` persists; reference count stuck | pool-size distribution | noisier D^abs |
 | `min_distinct_values` | 8 | `DegenerateSeparation` on rankable integer channels | flag rate + pool inspection | meaningless ratios |
-| `winsor_z` | 4.0 | clamp rate high after warm-up | raw reads vs baseline band | slow recovery from outliers |
-| `denom_floor_frac` | 0.5 | muted separation on tie-heavy channels | quantile gaps on sample pools | blown-up ratios |
-| `top_eps` | 0.05 | separation misranks channels on judged queries | judged spot-check | top mixed into bulk |
+| `winsor_z` | 2.5 | clamp rate high after warm-up | raw reads vs baseline band | slow recovery from outliers |
+| `denom_floor_frac` | 0.75 | muted separation on tie-heavy channels | quantile gaps on sample pools | blown-up ratios |
+| `top_eps` | 0.10 | separation misranks channels on judged queries | judged spot-check | top mixed into bulk |
 | `shrink_pool_size` | 20 | pools chronically below it; weights pinned near 1 | pool-size distribution | noise from thin pools |
 | `min_count_for_z` | 5 | erratic first-day weights | early-traffic telemetry | slower adaptivity |
 | `g_slope` | 1.0 | labeled win over RRF grows with slope | labeled comparison + recall check | noise amplification |
