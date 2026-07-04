@@ -97,9 +97,7 @@ class TestConfig:
         assert fused.weights["b"] == pytest.approx(0.5)
 
     def test_invalid_base_weight_raises_at_construction(self) -> None:
-        bad = ChannelConfig(
-            ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER, base_weight=-1.0
-        )
+        bad = ChannelConfig(ChannelId("s", "v1"), Direction.HIGHER_IS_BETTER, base_weight=-1.0)
         with pytest.raises(ruffle.ConfigError, match="base weight"):
             Fuser([bad])
 
