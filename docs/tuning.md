@@ -98,8 +98,11 @@ construction and requires no state migration.
 A reasonable procedure for setting them: run your channels over a set of queries with
 graded relevance, grid-search fixed per-channel RRF weights on that set, and declare
 the winner. Even a few dozen graded queries produce a usable tilt when one channel is
-clearly stronger. Revisit the declaration when a channel's model changes, since the
-tilt encodes a comparison between specific model versions.
+clearly stronger. Floor small fitted values at something positive (0.1, say) rather
+than declaring zero: a zero excludes the channel from every query, beyond what
+per-query evidence can revive, and a small fit chooses zeros too eagerly. Revisit the
+declaration when a channel's model changes, since the tilt encodes a comparison
+between specific model versions.
 
 ## Reading knobs
 
