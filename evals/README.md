@@ -45,6 +45,15 @@ The conditions:
   what any fixed per-channel weighting could achieve with these runs, and the
   table reads as a bracket, the RRF floor to the oracle ceiling, with Ruffle's
   label-free weights in between.
+- `rrf-fitted`, `ruffle-warm-fitted`: the approximate oracle. Fixed weights are
+  grid-searched the same way, but on a small graded subsample of the warmup
+  split (5% of its judged queries, floored at 10 and capped at 100; the
+  evaluation labels stay untouched), repeated over three seeded draws with the
+  first draw feeding the condition rows and every draw recorded in the result
+  file. `rrf-fitted` uses the weights as-is: what grading a few dozen queries
+  once buys. `ruffle-warm-fitted` declares the same weights as `base_weight` on
+  the channel registrations, so the labeled static tilt and the label-free
+  per-query adaptation compose.
 - `ruffle-cold`: `Fuser.fuse_stateless` with an empty prior, per query. With no
   accumulated baselines and no declared references this reduces to unweighted
   RRF by construction; the condition verifies that reduction on real runs.

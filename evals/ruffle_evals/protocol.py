@@ -4,6 +4,7 @@ conditions, and the oracle ceiling, all scored on one evaluation split."""
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Sequence
 
 import ruffle
@@ -11,6 +12,7 @@ import ruffle
 from ruffle_evals.baselines import borda, combmnz, combsum, isr, oracle_rrf
 from ruffle_evals.channels import Channels, Run
 from ruffle_evals.evaluate import delta_profile, evaluate, paired_p
+from ruffle_evals.fitted import fitted_weight_draws, fixed_rrf
 from ruffle_evals.fusion import (
     FusionOutcome,
     aggressive_config,
@@ -101,6 +103,36 @@ def main_conditions(
     rankings["rrf-oracle"] = oracle_rankings
     outcomes["rrf-oracle"] = None
 
+    # The approximate oracle: weights fitted on a small graded subsample of the
+    # warmup split (the evaluation labels stay untouched), used both as fixed
+    # RRF weights and as declared base weights under Ruffle's adaptation. Draw 0
+    # feeds the condition rows; every draw's spread is recorded below.
+    fit_detail: dict | None = None
+    if warm_qids and warm_outcomes is None:
+        budget, draws = fitted_weight_draws(runs, qrels, warm_qids, keys)
+        fit_detail = {"budget": budget, "draws": []}
+        for d, fitted_weights in enumerate(draws):
+            static = fixed_rrf(runs, eval_qids, fitted_weights, keys=keys)
+            tilted = [
+                dataclasses.replace(c, base_weight=fitted_weights[c.id.key])
+                for c in configs
+            ]
+            warmed = ruffle_warm(runs, warm_qids, eval_qids, configs=tilted)
+            if d == 0:
+                rankings["rrf-fitted"] = static
+                outcomes["rrf-fitted"] = None
+                rankings["ruffle-warm-fitted"] = warmed.rankings
+                outcomes["ruffle-warm-fitted"] = warmed
+            fit_detail["draws"].append(
+                {
+                    "weights": fitted_weights,
+                    "rrf_fitted_ndcg10": evaluate(qrels, static)[0]["nDCG@10"],
+                    "ruffle_warm_fitted_ndcg10": evaluate(qrels, warmed.rankings)[0][
+                        "nDCG@10"
+                    ],
+                }
+            )
+
     conditions: dict = {}
     per_queries: dict = {}
     baseline_per_query = None
@@ -121,6 +153,10 @@ def main_conditions(
     # The oracle's fixed simplex weights render in the weights column; they are
     # fitted on the judgments, which is what makes the row a ceiling.
     conditions["rrf-oracle"]["mean_weights"] = oracle_weights
+    if fit_detail is not None:
+        conditions["rrf-fitted"]["mean_weights"] = fit_detail["draws"][0]["weights"]
+        conditions["rrf-fitted"]["fit"] = fit_detail
+        conditions["ruffle-warm-fitted"]["fit"] = fit_detail
     for condition, entry in conditions.items():
         if condition == BASELINE:
             entry["p_vs_rrf"] = None

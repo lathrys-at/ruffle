@@ -141,6 +141,8 @@ def _conditions_table(conditions: dict, keys: list[str]) -> list[str]:
         "ruffle-warm",
         "ruffle-warm-coupled",
         "ruffle-warm-aggressive",
+        "rrf-fitted",
+        "ruffle-warm-fitted",
         "rrf-oracle",
     ]
     for condition in order:

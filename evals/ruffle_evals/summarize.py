@@ -29,10 +29,12 @@ _METHODS = (
     ("combmnz", "CombMNZ"),
     ("ruffle-warm", "Ruffle warm"),
     ("ruffle-warm-coupled", "Ruffle warm + coupling"),
+    ("rrf-fitted", "RRF + fitted weights"),
+    ("ruffle-warm-fitted", "Ruffle warm + fitted weights"),
     ("rrf-oracle", "Oracle-weighted RRF"),
 )
 
-_RUFFLE_ROWS = ("ruffle-warm", "ruffle-warm-coupled")
+_RUFFLE_ROWS = ("ruffle-warm", "ruffle-warm-coupled", "ruffle-warm-fitted")
 
 # The chart shows every non-baseline method as a delta against RRF.
 _CHART_METHODS = _METHODS[1:]
@@ -43,6 +45,8 @@ _CHART_COLORS = {
     "combmnz": "#a89078",
     "ruffle-warm": "#2f6db3",
     "ruffle-warm-coupled": "#1f4e87",
+    "rrf-fitted": "#a58cc4",
+    "ruffle-warm-fitted": "#6b4fa1",
     "rrf-oracle": "#d4a017",
 }
 
@@ -66,6 +70,16 @@ is RRF with fixed per-channel weights grid-searched against the evaluation
 judgments themselves. The labels choose its weights, so it is not a
 competitor: it is the ceiling for any fixed per-channel weighting, and the
 table reads as a bracket from the RRF floor to that ceiling.
+
+Two conditions sit between the floor and the ceiling by construction.
+`RRF + fitted weights` runs the same grid search on a small graded subsample
+of the warmup split (5% of its judged queries, at least 10 and at most 100),
+the deployable version of the oracle: what an operator gets by grading a few
+dozen queries once. `Ruffle warm + fitted weights` declares those same
+weights as `base_weight` on the channel registrations, so the static tilt
+from labels and the label-free per-query adaptation compose. The fit is
+repeated over three seeded draws; the tables show the first draw, and the
+result files record every draw's weights and score.
 """
 
 _READING = """\
@@ -81,8 +95,10 @@ more moderately), dense alone beats every label-free fusion of it with the
 weaker lexical channels, and the oracle converges on the dominant channel.
 Ruffle narrows the gap to the oracle but cannot close it: knowing that one
 channel is globally better than another requires labels, which is exactly the
-information the engine's contract excludes. An operator who has run a labeled
-evaluation holds that information, and can act on it in configuration.
+information the engine's contract excludes. The fitted rows are the
+operational answer: an operator who grades a few dozen queries once recovers
+most of the oracle's tilt, and declaring it as `base_weight` keeps the
+per-query adaptation on top.
 
 Across the label-free rules, no method wins everywhere. ISR's steeper rank
 discount and the score-based CombSUM profit in the dominant-channel regime,
