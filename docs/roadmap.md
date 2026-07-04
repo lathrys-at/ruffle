@@ -39,9 +39,7 @@ base weights and measures the composed result against the oracle ceiling.
 
 The clean BEIR grid measures fusion over three correlated text channels, the
 regime with the least per-query variance in channel competence and so the least
-for adaptive weighting to do. The degraded-channel experiment's flaky mode is
-the existing evidence that Ruffle's advantage grows when competence varies per
-query. A targeted follow-up would approximate a multi-modal deployment without
+for adaptive weighting to do. A targeted follow-up would approximate a multi-modal deployment without
 leaving text: a pooled multi-domain corpus where channel competence varies by
 query domain, or a channel pair with deliberately disjoint strengths (dense
 over titles against BM25 over bodies). The question it answers: how much of the
