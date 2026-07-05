@@ -90,9 +90,9 @@ Two regimes appear in the table. Where the channels are comparably strong
 between the RRF floor and the oracle ceiling. The headroom in this regime is
 small: even the label-fitted ceiling is only a point or two of nDCG above
 plain RRF, so no reweighting scheme, labeled or not, can move the aggregate
-much. Where the dense channel dominates (fiqa sharply; quora and cqadupstack
-more moderately), dense alone beats every label-free fusion of it with the
-weaker lexical channels, and the oracle converges on the dominant channel.
+much. Where the dense channel dominates (fiqa sharply; quora, cqadupstack, and
+MS MARCO more moderately), dense alone beats every label-free fusion of it with
+the weaker lexical channels, and the oracle converges on the dominant channel.
 Ruffle narrows the gap to the oracle but cannot close it: knowing that one
 channel is globally better than another requires labels, which is exactly the
 information the engine's contract excludes. The fitted rows are the
@@ -104,23 +104,32 @@ draw fits well, the composed condition tracks the static fit closely; when a
 draw fits badly, the adaptation pulls the result back toward plain warm
 Ruffle instead of following the bad fit down. The exception is a fitted
 weight of exactly zero, which silences a channel outright, so no per-query
-evidence can revive it; the nfcorpus fitted row, where a 10-query fit chose
-a single channel and landed below the RRF floor, is that failure mode in the
-table. An operator declaring weights from a small fit should floor them at a
-small positive value rather than zero, unless exclusion is the intent.
+evidence can revive it and the composed row collapses onto the static fit.
+Both the nfcorpus and the MS MARCO fits chose a single channel this way: on
+nfcorpus the 10-query fit landed below the RRF floor, the failure mode in the
+table, while on MS MARCO the fit zeroed the lexical channel and matched the
+dense-dominated oracle on the dev and dl20 splits, missing it only on dl19
+where the oracle keeps a little lexical weight. An operator declaring weights
+from a small fit should floor them at a small positive value rather than zero,
+unless exclusion is the intent.
 
 Across the label-free rules, no method wins everywhere. ISR's steeper rank
 discount and the score-based CombSUM profit in the dominant-channel regime,
 where top-heavy discounting and raw score magnitudes both lean toward the
 strong channel, and several of their columns beat Ruffle there; on balanced
-nfcorpus both fall back to the RRF baseline or below it. Ruffle is the one
-method in the table that improves on RRF in every column. That consistency,
-rather than the largest single number, is the designed behavior: the engine
+nfcorpus both fall back to the RRF baseline or below it. Ruffle stays at or
+above RRF in every column but one: on TREC-DL 2019, a two-channel
+dense-dominant set, warm Ruffle lands a fraction below the baseline at a gap
+the paired test cannot separate from zero, and everywhere else it improves on
+RRF. No other method in the table holds that near-uniform behavior. The
+consistency, rather than the largest single number, is the design: the engine
 is RRF plus per-query evidence, tilting only when a channel's own statistics
-support it, so its floor is the baseline rather than the worst case of a
-fixed convention. The delta profiles say the same thing per query: wins
-outnumber losses in every column and the 5th-percentile delta stays near
-zero, so the mean gains are not bought with per-query damage.
+support it, so its floor sits near the baseline rather than at the worst case
+of a fixed convention. The delta profiles show wins outnumbering losses in
+every column, but the loss tail is real rather than negligible: the
+5th-percentile per-query delta runs to around -0.18 to -0.19 on the hardest
+collections, fiqa and MS MARCO dev. The per-query gain is a favorable
+win-to-loss balance, not a uniform improvement.
 
 The clean-benchmark setting is also the regime where adaptive weighting has
 the least to offer: healthy channels reading the same text rise and fall
@@ -160,7 +169,9 @@ def _fmt_p(p: float | None) -> str:
 
 
 def _best_single(conditions: dict) -> str:
-    present = [(k, conditions[k]["metrics"]["nDCG@10"]) for k in _SINGLES if k in conditions]
+    present = [
+        (k, conditions[k]["metrics"]["nDCG@10"]) for k in _SINGLES if k in conditions
+    ]
     if not present:
         return ""
     key, value = max(present, key=lambda kv: kv[1])
