@@ -71,10 +71,9 @@ The conditions:
   redundancy discount, once gated in, may remove most of a duplicated signal
   (`discount_cap` 0.9, `shrink_to_identity` 0.2), with anchor refreshes as in
   the coupled condition. The profile prices the conservative defaults: what a
-  harder tilt buys where one channel dominates, and what it costs on the
-  degraded channels. No setting of these knobs learns that one channel is
-  globally better than another; that is cross-channel, label-bound information
-  outside the engine's contract.
+  harder tilt buys where one channel dominates. No setting of these knobs learns
+  that one channel is globally better than another; that is cross-channel,
+  label-bound information outside the engine's contract.
 
 Headline metrics are nDCG@10 (the BEIR standard), Recall@100, and MRR@10, via
 [ir_measures](https://github.com/terrierteam/ir_measures); AP@100 and Recall@10
@@ -88,24 +87,9 @@ everywhere or large wins bought with real per-query damage, and the loss tail
 is the empirical per-query do-no-harm statement. The tables show win/loss; the
 full profile is in the result files.
 
-## Targeted experiments
+## Targeted experiment
 
-Two further protocols run per collection, reusing the cached runs.
-
-The degraded-channel experiment adds a broken fourth channel derived from the
-BM25 run and measures what it costs each fusion, in two failure modes chosen
-because they sit on opposite sides of what label-free weighting can see.
-`wrong-query` serves another query's BM25 results: internally healthy scores
-over irrelevant content. Per-channel statistics read a channel against its own
-norm, so this mode is designed to be invisible to them; the honest expectation
-is that Ruffle matches RRF's damage rather than recovering it, with the conflict
-diagnostic as the signal that moves. `flaky` serves the tail of the channel's
-own results (ranks 51-100, true low scores) on a seeded half of the queries,
-simulating intermittent retrieval failure; that failure is visible per query as
-a departure from the channel's learned norm, which is what discrimination
-weighting reads. Each mode reports three conditions (three-channel RRF, four-
-channel RRF, four-channel Ruffle warm), the broken channel's mean weight, and
-for the flaky mode that weight split across failed and healthy queries.
+One further protocol runs per collection, reusing the cached runs.
 
 The learning curve warms a fresh stateful fuser on increasing prefixes of the
 warmup split and scores the same evaluation split each time, tracing the climb
@@ -134,9 +118,9 @@ too few queries for a meaningful warm/eval split and runs only when named
 explicitly.
 
 cqadupstack and msmarco run through dedicated runners, only when named
-explicitly, and produce the main comparison only (the degraded and curve
-experiments answer mechanism questions already covered on the standard
-collections). cqadupstack follows the BEIR reporting convention: each subforum
+explicitly, and produce the main comparison only (the learning curve answers a
+mechanism question already covered on the standard collections). cqadupstack
+follows the BEIR reporting convention: each subforum
 is its own corpus with its own channels, warmup, and oracle, metrics are
 macro-averaged over the twelve, and the paired test pools per-query values.
 msmarco uses two channels (BM25 and dense, the canonical hybrid pair; a
@@ -166,8 +150,7 @@ python -m ruffle_evals scifact --k 100
 Channel runs and corpus embeddings are cached under `cache/` keyed by collection
 and run depth, so re-runs only re-execute the fusion and the metrics. Each run
 writes `results/<dataset>.json` (the main comparison: aggregate metrics, mean
-weights, p-values, and the environment),
-`results/<dataset>-degraded.json`, and `results/<dataset>-curve.json`, then
+weights, p-values, and the environment) and `results/<dataset>-curve.json`, then
 regenerates `results/RESULTS.md`, `results/SUMMARY.md`, and the summary chart
 from all result files present.
 

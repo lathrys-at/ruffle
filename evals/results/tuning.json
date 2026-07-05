@@ -453,27 +453,5 @@
       }
     },
     "objective": 0.010284
-  },
-  "wrong_query_check": {
-    "fiqa": {
-      "rrf": 0.306643,
-      "warm-default": 0.296501,
-      "warm-tuned": 0.296392
-    },
-    "nfcorpus": {
-      "rrf": 0.326218,
-      "warm-default": 0.324873,
-      "warm-tuned": 0.321672
-    },
-    "quora": {
-      "rrf": 0.839153,
-      "warm-default": 0.814376,
-      "warm-tuned": 0.798997
-    },
-    "scifact": {
-      "rrf": 0.685259,
-      "warm-default": 0.650306,
-      "warm-tuned": 0.641182
-    }
   }
 }

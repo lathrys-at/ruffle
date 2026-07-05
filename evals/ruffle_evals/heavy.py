@@ -1,9 +1,9 @@
 """The large-corpus runners: cqadupstack (a 12-subforum composite) and MS MARCO
 passage with the TREC-DL 2019/2020 query sets.
 
-Both run the main condition comparison only; the degraded-channel and
-learning-curve experiments answer mechanism questions already covered on the
-four standard collections.
+Both run the main condition comparison only; the learning-curve experiment is
+skipped, as it answers a mechanism question already covered on the four standard
+collections.
 
 cqadupstack follows the BEIR reporting convention: each subforum is its own
 corpus with its own channels, warmed and evaluated independently, and the

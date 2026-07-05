@@ -10,8 +10,7 @@ Ruffle's adaptive machinery.
 
 The objective is the macro-mean nDCG@10 gain over plain RRF across collection
 groups (the 12 cqadupstack subforums form one group), under a hard constraint
-that no group falls below the RRF floor. Degraded-channel behavior is measured
-once for the winner, for information; it does not gate selection.
+that no group falls below the RRF floor.
 
 Anchors are precomputed once per collection and direction and cached: an anchor
 depends on the channels and the seeded draw, never on the candidate
@@ -33,7 +32,6 @@ from ruffle_evals.baselines import _ndcg10
 from ruffle_evals.channels import CHANNEL_KEYS, DENSE_SLUG, Channels, run_filename
 from ruffle_evals.datasets import load, load_id
 from ruffle_evals.evaluate import evaluate, paired_p
-from ruffle_evals.experiments import _wrong_query_run
 from ruffle_evals.fusion import _ANCHOR_CANDIDATES, channel_configs, rrf, ruffle_warm
 from ruffle_evals.heavy import MSMARCO_KEYS, SUBFORUMS, _load_msmarco_queryset
 
@@ -405,7 +403,6 @@ def main() -> int:
     winner = incumbent["candidate"]
     print(f"[tune] winner objective {incumbent['objective']:.5f}; validating", flush=True)
     validation = _validate(winner, bundles)
-    wrong_query = _wrong_query_check(winner, bundles)
 
     summary = {
         "protocol": {
@@ -427,7 +424,6 @@ def main() -> int:
             "changed_vs_defaults": _diff_vs_defaults(winner, defaults),
         },
         "validation_std_direction": validation,
-        "wrong_query_check": wrong_query,
     }
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     (RESULTS_DIR / "tuning.json").write_text(json.dumps(_round6(summary), indent=2, sort_keys=True) + "\n")
@@ -505,39 +501,6 @@ def _validate(winner: dict, bundles: list[Bundle]) -> dict:
             for label in entries[0]
         }
     return out
-
-
-def _wrong_query_check(winner: dict, bundles: list[Bundle]) -> dict:
-    """The winner's wrong-query damage, measured once for information; it did
-    not gate selection."""
-    config = _to_config(winner)
-    out = {}
-    for bundle in bundles:
-        if bundle.group not in ("scifact", "nfcorpus", "fiqa", "quora"):
-            continue
-        all_qids = [*bundle.warm_std, *bundle.eval_std]
-        broken = _wrong_query_run(bundle.runs["bm25"], all_qids)
-        keys4 = (*bundle.keys, "broken")
-        configs4 = channel_configs(keys4, tags={"broken": "bm25s-wrong-query"})
-        runs4 = {**bundle.runs, "broken": broken}
-        rows = {}
-        baseline = rrf(runs4, bundle.eval_std, keys=keys4)
-        rows["rrf"] = _mean_ndcg(baseline.rankings, bundle)
-        for label, cfg in (("warm-default", None), ("warm-tuned", config)):
-            outcome = ruffle_warm(
-                runs4, bundle.warm_std, bundle.eval_std, configs=configs4, config=cfg
-            )
-            rows[label] = _mean_ndcg(outcome.rankings, bundle)
-        out[bundle.group] = rows
-    return out
-
-
-def _mean_ndcg(rankings: dict, bundle: Bundle) -> float:
-    values = [
-        _ndcg10([d for d, _ in rankings[qid]], bundle.qrels.get(qid, {}))
-        for qid in bundle.eval_std
-    ]
-    return sum(values) / max(len(values), 1)
 
 
 if __name__ == "__main__":
