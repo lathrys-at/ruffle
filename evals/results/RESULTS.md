@@ -274,3 +274,66 @@ Macro-averaged over the 12 subforums, each with its own corpus, channels, warmup
 | rrf-fitted | 0.4310 | 0.7796 | 0.4185 | 0.000 | 28% / 15% | 0.055 / 0.030 / 0.916 |
 | ruffle-warm-fitted | 0.4311 | 0.7783 | 0.4202 | 0.000 | 28% / 15% | 0.169 / 0.101 / 2.730 |
 | rrf-oracle | 0.4374 | 0.7813 | 0.4261 | 0.000 | 29% / 14% | 0.047 / 0.027 / 0.926 |
+
+### msmarco
+
+8841823 passages, top-100 per channel, ruffle 0.2.0.
+
+Two channels (the canonical BM25 + dense hybrid pair). Warmed on 3490 dev queries; dl19/dl20 are fused from the same dev-warmed state snapshot, a cross-query-set transfer over the shared corpus. The fitted conditions grid-search fixed weights on a 100-query graded subsample of the dev warmup and apply them to every evaluation set, as static RRF weights and as declared base weights under Ruffle.
+
+#### dev (3490 evaluation queries)
+
+| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
+|---|---|---|---|---|---|---|
+| bm25 | 0.2111 | 0.6248 | 0.1673 | 0.000 | 5% / 40% |  |
+| dense | 0.4153 | 0.9028 | 0.3532 | 0.000 | 34% / 19% |  |
+| rrf | 0.3419 | 0.8780 | 0.2810 |  |  | 1.000 / 1.000 |
+| borda | 0.3394 | 0.8770 | 0.2781 | 0.016 | 6% / 7% |  |
+| isr | 0.3642 | 0.8772 | 0.2973 | 0.000 | 24% / 20% |  |
+| combsum | 0.3715 | 0.8805 | 0.3044 | 0.000 | 22% / 12% |  |
+| combmnz | 0.3611 | 0.8815 | 0.2982 | 0.000 | 19% / 10% |  |
+| ruffle-cold | 0.3419 | 0.8780 | 0.2810 |  | 0% / 0% | 1.000 / 1.000 |
+| ruffle-warm | 0.3473 | 0.8544 | 0.2846 | 0.015 | 14% / 11% | 1.006 / 0.994 |
+| ruffle-warm-coupled | 0.3473 | 0.8543 | 0.2845 | 0.016 | 14% / 11% | 1.007 / 0.993 |
+| ruffle-warm-aggressive | 0.3473 | 0.8255 | 0.2838 | 0.073 | 17% / 16% | 1.015 / 0.985 |
+| rrf-fitted | 0.4153 | 0.9028 | 0.3532 | 0.000 | 34% / 19% | 0.000 / 1.000 |
+| ruffle-warm-fitted | 0.4153 | 0.9028 | 0.3532 | 0.000 | 34% / 19% | 0.000 / 2.000 |
+| rrf-oracle | 0.4153 | 0.9028 | 0.3532 | 0.000 | 34% / 19% | 0.000 / 1.000 |
+
+#### dl19 (43 evaluation queries)
+
+| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
+|---|---|---|---|---|---|---|
+| bm25 | 0.4238 | 0.4033 | 0.7207 | 0.000 | 12% / 88% |  |
+| dense | 0.6915 | 0.5067 | 0.9349 | 0.125 | 63% / 35% |  |
+| rrf | 0.6532 | 0.5307 | 0.9041 |  |  | 1.000 / 1.000 |
+| borda | 0.6471 | 0.5294 | 0.8882 | 0.174 | 33% / 33% |  |
+| isr | 0.5934 | 0.5287 | 0.9045 | 0.004 | 26% / 74% |  |
+| combsum | 0.6479 | 0.5368 | 0.9273 | 0.644 | 42% / 49% |  |
+| combmnz | 0.6574 | 0.5367 | 0.9277 | 0.611 | 44% / 42% |  |
+| ruffle-cold | 0.6532 | 0.5307 | 0.9041 |  | 0% / 0% | 1.000 / 1.000 |
+| ruffle-warm | 0.6457 | 0.5052 | 0.8966 | 0.552 | 47% / 35% | 1.036 / 0.964 |
+| ruffle-warm-coupled | 0.6458 | 0.5059 | 0.8966 | 0.558 | 47% / 37% | 1.037 / 0.963 |
+| ruffle-warm-aggressive | 0.6358 | 0.4904 | 0.8921 | 0.338 | 49% / 40% | 1.030 / 0.970 |
+| rrf-fitted | 0.6915 | 0.5067 | 0.9349 | 0.125 | 63% / 35% | 0.000 / 1.000 |
+| ruffle-warm-fitted | 0.6915 | 0.5067 | 0.9349 | 0.125 | 63% / 35% | 0.000 / 2.000 |
+| rrf-oracle | 0.7013 | 0.5067 | 0.9496 | 0.001 | 77% / 21% | 0.200 / 0.800 |
+
+#### dl20 (54 evaluation queries)
+
+| condition | nDCG@10 | R@100 | MRR@10 | p vs RRF | win/loss vs RRF | mean weights (bm25 / dense) |
+|---|---|---|---|---|---|---|
+| bm25 | 0.4775 | 0.4260 | 0.8223 | 0.000 | 15% / 83% |  |
+| dense | 0.6894 | 0.5436 | 0.9321 | 0.002 | 61% / 33% |  |
+| rrf | 0.6194 | 0.5671 | 0.9193 |  |  | 1.000 / 1.000 |
+| borda | 0.6160 | 0.5677 | 0.9209 | 0.243 | 22% / 33% |  |
+| isr | 0.6328 | 0.5685 | 0.9259 | 0.377 | 46% / 48% |  |
+| combsum | 0.6496 | 0.5750 | 0.9173 | 0.006 | 54% / 39% |  |
+| combmnz | 0.6323 | 0.5725 | 0.9144 | 0.023 | 50% / 35% |  |
+| ruffle-cold | 0.6194 | 0.5671 | 0.9193 |  | 0% / 0% | 1.000 / 1.000 |
+| ruffle-warm | 0.6297 | 0.5305 | 0.9105 | 0.065 | 50% / 20% | 0.994 / 1.006 |
+| ruffle-warm-coupled | 0.6289 | 0.5298 | 0.9105 | 0.094 | 48% / 22% | 0.994 / 1.006 |
+| ruffle-warm-aggressive | 0.6227 | 0.5064 | 0.9198 | 0.825 | 52% / 33% | 1.015 / 0.985 |
+| rrf-fitted | 0.6894 | 0.5436 | 0.9321 | 0.002 | 61% / 33% | 0.000 / 1.000 |
+| ruffle-warm-fitted | 0.6894 | 0.5436 | 0.9321 | 0.002 | 61% / 33% | 0.000 / 2.000 |
+| rrf-oracle | 0.6894 | 0.5436 | 0.9321 | 0.002 | 61% / 33% | 0.000 / 1.000 |

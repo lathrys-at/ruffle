@@ -21,6 +21,7 @@ set over the same corpus is exactly the deployment story.
 
 from __future__ import annotations
 
+import dataclasses
 import random
 
 import ir_datasets
@@ -28,7 +29,8 @@ import ir_datasets
 from ruffle_evals import SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Channels
 from ruffle_evals.datasets import load_id
-from ruffle_evals.evaluate import delta_profile, paired_p
+from ruffle_evals.evaluate import delta_profile, evaluate, paired_p
+from ruffle_evals.fitted import fitted_weight_draws, fixed_rrf
 from ruffle_evals.fusion import (
     aggressive_config,
     channel_configs,
@@ -120,7 +122,9 @@ def run_cqadupstack(k: int, refreshes: int) -> dict:
     }
 
 
-def _macro_aggregate(per_sub: dict[str, dict], pooled: dict[str, dict[str, float]]) -> dict:
+def _macro_aggregate(
+    per_sub: dict[str, dict], pooled: dict[str, dict[str, float]]
+) -> dict:
     subs = list(per_sub)
     names = list(per_sub[subs[0]]["conditions"])
     weights_total = sum(per_sub[s]["eval_queries"] for s in subs)
@@ -165,7 +169,9 @@ def _macro_aggregate(per_sub: dict[str, dict], pooled: dict[str, dict[str, float
     return aggregated
 
 
-def _load_msmarco_queryset(dsid: str, prefix: str) -> tuple[dict[str, str], dict[str, dict[str, int]]]:
+def _load_msmarco_queryset(
+    dsid: str, prefix: str
+) -> tuple[dict[str, str], dict[str, dict[str, int]]]:
     ds = ir_datasets.load(dsid)
     queries = {f"{prefix}:{q.query_id}": q.text for q in ds.queries_iter()}
     qrels: dict[str, dict[str, int]] = {}
@@ -207,11 +213,18 @@ def run_msmarco(k: int, refreshes: int) -> dict:
     warm_qids, dev_eval = dev_qids[:cut], dev_qids[cut:]
     eval_sets = {"dev": dev_eval, "dl19": set_qids["dl19"], "dl20": set_qids["dl20"]}
     configs = channel_configs(MSMARCO_KEYS)
+    keys = [c.id.key for c in configs]
 
     print("[msmarco] warming (plain, coupled, aggressive)", flush=True)
     warm_plain = ruffle_warm_multi(runs, warm_qids, eval_sets, configs)
     warm_coupled = ruffle_warm_multi(
-        runs, warm_qids, eval_sets, configs, channels=channels, coupling=True, refreshes=refreshes
+        runs,
+        warm_qids,
+        eval_sets,
+        configs,
+        channels=channels,
+        coupling=True,
+        refreshes=refreshes,
     )
     warm_aggressive = ruffle_warm_multi(
         runs,
@@ -223,9 +236,26 @@ def run_msmarco(k: int, refreshes: int) -> dict:
         config=aggressive_config(),
     )
 
+    # The approximate oracle: fixed weights fit on a small graded subsample of the
+    # dev warmup, transferred to every evaluation set the way the warm baselines
+    # are. Draw 0 feeds the condition rows; every draw's spread is recorded.
+    # ruffle-warm-fitted declares each draw's weights as base_weight and warms
+    # once per draw, resuming each evaluation set from that snapshot.
+    print("[msmarco] fitting approximate-oracle weights on the dev warmup", flush=True)
+    budget, draws = fitted_weight_draws(runs, qrels, warm_qids, keys)
+    warm_fitted_by_draw = [
+        ruffle_warm_multi(
+            runs,
+            warm_qids,
+            eval_sets,
+            [dataclasses.replace(c, base_weight=fw[c.id.key]) for c in configs],
+        )
+        for fw in draws
+    ]
+
     results_sets: dict[str, dict] = {}
     for name, eval_qids in eval_sets.items():
-        conditions, _ = main_conditions(
+        conditions, per_queries = main_conditions(
             runs,
             channels,
             qrels,
@@ -239,6 +269,45 @@ def run_msmarco(k: int, refreshes: int) -> dict:
                 "ruffle-warm-aggressive": warm_aggressive[name],
             },
         )
+
+        # Fitted conditions for this evaluation set: static weighted RRF and the
+        # base_weight-tilted warm fuser, each fit on the dev warmup only.
+        static_evals = [
+            evaluate(qrels, fixed_rrf(runs, eval_qids, fw, keys=keys)) for fw in draws
+        ]
+        warm_evals = [
+            evaluate(qrels, warm_fitted_by_draw[d][name].rankings)
+            for d in range(len(draws))
+        ]
+        fit_detail = {
+            "budget": budget,
+            "draws": [
+                {
+                    "weights": draws[d],
+                    "rrf_fitted_ndcg10": static_evals[d][0]["nDCG@10"],
+                    "ruffle_warm_fitted_ndcg10": warm_evals[d][0]["nDCG@10"],
+                }
+                for d in range(len(draws))
+            ],
+        }
+        baseline_pq = per_queries[BASELINE]
+        warm_out = warm_fitted_by_draw[0][name]
+        conditions["rrf-fitted"] = {
+            "metrics": static_evals[0][0],
+            "mean_weights": draws[0],
+            "mean_conflict": None,
+            "fit": fit_detail,
+            "p_vs_rrf": paired_p(baseline_pq, static_evals[0][1]),
+            "delta_vs_rrf": delta_profile(baseline_pq, static_evals[0][1]),
+        }
+        conditions["ruffle-warm-fitted"] = {
+            "metrics": warm_evals[0][0],
+            "mean_weights": warm_out.mean_weights(keys),
+            "mean_conflict": warm_out.mean_conflict(),
+            "fit": fit_detail,
+            "p_vs_rrf": paired_p(baseline_pq, warm_evals[0][1]),
+            "delta_vs_rrf": delta_profile(baseline_pq, warm_evals[0][1]),
+        }
         results_sets[name] = {"eval_queries": len(eval_qids), "conditions": conditions}
         print(f"[msmarco] {name} conditions done", flush=True)
 
@@ -249,7 +318,10 @@ def run_msmarco(k: int, refreshes: int) -> dict:
             "Two channels (the canonical BM25 + dense hybrid pair). Warmed on "
             f"{len(warm_qids)} dev queries; dl19/dl20 are fused from the same "
             "dev-warmed state snapshot, a cross-query-set transfer over the "
-            "shared corpus."
+            "shared corpus. The fitted conditions grid-search fixed weights on a "
+            f"{budget}-query graded subsample of the dev warmup and apply them to "
+            "every evaluation set, as static RRF weights and as declared base "
+            "weights under Ruffle."
         ),
         "channel_keys": list(MSMARCO_KEYS),
         "k": k,

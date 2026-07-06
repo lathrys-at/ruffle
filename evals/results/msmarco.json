@@ -1,0 +1,1065 @@
+{
+  "channel_keys": [
+    "bm25",
+    "dense"
+  ],
+  "corpus_docs": 8841823,
+  "coupling_refreshes": 10,
+  "dataset": "msmarco",
+  "engine_defaults": {
+    "denom_floor_frac": 0.75,
+    "top_eps": 0.1,
+    "top_m": 5,
+    "winsor_z": 2.5
+  },
+  "eval_sets": {
+    "dev": {
+      "conditions": {
+        "bm25": {
+          "delta_vs_rrf": {
+            "loss": 0.404298,
+            "mean": -0.130822,
+            "p5": -0.571429,
+            "tie": 0.548711,
+            "win": 0.046991
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.174683,
+            "R@10": 0.359814,
+            "R@100": 0.624761,
+            "RR@10": 0.167268,
+            "nDCG@10": 0.21106
+          },
+          "p_vs_rrf": 0.0
+        },
+        "borda": {
+          "delta_vs_rrf": {
+            "loss": 0.065616,
+            "mean": -0.002509,
+            "p5": -0.0264,
+            "tie": 0.878223,
+            "win": 0.05616
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.290128,
+            "R@10": 0.539947,
+            "R@100": 0.87703,
+            "RR@10": 0.27813,
+            "nDCG@10": 0.339373
+          },
+          "p_vs_rrf": 0.015735
+        },
+        "combmnz": {
+          "delta_vs_rrf": {
+            "loss": 0.09914,
+            "mean": 0.019188,
+            "p5": -0.13093,
+            "tie": 0.711748,
+            "win": 0.189112
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.308287,
+            "R@10": 0.56841,
+            "R@100": 0.881471,
+            "RR@10": 0.298201,
+            "nDCG@10": 0.36107
+          },
+          "p_vs_rrf": 0.0
+        },
+        "combsum": {
+          "delta_vs_rrf": {
+            "loss": 0.117765,
+            "mean": 0.02964,
+            "p5": -0.200253,
+            "tie": 0.659885,
+            "win": 0.22235
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.314658,
+            "R@10": 0.590234,
+            "R@100": 0.880468,
+            "RR@10": 0.304433,
+            "nDCG@10": 0.371522
+          },
+          "p_vs_rrf": 0.0
+        },
+        "dense": {
+          "delta_vs_rrf": {
+            "loss": 0.190831,
+            "mean": 0.073446,
+            "p5": -0.386853,
+            "tie": 0.469341,
+            "win": 0.339828
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.360147,
+            "R@10": 0.624737,
+            "R@100": 0.902794,
+            "RR@10": 0.353208,
+            "nDCG@10": 0.415328
+          },
+          "p_vs_rrf": 0.0
+        },
+        "isr": {
+          "delta_vs_rrf": {
+            "loss": 0.199427,
+            "mean": 0.022319,
+            "p5": -0.386853,
+            "tie": 0.56447,
+            "win": 0.236103
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.308987,
+            "R@10": 0.577579,
+            "R@100": 0.877173,
+            "RR@10": 0.297254,
+            "nDCG@10": 0.364201
+          },
+          "p_vs_rrf": 0.0
+        },
+        "rrf": {
+          "delta_vs_rrf": null,
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.291168,
+            "R@10": 0.544819,
+            "R@100": 0.878032,
+            "RR@10": 0.280982,
+            "nDCG@10": 0.341882
+          },
+          "p_vs_rrf": null
+        },
+        "rrf-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.190831,
+            "mean": 0.073446,
+            "p5": -0.386853,
+            "tie": 0.469341,
+            "win": 0.339828
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.415328,
+                "ruffle_warm_fitted_ndcg10": 0.415328,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.410013,
+                "ruffle_warm_fitted_ndcg10": 0.411662,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.415328,
+                "ruffle_warm_fitted_ndcg10": 0.415328,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.360147,
+            "R@10": 0.624737,
+            "R@100": 0.902794,
+            "RR@10": 0.353208,
+            "nDCG@10": 0.415328
+          },
+          "p_vs_rrf": 0.0
+        },
+        "rrf-oracle": {
+          "delta_vs_rrf": {
+            "loss": 0.190831,
+            "mean": 0.073446,
+            "p5": -0.386853,
+            "tie": 0.469341,
+            "win": 0.339828
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.360147,
+            "R@10": 0.624737,
+            "R@100": 0.902794,
+            "RR@10": 0.353208,
+            "nDCG@10": 0.415328
+          },
+          "p_vs_rrf": 0.0
+        },
+        "ruffle-cold": {
+          "delta_vs_rrf": {
+            "loss": 0.0,
+            "mean": 0.0,
+            "p5": 0.0,
+            "tie": 1.0,
+            "win": 0.0
+          },
+          "mean_conflict": 0.0,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.291168,
+            "R@10": 0.544819,
+            "R@100": 0.878032,
+            "RR@10": 0.280982,
+            "nDCG@10": 0.341882
+          },
+          "p_vs_rrf": null
+        },
+        "ruffle-warm": {
+          "delta_vs_rrf": {
+            "loss": 0.106304,
+            "mean": 0.005458,
+            "p5": -0.181542,
+            "tie": 0.753009,
+            "win": 0.140688
+          },
+          "mean_conflict": 0.11627,
+          "mean_weights": {
+            "bm25": 1.006399,
+            "dense": 0.993601
+          },
+          "metrics": {
+            "AP@100": 0.292626,
+            "R@10": 0.557283,
+            "R@100": 0.854394,
+            "RR@10": 0.284611,
+            "nDCG@10": 0.34734
+          },
+          "p_vs_rrf": 0.014835
+        },
+        "ruffle-warm-aggressive": {
+          "delta_vs_rrf": {
+            "loss": 0.15616,
+            "mean": 0.005414,
+            "p5": -0.333627,
+            "tie": 0.673639,
+            "win": 0.170201
+          },
+          "mean_conflict": 0.076849,
+          "mean_weights": {
+            "bm25": 1.014621,
+            "dense": 0.985379
+          },
+          "metrics": {
+            "AP@100": 0.291122,
+            "R@10": 0.558524,
+            "R@100": 0.825478,
+            "RR@10": 0.283826,
+            "nDCG@10": 0.347296
+          },
+          "p_vs_rrf": 0.072678
+        },
+        "ruffle-warm-coupled": {
+          "delta_vs_rrf": {
+            "loss": 0.107736,
+            "mean": 0.005451,
+            "p5": -0.184576,
+            "tie": 0.749857,
+            "win": 0.142407
+          },
+          "mean_conflict": 0.11627,
+          "mean_weights": {
+            "bm25": 1.006522,
+            "dense": 0.993478
+          },
+          "metrics": {
+            "AP@100": 0.292474,
+            "R@10": 0.557569,
+            "R@100": 0.854298,
+            "RR@10": 0.284509,
+            "nDCG@10": 0.347333
+          },
+          "p_vs_rrf": 0.015795
+        },
+        "ruffle-warm-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.190831,
+            "mean": 0.073446,
+            "p5": -0.386853,
+            "tie": 0.469341,
+            "win": 0.339828
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.415328,
+                "ruffle_warm_fitted_ndcg10": 0.415328,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.410013,
+                "ruffle_warm_fitted_ndcg10": 0.411662,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.415328,
+                "ruffle_warm_fitted_ndcg10": 0.415328,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": 0.11627,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 2.0
+          },
+          "metrics": {
+            "AP@100": 0.360147,
+            "R@10": 0.624737,
+            "R@100": 0.902794,
+            "RR@10": 0.353208,
+            "nDCG@10": 0.415328
+          },
+          "p_vs_rrf": 0.0
+        }
+      },
+      "eval_queries": 3490
+    },
+    "dl19": {
+      "conditions": {
+        "bm25": {
+          "delta_vs_rrf": {
+            "loss": 0.883721,
+            "mean": -0.229455,
+            "p5": -0.668121,
+            "tie": 0.0,
+            "win": 0.116279
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.254059,
+            "R@10": 0.12775,
+            "R@100": 0.403258,
+            "RR@10": 0.720736,
+            "nDCG@10": 0.423788
+          },
+          "p_vs_rrf": 0.0
+        },
+        "borda": {
+          "delta_vs_rrf": {
+            "loss": 0.325581,
+            "mean": -0.006096,
+            "p5": -0.05626,
+            "tie": 0.348837,
+            "win": 0.325581
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.379275,
+            "R@10": 0.162423,
+            "R@100": 0.529376,
+            "RR@10": 0.888243,
+            "nDCG@10": 0.647147
+          },
+          "p_vs_rrf": 0.174469
+        },
+        "combmnz": {
+          "delta_vs_rrf": {
+            "loss": 0.418605,
+            "mean": 0.004173,
+            "p5": -0.107738,
+            "tie": 0.139535,
+            "win": 0.44186
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.386131,
+            "R@10": 0.167472,
+            "R@100": 0.536689,
+            "RR@10": 0.927741,
+            "nDCG@10": 0.657416
+          },
+          "p_vs_rrf": 0.610729
+        },
+        "combsum": {
+          "delta_vs_rrf": {
+            "loss": 0.488372,
+            "mean": -0.005377,
+            "p5": -0.12399,
+            "tie": 0.093023,
+            "win": 0.418605
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.387102,
+            "R@10": 0.165455,
+            "R@100": 0.536769,
+            "RR@10": 0.927326,
+            "nDCG@10": 0.647866
+          },
+          "p_vs_rrf": 0.643839
+        },
+        "dense": {
+          "delta_vs_rrf": {
+            "loss": 0.348837,
+            "mean": 0.03821,
+            "p5": -0.202305,
+            "tie": 0.023256,
+            "win": 0.627907
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.377469,
+            "R@10": 0.14775,
+            "R@100": 0.506677,
+            "RR@10": 0.934884,
+            "nDCG@10": 0.691453
+          },
+          "p_vs_rrf": 0.124892
+        },
+        "isr": {
+          "delta_vs_rrf": {
+            "loss": 0.744186,
+            "mean": -0.059828,
+            "p5": -0.278631,
+            "tie": 0.0,
+            "win": 0.255814
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.364787,
+            "R@10": 0.156922,
+            "R@100": 0.528662,
+            "RR@10": 0.904485,
+            "nDCG@10": 0.593415
+          },
+          "p_vs_rrf": 0.003963
+        },
+        "rrf": {
+          "delta_vs_rrf": null,
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.376146,
+            "R@10": 0.165035,
+            "R@100": 0.530724,
+            "RR@10": 0.90407,
+            "nDCG@10": 0.653243
+          },
+          "p_vs_rrf": null
+        },
+        "rrf-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.348837,
+            "mean": 0.03821,
+            "p5": -0.202305,
+            "tie": 0.023256,
+            "win": 0.627907
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.691453,
+                "ruffle_warm_fitted_ndcg10": 0.691453,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.700863,
+                "ruffle_warm_fitted_ndcg10": 0.703037,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.691453,
+                "ruffle_warm_fitted_ndcg10": 0.691453,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.377469,
+            "R@10": 0.14775,
+            "R@100": 0.506677,
+            "RR@10": 0.934884,
+            "nDCG@10": 0.691453
+          },
+          "p_vs_rrf": 0.124892
+        },
+        "rrf-oracle": {
+          "delta_vs_rrf": {
+            "loss": 0.209302,
+            "mean": 0.04806,
+            "p5": -0.071035,
+            "tie": 0.023256,
+            "win": 0.767442
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.2,
+            "dense": 0.8
+          },
+          "metrics": {
+            "AP@100": 0.394154,
+            "R@10": 0.166976,
+            "R@100": 0.506677,
+            "RR@10": 0.949612,
+            "nDCG@10": 0.701303
+          },
+          "p_vs_rrf": 0.000977
+        },
+        "ruffle-cold": {
+          "delta_vs_rrf": {
+            "loss": 0.0,
+            "mean": 0.0,
+            "p5": 0.0,
+            "tie": 1.0,
+            "win": 0.0
+          },
+          "mean_conflict": 0.0,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.376146,
+            "R@10": 0.165035,
+            "R@100": 0.530724,
+            "RR@10": 0.90407,
+            "nDCG@10": 0.653243
+          },
+          "p_vs_rrf": null
+        },
+        "ruffle-warm": {
+          "delta_vs_rrf": {
+            "loss": 0.348837,
+            "mean": -0.007577,
+            "p5": -0.100472,
+            "tie": 0.186047,
+            "win": 0.465116
+          },
+          "mean_conflict": 0.101237,
+          "mean_weights": {
+            "bm25": 1.036472,
+            "dense": 0.963528
+          },
+          "metrics": {
+            "AP@100": 0.370419,
+            "R@10": 0.162418,
+            "R@100": 0.505206,
+            "RR@10": 0.896641,
+            "nDCG@10": 0.645666
+          },
+          "p_vs_rrf": 0.551925
+        },
+        "ruffle-warm-aggressive": {
+          "delta_vs_rrf": {
+            "loss": 0.395349,
+            "mean": -0.017461,
+            "p5": -0.209049,
+            "tie": 0.116279,
+            "win": 0.488372
+          },
+          "mean_conflict": 0.087948,
+          "mean_weights": {
+            "bm25": 1.030328,
+            "dense": 0.969672
+          },
+          "metrics": {
+            "AP@100": 0.363346,
+            "R@10": 0.157719,
+            "R@100": 0.49039,
+            "RR@10": 0.892119,
+            "nDCG@10": 0.635782
+          },
+          "p_vs_rrf": 0.337814
+        },
+        "ruffle-warm-coupled": {
+          "delta_vs_rrf": {
+            "loss": 0.372093,
+            "mean": -0.007476,
+            "p5": -0.100472,
+            "tie": 0.162791,
+            "win": 0.465116
+          },
+          "mean_conflict": 0.101237,
+          "mean_weights": {
+            "bm25": 1.037099,
+            "dense": 0.962901
+          },
+          "metrics": {
+            "AP@100": 0.370864,
+            "R@10": 0.162418,
+            "R@100": 0.505947,
+            "RR@10": 0.896641,
+            "nDCG@10": 0.645767
+          },
+          "p_vs_rrf": 0.558074
+        },
+        "ruffle-warm-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.348837,
+            "mean": 0.03821,
+            "p5": -0.202305,
+            "tie": 0.023256,
+            "win": 0.627907
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.691453,
+                "ruffle_warm_fitted_ndcg10": 0.691453,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.700863,
+                "ruffle_warm_fitted_ndcg10": 0.703037,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.691453,
+                "ruffle_warm_fitted_ndcg10": 0.691453,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": 0.101237,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 2.0
+          },
+          "metrics": {
+            "AP@100": 0.377469,
+            "R@10": 0.14775,
+            "R@100": 0.506677,
+            "RR@10": 0.934884,
+            "nDCG@10": 0.691453
+          },
+          "p_vs_rrf": 0.124892
+        }
+      },
+      "eval_queries": 43
+    },
+    "dl20": {
+      "conditions": {
+        "bm25": {
+          "delta_vs_rrf": {
+            "loss": 0.833333,
+            "mean": -0.141947,
+            "p5": -0.495094,
+            "tie": 0.018519,
+            "win": 0.148148
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.259279,
+            "R@10": 0.157014,
+            "R@100": 0.425994,
+            "RR@10": 0.822274,
+            "nDCG@10": 0.477455
+          },
+          "p_vs_rrf": 0.0
+        },
+        "borda": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": -0.003352,
+            "p5": -0.042414,
+            "tie": 0.444444,
+            "win": 0.222222
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.376948,
+            "R@10": 0.205139,
+            "R@100": 0.567664,
+            "RR@10": 0.920855,
+            "nDCG@10": 0.61605
+          },
+          "p_vs_rrf": 0.243098
+        },
+        "combmnz": {
+          "delta_vs_rrf": {
+            "loss": 0.351852,
+            "mean": 0.012876,
+            "p5": -0.044983,
+            "tie": 0.148148,
+            "win": 0.5
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.394889,
+            "R@10": 0.205192,
+            "R@100": 0.572547,
+            "RR@10": 0.914352,
+            "nDCG@10": 0.632279
+          },
+          "p_vs_rrf": 0.02339
+        },
+        "combsum": {
+          "delta_vs_rrf": {
+            "loss": 0.388889,
+            "mean": 0.030198,
+            "p5": -0.053098,
+            "tie": 0.074074,
+            "win": 0.537037
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.400895,
+            "R@10": 0.215363,
+            "R@100": 0.575046,
+            "RR@10": 0.917284,
+            "nDCG@10": 0.6496
+          },
+          "p_vs_rrf": 0.006161
+        },
+        "dense": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": 0.07002,
+            "p5": -0.139739,
+            "tie": 0.055556,
+            "win": 0.611111
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.403504,
+            "R@10": 0.224914,
+            "R@100": 0.543617,
+            "RR@10": 0.932099,
+            "nDCG@10": 0.689422
+          },
+          "p_vs_rrf": 0.001582
+        },
+        "isr": {
+          "delta_vs_rrf": {
+            "loss": 0.481481,
+            "mean": 0.0134,
+            "p5": -0.159006,
+            "tie": 0.055556,
+            "win": 0.462963
+          },
+          "mean_conflict": null,
+          "mean_weights": null,
+          "metrics": {
+            "AP@100": 0.384559,
+            "R@10": 0.215026,
+            "R@100": 0.568544,
+            "RR@10": 0.925926,
+            "nDCG@10": 0.632802
+          },
+          "p_vs_rrf": 0.376632
+        },
+        "rrf": {
+          "delta_vs_rrf": null,
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.377718,
+            "R@10": 0.204335,
+            "R@100": 0.56713,
+            "RR@10": 0.919312,
+            "nDCG@10": 0.619402
+          },
+          "p_vs_rrf": null
+        },
+        "rrf-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": 0.07002,
+            "p5": -0.139739,
+            "tie": 0.055556,
+            "win": 0.611111
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.689422,
+                "ruffle_warm_fitted_ndcg10": 0.689422,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.680411,
+                "ruffle_warm_fitted_ndcg10": 0.677823,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.689422,
+                "ruffle_warm_fitted_ndcg10": 0.689422,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.403504,
+            "R@10": 0.224914,
+            "R@100": 0.543617,
+            "RR@10": 0.932099,
+            "nDCG@10": 0.689422
+          },
+          "p_vs_rrf": 0.001582
+        },
+        "rrf-oracle": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": 0.07002,
+            "p5": -0.139739,
+            "tie": 0.055556,
+            "win": 0.611111
+          },
+          "mean_conflict": null,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.403504,
+            "R@10": 0.224914,
+            "R@100": 0.543617,
+            "RR@10": 0.932099,
+            "nDCG@10": 0.689422
+          },
+          "p_vs_rrf": 0.001582
+        },
+        "ruffle-cold": {
+          "delta_vs_rrf": {
+            "loss": 0.0,
+            "mean": 0.0,
+            "p5": 0.0,
+            "tie": 1.0,
+            "win": 0.0
+          },
+          "mean_conflict": 0.0,
+          "mean_weights": {
+            "bm25": 1.0,
+            "dense": 1.0
+          },
+          "metrics": {
+            "AP@100": 0.377718,
+            "R@10": 0.204335,
+            "R@100": 0.56713,
+            "RR@10": 0.919312,
+            "nDCG@10": 0.619402
+          },
+          "p_vs_rrf": null
+        },
+        "ruffle-warm": {
+          "delta_vs_rrf": {
+            "loss": 0.203704,
+            "mean": 0.010289,
+            "p5": -0.044774,
+            "tie": 0.296296,
+            "win": 0.5
+          },
+          "mean_conflict": 0.19415,
+          "mean_weights": {
+            "bm25": 0.994358,
+            "dense": 1.005642
+          },
+          "metrics": {
+            "AP@100": 0.359126,
+            "R@10": 0.215508,
+            "R@100": 0.530488,
+            "RR@10": 0.910494,
+            "nDCG@10": 0.629691
+          },
+          "p_vs_rrf": 0.065149
+        },
+        "ruffle-warm-aggressive": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": 0.003282,
+            "p5": -0.208401,
+            "tie": 0.148148,
+            "win": 0.518519
+          },
+          "mean_conflict": 0.1056,
+          "mean_weights": {
+            "bm25": 1.0154,
+            "dense": 0.9846
+          },
+          "metrics": {
+            "AP@100": 0.343437,
+            "R@10": 0.203841,
+            "R@100": 0.506366,
+            "RR@10": 0.919753,
+            "nDCG@10": 0.622684
+          },
+          "p_vs_rrf": 0.825387
+        },
+        "ruffle-warm-coupled": {
+          "delta_vs_rrf": {
+            "loss": 0.222222,
+            "mean": 0.009471,
+            "p5": -0.044774,
+            "tie": 0.296296,
+            "win": 0.481481
+          },
+          "mean_conflict": 0.19415,
+          "mean_weights": {
+            "bm25": 0.994195,
+            "dense": 1.005805
+          },
+          "metrics": {
+            "AP@100": 0.358817,
+            "R@10": 0.215508,
+            "R@100": 0.529841,
+            "RR@10": 0.910494,
+            "nDCG@10": 0.628873
+          },
+          "p_vs_rrf": 0.093988
+        },
+        "ruffle-warm-fitted": {
+          "delta_vs_rrf": {
+            "loss": 0.333333,
+            "mean": 0.07002,
+            "p5": -0.139739,
+            "tie": 0.055556,
+            "win": 0.611111
+          },
+          "fit": {
+            "budget": 100,
+            "draws": [
+              {
+                "rrf_fitted_ndcg10": 0.689422,
+                "ruffle_warm_fitted_ndcg10": 0.689422,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.680411,
+                "ruffle_warm_fitted_ndcg10": 0.677823,
+                "weights": {
+                  "bm25": 0.1,
+                  "dense": 0.9
+                }
+              },
+              {
+                "rrf_fitted_ndcg10": 0.689422,
+                "ruffle_warm_fitted_ndcg10": 0.689422,
+                "weights": {
+                  "bm25": 0.0,
+                  "dense": 1.0
+                }
+              }
+            ]
+          },
+          "mean_conflict": 0.19415,
+          "mean_weights": {
+            "bm25": 0.0,
+            "dense": 2.0
+          },
+          "metrics": {
+            "AP@100": 0.403504,
+            "R@10": 0.224914,
+            "R@100": 0.543617,
+            "RR@10": 0.932099,
+            "nDCG@10": 0.689422
+          },
+          "p_vs_rrf": 0.001582
+        }
+      },
+      "eval_queries": 54
+    }
+  },
+  "ir_datasets_id": "msmarco-passage (dev/small, trec-dl-2019/judged, trec-dl-2020/judged)",
+  "k": 100,
+  "note": "Two channels (the canonical BM25 + dense hybrid pair). Warmed on 3490 dev queries; dl19/dl20 are fused from the same dev-warmed state snapshot, a cross-query-set transfer over the shared corpus. The fitted conditions grid-search fixed weights on a 100-query graded subsample of the dev warmup and apply them to every evaluation set, as static RRF weights and as declared base weights under Ruffle.",
+  "python": "3.12.13",
+  "ruffle_version": "0.2.0",
+  "seed": 0,
+  "warm_queries": 3490
+}
