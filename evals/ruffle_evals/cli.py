@@ -1,11 +1,10 @@
 """The harness entry point: ``python -m ruffle_evals [dataset ...]``.
 
 Each named collection is loaded, its channel runs are computed or read from the
-cache, and three protocols run on the same held-out evaluation split: the main
-condition comparison, the degraded-channel experiment, and the warmup learning
-curve. The numbers land in ``results/<dataset>.json``, ``<dataset>-degraded.json``,
-and ``<dataset>-curve.json``; after every run the summary in
-``results/RESULTS.md`` is regenerated from all result files present.
+cache, and two protocols run on the same held-out evaluation split: the main
+condition comparison and the warmup learning curve. The numbers land in
+``results/<dataset>.json`` and ``<dataset>-curve.json``; after every run the
+summary in ``results/RESULTS.md`` is regenerated from all result files present.
 """
 
 from __future__ import annotations
@@ -20,7 +19,7 @@ import ruffle
 from ruffle_evals import RESULTS_DIR, SEED
 from ruffle_evals.channels import CHANNEL_KEYS, Channels
 from ruffle_evals.datasets import DATASETS, DEFAULT_DATASETS, load
-from ruffle_evals.experiments import DEGRADED_MODES, degraded, learning_curve
+from ruffle_evals.experiments import learning_curve
 from ruffle_evals.fusion import split_queries
 from ruffle_evals.heavy import run_cqadupstack, run_msmarco
 from ruffle_evals.protocol import main_conditions
@@ -29,7 +28,7 @@ __all__ = ["main"]
 
 # The heavy collections run through dedicated runners (composite aggregation,
 # multi-evaluation-set warm transfer) rather than the generic per-dataset path,
-# and skip the degraded/curve experiments.
+# and skip the learning-curve experiment.
 _HEAVY = {"cqadupstack": run_cqadupstack, "msmarco": run_msmarco}
 
 _SUMMARY_ORDER = (*DATASETS, *_HEAVY)
@@ -94,9 +93,6 @@ def _run_dataset(name: str, k: int, warm_frac: float, refreshes: int) -> None:
 
     conditions, _ = main_conditions(runs, channels, dataset.qrels, warm_qids, eval_qids, refreshes)
     _write(name, "", {**envelope, "coupling_refreshes": refreshes, "conditions": conditions})
-
-    print(f"[{name}] degraded-channel experiment", flush=True)
-    _write(name, "-degraded", {**envelope, **degraded(runs, dataset.qrels, warm_qids, eval_qids)})
 
     print(f"[{name}] warmup learning curve", flush=True)
     _write(name, "-curve", {**envelope, **learning_curve(runs, dataset.qrels, warm_qids, eval_qids)})
@@ -193,57 +189,6 @@ def _msmarco_tables(result: dict) -> list[str]:
     return lines
 
 
-def _degraded_table(result: dict) -> list[str]:
-    lines = [
-        "#### Degraded fourth channel",
-        "",
-        "A broken channel derived from the BM25 run joins the three healthy ones.",
-        "`wrong-query` serves another query's results (healthy-looking scores,",
-        "irrelevant content); `flaky` serves the tail of its own results (ranks",
-        "51-100) on a seeded half of the queries. The p column compares against",
-        "four-channel RRF, so it reads what each fusion recovers of the damage.",
-        "",
-        "| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |",
-        "|---|---|---|---|---|---|---|---|",
-    ]
-    for mode in DEGRADED_MODES:
-        entry = result["modes"].get(mode)
-        if entry is None:
-            continue
-        for condition in ("rrf-clean", "rrf", "ruffle-warm", "ruffle-warm-aggressive"):
-            data = entry["conditions"].get(condition)
-            if data is None:
-                continue
-            metrics = data["metrics"]
-            weights = data.get("mean_weights")
-            broken = "" if weights is None else f"{weights['broken']:.3f}"
-            lines.append(
-                f"| {mode} | {condition} | {_fmt(metrics.get('nDCG@10'))} "
-                f"| {_fmt(metrics.get('R@100'))} | {_fmt(metrics.get('RR@10'))} "
-                f"| {_fmt(data.get('p_vs_rrf_broken'), 3)} | {broken} "
-                f"| {_fmt(data.get('mean_conflict'), 3)} |"
-            )
-    flaky = result["modes"].get("flaky", {})
-    if "broken_weight_on_failed" in flaky:
-        lines.extend(
-            [
-                "",
-                f"In the flaky mode the broken channel's mean weight on the "
-                f"{flaky['failed_eval_queries']} failed evaluation queries is "
-                f"{flaky['broken_weight_on_failed']:.3f}, against "
-                f"{flaky['broken_weight_on_healthy']:.3f} on the healthy ones.",
-            ]
-        )
-    if "aggressive_broken_weight_on_failed" in flaky:
-        lines.append(
-            f"Under the aggressive profile that split widens to "
-            f"{flaky['aggressive_broken_weight_on_failed']:.3f} against "
-            f"{flaky['aggressive_broken_weight_on_healthy']:.3f}."
-        )
-    lines.append("")
-    return lines
-
-
 def _curve_table(result: dict) -> list[str]:
     base = result["rrf"]["metrics"]
     lines = [
@@ -288,9 +233,6 @@ def _regenerate_summary() -> None:
         wrote_any = True
         result = json.loads(main_path.read_text())
         lines.extend(_msmarco_tables(result) if "eval_sets" in result else _main_table(result))
-        degraded_path = RESULTS_DIR / f"{name}-degraded.json"
-        if degraded_path.exists():
-            lines.extend(_degraded_table(json.loads(degraded_path.read_text())))
         curve_path = RESULTS_DIR / f"{name}-curve.json"
         if curve_path.exists():
             lines.extend(_curve_table(json.loads(curve_path.read_text())))

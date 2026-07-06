@@ -28,28 +28,6 @@ baseline; a blank cell means the rankings were identical to the baseline.
 | ruffle-warm-fitted | 0.7601 | 0.9800 | 0.7201 | 0.261 | 20% / 15% | 0.349 / 0.000 / 2.651 |
 | rrf-oracle | 0.7679 | 0.9867 | 0.7309 | 0.010 | 19% / 10% | 0.100 / 0.300 / 0.600 |
 
-#### Degraded fourth channel
-
-A broken channel derived from the BM25 run joins the three healthy ones.
-`wrong-query` serves another query's results (healthy-looking scores,
-irrelevant content); `flaky` serves the tail of its own results (ranks
-51-100) on a seeded half of the queries. The p column compares against
-four-channel RRF, so it reads what each fusion recovers of the damage.
-
-| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
-|---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.7393 | 0.9933 | 0.7030 | 0.060 |  |  |
-| wrong-query | rrf | 0.7218 | 0.9867 | 0.6798 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.6841 | 0.9400 | 0.6411 | 0.025 | 1.099 | 0.397 |
-| wrong-query | ruffle-warm-aggressive | 0.6077 | 0.8600 | 0.5709 | 0.000 | 1.204 | 0.328 |
-| flaky | rrf-clean | 0.7393 | 0.9933 | 0.7030 | 0.001 |  |  |
-| flaky | rrf | 0.7083 | 0.9787 | 0.6613 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.7337 | 0.9600 | 0.6980 | 0.003 | 1.034 | 0.297 |
-| flaky | ruffle-warm-aggressive | 0.7382 | 0.9667 | 0.7036 | 0.009 | 1.161 | 0.245 |
-
-In the flaky mode the broken channel's mean weight on the 73 failed evaluation queries is 0.570, against 1.475 on the healthy ones.
-Under the aggressive profile that split widens to 0.355 against 1.925.
-
 #### Warmup learning curve
 
 Ruffle warm (default configuration) on the fixed evaluation split, warmed
@@ -87,28 +65,6 @@ on this split is nDCG@10 0.7393, R@100 0.9933.
 | rrf-fitted | 0.3255 | 0.3128 | 0.5096 | 0.144 | 29% / 38% | 0.000 / 0.000 / 1.000 |
 | ruffle-warm-fitted | 0.3255 | 0.3128 | 0.5096 | 0.144 | 29% / 38% | 0.000 / 0.000 / 3.000 |
 | rrf-oracle | 0.3461 | 0.3240 | 0.5558 | 0.114 | 20% / 12% | 0.300 / 0.300 / 0.400 |
-
-#### Degraded fourth channel
-
-A broken channel derived from the BM25 run joins the three healthy ones.
-`wrong-query` serves another query's results (healthy-looking scores,
-irrelevant content); `flaky` serves the tail of its own results (ranks
-51-100) on a seeded half of the queries. The p column compares against
-four-channel RRF, so it reads what each fusion recovers of the damage.
-
-| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
-|---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.3427 | 0.3158 | 0.5501 | 0.025 |  |  |
-| wrong-query | rrf | 0.3365 | 0.3093 | 0.5444 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.3257 | 0.2948 | 0.5123 | 0.043 | 1.050 | 0.364 |
-| wrong-query | ruffle-warm-aggressive | 0.3095 | 0.2847 | 0.4840 | 0.003 | 1.185 | 0.282 |
-| flaky | rrf-clean | 0.3427 | 0.3158 | 0.5501 | 0.000 |  |  |
-| flaky | rrf | 0.3220 | 0.3004 | 0.5239 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.3369 | 0.2957 | 0.5470 | 0.001 | 1.056 | 0.268 |
-| flaky | ruffle-warm-aggressive | 0.3394 | 0.2943 | 0.5486 | 0.002 | 1.201 | 0.213 |
-
-In the flaky mode the broken channel's mean weight on the 81 failed evaluation queries is 0.768, against 1.343 on the healthy ones.
-Under the aggressive profile that split widens to 0.713 against 1.688.
 
 #### Warmup learning curve
 
@@ -148,28 +104,6 @@ on this split is nDCG@10 0.3427, R@100 0.3158.
 | ruffle-warm-fitted | 0.5177 | 0.8468 | 0.5805 | 0.000 | 59% / 11% | 0.342 / 0.000 / 2.658 |
 | rrf-oracle | 0.5406 | 0.8468 | 0.6155 | 0.000 | 57% / 14% | 0.000 / 0.000 / 1.000 |
 
-#### Degraded fourth channel
-
-A broken channel derived from the BM25 run joins the three healthy ones.
-`wrong-query` serves another query's results (healthy-looking scores,
-irrelevant content); `flaky` serves the tail of its own results (ranks
-51-100) on a seeded half of the queries. The p column compares against
-four-channel RRF, so it reads what each fusion recovers of the damage.
-
-| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
-|---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.3476 | 0.7873 | 0.4190 | 0.058 |  |  |
-| wrong-query | rrf | 0.3450 | 0.7597 | 0.4168 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.3278 | 0.6810 | 0.3917 | 0.067 | 1.046 | 0.421 |
-| wrong-query | ruffle-warm-aggressive | 0.3122 | 0.6059 | 0.3604 | 0.011 | 1.092 | 0.336 |
-| flaky | rrf-clean | 0.3476 | 0.7873 | 0.4190 | 0.000 |  |  |
-| flaky | rrf | 0.3230 | 0.7161 | 0.3877 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.3366 | 0.6664 | 0.4084 | 0.062 | 1.036 | 0.371 |
-| flaky | ruffle-warm-aggressive | 0.3404 | 0.6411 | 0.4097 | 0.078 | 1.133 | 0.302 |
-
-In the flaky mode the broken channel's mean weight on the 159 failed evaluation queries is 0.608, against 1.448 on the healthy ones.
-Under the aggressive profile that split widens to 0.393 against 1.847.
-
 #### Warmup learning curve
 
 Ruffle warm (default configuration) on the fixed evaluation split, warmed
@@ -208,28 +142,6 @@ on this split is nDCG@10 0.3476, R@100 0.7873.
 | rrf-fitted | 0.8932 | 0.9974 | 0.8856 | 0.000 | 23% / 9% | 0.000 / 0.100 / 0.900 |
 | ruffle-warm-fitted | 0.8908 | 0.9974 | 0.8821 | 0.000 | 23% / 10% | 0.000 / 0.343 / 2.657 |
 | rrf-oracle | 0.8932 | 0.9974 | 0.8856 | 0.000 | 23% / 9% | 0.000 / 0.100 / 0.900 |
-
-#### Degraded fourth channel
-
-A broken channel derived from the BM25 run joins the three healthy ones.
-`wrong-query` serves another query's results (healthy-looking scores,
-irrelevant content); `flaky` serves the tail of its own results (ranks
-51-100) on a seeded half of the queries. The p column compares against
-four-channel RRF, so it reads what each fusion recovers of the damage.
-
-| mode | condition | nDCG@10 | R@100 | MRR@10 | p vs RRF+broken | broken weight | mean conflict |
-|---|---|---|---|---|---|---|---|
-| wrong-query | rrf-clean | 0.8416 | 0.9962 | 0.8349 | 0.167 |  |  |
-| wrong-query | rrf | 0.8414 | 0.9938 | 0.8347 |  | 1.000 |  |
-| wrong-query | ruffle-warm | 0.8025 | 0.9895 | 0.7924 | 0.000 | 1.023 | 0.383 |
-| wrong-query | ruffle-warm-aggressive | 0.7104 | 0.9185 | 0.7003 | 0.000 | 1.051 | 0.272 |
-| flaky | rrf-clean | 0.8416 | 0.9962 | 0.8349 | 0.000 |  |  |
-| flaky | rrf | 0.8005 | 0.9921 | 0.7854 |  | 1.000 |  |
-| flaky | ruffle-warm | 0.8195 | 0.9892 | 0.8084 | 0.000 | 1.028 | 0.265 |
-| flaky | ruffle-warm-aggressive | 0.8119 | 0.9832 | 0.8008 | 0.000 | 1.132 | 0.194 |
-
-In the flaky mode the broken channel's mean weight on the 2490 failed evaluation queries is 0.635, against 1.418 on the healthy ones.
-Under the aggressive profile that split widens to 0.425 against 1.833.
 
 #### Warmup learning curve
 
