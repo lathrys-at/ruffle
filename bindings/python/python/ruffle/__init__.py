@@ -53,6 +53,7 @@ from ruffle._core import (
     StateError,
     __version__,
 )
+from ruffle._fit import FittedBaseWeights, fit_base_weights
 from ruffle._fuser import ChannelDiscrimination, ChannelFlag, Fused, Fuser, RankedItem
 from ruffle._state import (
     ChannelSummary,
@@ -82,6 +83,7 @@ __all__ = [
     "Direction",
     "DiscriminationConfig",
     "Divergence",
+    "FittedBaseWeights",
     "FuseConfig",
     "Fused",
     "Fuser",
@@ -98,5 +100,6 @@ __all__ = [
     "RuffleState",
     "StatFingerprint",
     "StateError",
+    "fit_base_weights",
     "__version__",
 ]

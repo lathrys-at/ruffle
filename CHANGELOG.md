@@ -9,6 +9,27 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `ruffle.fit_base_weights` (Python package): offline fitting of
+  `ChannelConfig.base_weight` declarations from a small graded sample, the
+  labeled complement to the label-free engine. A joint grid search over the
+  weight simplex (step 0.1, minimum weight 0.2 per channel by default)
+  maximizes linear-gain nDCG@10 at the deployed RRF constant, guarded by a
+  cross-fitted split-sample acceptance test whose held-out estimate is
+  honest by construction: the fit is returned only when its estimated
+  benefit over uniform weights is positive, else uniform is returned with
+  the fallback flagged. The floor, not the guard, is the do-no-harm
+  mechanism (no fit can silence a channel), and it caps the achievable tilt
+  at 4:1 by default. On the evaluation harness (nineteen collections,
+  two-fold crossfit, 64-query budget) the fitted weights composed with the
+  engine improved mean nDCG@10 on every collection, with the largest gains
+  where one channel dominates and a documented per-query loss tail inherent
+  to any static tilt. Pure Python, no new dependencies, deterministic;
+  golden-pinned against the harness's numpy reference including tied fused
+  scores straddling the metric cutoff. Python-only: fitting happens where
+  operators hold graded data, and the tuning guide documents the algorithm
+  to reimplementation precision for other languages. No engine, state, or
+  format change.
+
 - Within-query dispersion gate: `RrfConfig.min_g_dispersion` (Python
   `min_g_dispersion`, TypeScript `minGDispersion`), default `0.45`, validated
   finite and non-negative, `0` disables. The per-query weighting now acts only

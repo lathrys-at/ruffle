@@ -95,14 +95,50 @@ want to observe in telemetry before letting it affect rankings. Base weights are
 configuration, not persisted state: changing them takes effect on the next
 construction and requires no state migration.
 
-A reasonable procedure for setting them: run your channels over a set of queries with
-graded relevance, grid-search fixed per-channel RRF weights on that set, and declare
-the winner. Even a few dozen graded queries produce a usable tilt when one channel is
-clearly stronger. Floor small fitted values at something positive (0.1, say) rather
-than declaring zero: a zero excludes the channel from every query, beyond what
-per-query evidence can revive, and a small fit chooses zeros too eagerly. Revisit the
-declaration when a channel's model changes, since the tilt encodes a comparison
-between specific model versions.
+The Python package ships the fitting procedure as `ruffle.fit_base_weights`, the
+labeled complement to the label-free engine. Give it each channel's per-query
+retrieved items (ranked ids, or scored pairs whose tied scores share their midrank)
+and a graded sample, and it returns base weights plus an honest estimate of their
+benefit. Sixty-four graded queries is the reference budget; sixteen is the guarded
+minimum, at roughly half the expected gain. The sample must be representative
+traffic: fitting on queries selected for difficulty or disagreement biases the
+weights toward that slice.
+
+The procedure, specified to reimplementation precision for other languages:
+
+1. Use the queries present in both the graded sample and the runs, dropping queries
+   with no positive grade. Per query, each channel contributes `1 / (eta + rank)`
+   per document, ranks from the given order (tied scores share their midrank); the
+   fused order sorts by weighted contribution sum, first-seen breaking exact ties.
+2. Grid-search the weight simplex at step 0.1, every channel's weight at or above
+   the floor, maximizing mean linear-gain nDCG@10 (gain is the raw grade, discount
+   `1/log2(i+2)`; this is not pytrec_eval's exponential-gain variant). The first
+   maximum in the deterministic grid order wins; the whole fit is deterministic.
+3. Acceptance is cross-fitted: split the sample in half (alternating over sorted
+   query ids), fit each half, score each half-fit against uniform weights on the
+   opposite half, and pool the held-out differences. Return the full-sample fit
+   only if the pooled held-out mean is positive; otherwise return uniform weights
+   with the fallback flagged. The held-out estimate is honest (selection and
+   evaluation never share queries), so the zero bar is a genuine
+   expected-do-no-harm criterion.
+
+The floor, not the acceptance test, is the do-no-harm mechanism: no fit can silence
+a channel below it, which bounds the loss on queries where a down-weighted channel
+was right. The floor also caps the achievable tilt at `(1 - floor) / floor` (4:1 at
+the default 0.2); on a corpus where one channel is overwhelmingly dominant, a lower
+floor in the 0.1 to 0.25 band buys more of the gap at a measurably heavier
+per-query loss tail. `eta` is a required argument and must equal the deployed
+`rrf_eta`: RRF weight fitting is eta-sensitive, and fitting at one constant while
+fusing at another measurably degrades the fit. A high fallback rate on a deployment
+whose channels are close in quality is the intended safe outcome, not a failure.
+
+Two honest costs to hold onto. A static tilt carries a real per-query loss tail on
+queries where the down-weighted channel was right; that is inherent to any fixed
+weighting, including the labeled oracle itself. And fits are made with coupling
+off: an enabled coupling discount additionally suppresses redundant channels the
+fit may already sit at the floor on, so re-check the fitted configuration if you
+enable coupling. Revisit the declaration when a channel's model changes (the tag
+bump), since the tilt encodes a comparison between specific model versions.
 
 ## Reading knobs
 
