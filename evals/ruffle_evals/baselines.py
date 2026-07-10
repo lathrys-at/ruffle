@@ -125,7 +125,7 @@ def oracle_rrf(
     qrels: dict[str, dict[str, int]],
     qids: list[str],
     keys: Sequence[str] = CHANNEL_KEYS,
-    eta: float = 60.0,
+    eta: float = 20.0,
     step: float = 0.1,
 ) -> tuple[Rankings, dict[str, float]]:
     """Weighted RRF with fixed per-channel weights grid-searched on the

@@ -15,7 +15,8 @@ use crate::weighting::coupling::{
     Diagnostics, PairBaseline, anchor_correlations, coupled_weights, diagnostics,
 };
 use crate::weighting::discrimination::{
-    ChannelDiscrimination, discriminate, level_shrunk, winsorize_separation,
+    ChannelDiscrimination, discriminate, level_normalized_or_neutral, level_shrunk,
+    winsorize_separation,
 };
 use crate::weighting::fusion::weighted_rrf;
 use serde::{Deserialize, Serialize};
@@ -66,6 +67,15 @@ pub struct Fused<Id> {
     /// channels each rank confidently but disagree on which items are relevant, so the
     /// choice of fusion matters most. Ranges from `0.0` to `1.0`.
     pub conflict: f64,
+    /// The within-query dispersion the gate read: the sample standard deviation of the
+    /// channels' level-normalized weights (cold channels contribute exact neutral).
+    /// `0.0` when fewer than two channels fused.
+    pub g_dispersion: f64,
+    /// Whether the dispersion gate closed on this query: the dispersion sat below
+    /// [`min_g_dispersion`](crate::RrfConfig::min_g_dispersion), so every channel's
+    /// adaptive weight was exactly neutral and, with coupling off and no `base_weight`
+    /// tilt, the fusion is plain RRF. Always `false` when the gate is disabled.
+    pub gated: bool,
 }
 
 /// The entry point: fuses several retrieval channels' ranked outputs into one ranking.
@@ -564,6 +574,7 @@ fn fuse_core<Id: Hash + Eq + Clone>(
     // read and fused (a later duplicate would double-count the channel's vote under a
     // single weight). `registered` holds the inputs that actually fuse.
     let mut g_map: BTreeMap<String, f64> = BTreeMap::new();
+    let mut gate_reads: Vec<f64> = Vec::new();
     let mut reads: BTreeMap<String, ChannelDiscrimination> = BTreeMap::new();
     let mut flags: BTreeMap<String, ChannelFlag> = BTreeMap::new();
     let mut registered: Vec<&ChannelInput<Id>> = Vec::new();
@@ -620,13 +631,44 @@ fn fuse_core<Id: Hash + Eq + Clone>(
         // The weight the fusion uses is the raw read normalized by the channel's own
         // running g level and deviation-shrunk (§4); the raw read itself is what the
         // result reports and what folds into the level baseline, so the normalization
-        // never feeds back into its own reference.
+        // never feeds back into its own reference. The gate read is the normalized
+        // value BEFORE the keep and the clamp (exact neutral while the level is cold),
+        // so the dispersion measures the differential evidence itself, not the
+        // already-shrunk bet.
+        gate_reads.push(level_normalized_or_neutral(
+            disc.g,
+            &summary.level,
+            &cfg.discrimination,
+        ));
         g_map.insert(
             o.key.clone(),
             level_shrunk(disc.g, &summary.level, &cfg.discrimination),
         );
         reads.insert(o.key.clone(), disc);
         registered.push(o);
+    }
+
+    // The dispersion gate (§6): when the channels' level-normalized reads sit within
+    // estimation noise of one another, the per-query bet direction is a coin flip and
+    // the safe point is the unweighted floor. The dispersion is the sample standard
+    // deviation (its null-noise scale is comparable across channel counts); below the
+    // threshold every adaptive weight becomes exactly `NEUTRAL_WEIGHT`, bypassing the
+    // keep and the clamp, so with coupling off and no base_weight tilt the fusion is
+    // byte-identical to plain RRF. A single channel has no sample dispersion and is
+    // always gated, which the sum-to-N renormalization makes a no-op.
+    let g_dispersion = if gate_reads.len() >= 2 {
+        let n = gate_reads.len() as f64;
+        let mean = gate_reads.iter().sum::<f64>() / n;
+        let var = gate_reads.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / (n - 1.0);
+        var.sqrt()
+    } else {
+        0.0
+    };
+    let gated = cfg.fusion.min_g_dispersion > 0.0 && g_dispersion < cfg.fusion.min_g_dispersion;
+    if gated {
+        for v in g_map.values_mut() {
+            *v = NEUTRAL_WEIGHT;
+        }
     }
 
     // Step 3: redundancy-discounted weights over the present registered channels. The
@@ -675,6 +717,8 @@ fn fuse_core<Id: Hash + Eq + Clone>(
         discrimination: reads.clone(),
         confidence,
         conflict,
+        g_dispersion,
+        gated,
     };
     (fused, reads)
 }
@@ -1030,7 +1074,12 @@ mod tests {
                 tag: tag(),
             },
         );
-        let mut f = Fuser::resume(&[a.clone(), b.clone()], state, FuseConfig::default()).unwrap();
+        // The dispersion gate would pin these weights to neutral (one scored channel
+        // plus one ranks-only companion has low dispersion); this test exercises the
+        // tilt mechanics underneath, so it turns the gate off.
+        let mut cfg = FuseConfig::default();
+        cfg.fusion.min_g_dispersion = 0.0;
+        let mut f = Fuser::resume(&[a.clone(), b.clone()], state, cfg).unwrap();
 
         let obs = vec![scored_obs(&a, 0), ranks_obs(&b, &[100, 101, 1, 2])];
 
@@ -1179,13 +1228,179 @@ mod tests {
         // y left absent from the prior: it seeds cold from its config.
 
         let obs = vec![scored_obs(&x, 0), scored_obs(&y, 0)];
-        let fused = Fuser::fuse_stateless(&obs, &cfgs, &prior, &FuseConfig::default()).unwrap();
+        // Gate off: this test pins the tilt mechanics the gate sits on top of.
+        let mut cfg = FuseConfig::default();
+        cfg.fusion.min_g_dispersion = 0.0;
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &prior, &cfg).unwrap();
 
         let total: f64 = fused.weights.values().sum();
         assert_abs_diff_eq!(total, 2.0, epsilon = 1e-9);
         assert!(
             fused.weights[&key("x")] > fused.weights[&key("y")],
             "the discriminating channel should carry more weight: {:?}",
+            fused.weights
+        );
+    }
+
+    // --- 5b-pre. the dispersion gate ---------------------------------------------------
+
+    /// A channel summary with a warmed level baseline at the given mean, so the gate
+    /// reads `g / mean` rather than defaulting to neutral.
+    fn warm_level_summary(level_mean: f64) -> ChannelSummary {
+        ChannelSummary {
+            level: baseline(level_mean, 0.01, 6.0),
+            separation: MeanVar::new(),
+            reference: MeanVar::new(),
+            tag: tag(),
+        }
+    }
+
+    #[test]
+    fn cold_fuser_is_gated_to_the_exact_rrf_floor() {
+        // Every level baseline is cold, so each channel contributes exact neutral to
+        // the dispersion read: zero dispersion, gate closed, weights exactly 1, and
+        // the ranking is byte-identical to unweighted RRF.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 1000)];
+        let fused =
+            Fuser::fuse_stateless(&obs, &cfgs, &empty_state(), &FuseConfig::default()).unwrap();
+        assert!(fused.gated);
+        assert_eq!(fused.g_dispersion, 0.0);
+        for w in fused.weights.values() {
+            assert_eq!(*w, 1.0); // exact, not approximate: the floor contract
+        }
+        let unweighted: BTreeMap<String, f64> =
+            [(key("a"), 1.0), (key("b"), 1.0)].into_iter().collect();
+        let direct = weighted_rrf(&obs, &unweighted, &FuseConfig::default().fusion);
+        assert_eq!(fused.ranking, direct);
+    }
+
+    #[test]
+    fn low_dispersion_gates_and_high_dispersion_opens() {
+        // Two warmed channels with equal level means read identical pools: zero
+        // dispersion, gated. Tilting the level means apart pushes the normalized
+        // reads apart: the gate opens and the weights tilt.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 1000)];
+
+        let mut equal = empty_state();
+        equal.channels.insert(key("a"), warm_level_summary(1.0));
+        equal.channels.insert(key("b"), warm_level_summary(1.0));
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &equal, &FuseConfig::default()).unwrap();
+        assert!(fused.gated, "identical normalized reads must gate");
+        for w in fused.weights.values() {
+            assert_eq!(*w, 1.0);
+        }
+
+        let mut tilted = empty_state();
+        tilted.channels.insert(key("a"), warm_level_summary(0.5));
+        tilted.channels.insert(key("b"), warm_level_summary(1.5));
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &tilted, &FuseConfig::default()).unwrap();
+        assert!(
+            !fused.gated,
+            "dispersed normalized reads must open the gate"
+        );
+        assert!(fused.g_dispersion > FuseConfig::default().fusion.min_g_dispersion);
+        assert!(
+            fused.weights[&key("a")] > fused.weights[&key("b")],
+            "the channel reading above its own level carries more weight: {:?}",
+            fused.weights
+        );
+
+        // An open gate leaves the weights exactly what the ungated map produces.
+        let mut off = FuseConfig::default();
+        off.fusion.min_g_dispersion = 0.0;
+        let ungated = Fuser::fuse_stateless(&obs, &cfgs, &tilted, &off).unwrap();
+        assert_eq!(fused.weights, ungated.weights);
+        assert_eq!(fused.ranking, ungated.ranking);
+    }
+
+    #[test]
+    fn zero_threshold_disables_the_gate() {
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 1000)];
+        let mut off = FuseConfig::default();
+        off.fusion.min_g_dispersion = 0.0;
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &empty_state(), &off).unwrap();
+        assert!(!fused.gated, "a disabled gate never reports gated");
+    }
+
+    #[test]
+    fn gated_fuse_still_updates_the_level_baseline_with_raw_g() {
+        // The gate changes the weights, never the reads or the state: a gated fuse
+        // still folds the raw g into the level baseline.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let mut f = fuser(&[a.clone(), b.clone()], FuseConfig::default());
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 1000)];
+        let fused = f.fuse(&obs);
+        assert!(fused.gated);
+        let level = &f.state.channels[&key("a")].level;
+        assert_eq!(level.count(), 1.0);
+        assert_abs_diff_eq!(
+            level.mean(),
+            fused.discrimination[&key("a")].g,
+            epsilon = 1e-12
+        );
+    }
+
+    #[test]
+    fn zero_keep_reduces_to_rrf_regardless_of_the_gate() {
+        // g_deviation_keep = 0 pins every open-gate weight to neutral too, so the
+        // documented "0 is plain RRF" invariant holds with the gate on or off.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let cfgs = [a.clone(), b.clone()];
+        let obs = vec![scored_obs(&a, 0), scored_obs(&b, 1000)];
+        let mut tilted = empty_state();
+        tilted.channels.insert(key("a"), warm_level_summary(0.5));
+        tilted.channels.insert(key("b"), warm_level_summary(1.5));
+        for gate in [0.0, 0.45] {
+            let mut cfg = FuseConfig::default();
+            cfg.discrimination.g_deviation_keep = 0.0;
+            cfg.fusion.min_g_dispersion = gate;
+            let fused = Fuser::fuse_stateless(&obs, &cfgs, &tilted, &cfg).unwrap();
+            for w in fused.weights.values() {
+                assert_abs_diff_eq!(*w, 1.0, epsilon = 1e-12);
+            }
+        }
+    }
+
+    #[test]
+    fn gated_query_under_coupling_still_carries_the_discount() {
+        // The exact-floor property is scoped to coupling off: a gated query hands the
+        // coupled solve an all-neutral g vector, and the redundancy discount still
+        // moves weight from the redundant pair to the independent channel.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let c = chan("c", None);
+        let cfgs = [a.clone(), b.clone(), c.clone()];
+        let obs = vec![
+            scored_obs(&a, 0),
+            scored_obs(&b, 1000),
+            scored_obs(&c, 2000),
+        ];
+        let mut state = empty_state();
+        state.pairs.insert(
+            UnorderedPair::new(key("a"), key("b")),
+            PairSummary {
+                redundancy: baseline(0.8, 0.005, 60.0),
+                refreshes: 4.0,
+            },
+        );
+        let mut cfg = FuseConfig::default();
+        cfg.coupling.enabled = true;
+        let fused = Fuser::fuse_stateless(&obs, &cfgs, &state, &cfg).unwrap();
+        assert!(fused.gated, "cold levels still gate under coupling");
+        assert!(
+            fused.weights[&key("c")] > fused.weights[&key("a")],
+            "the redundancy discount applies to a gated query: {:?}",
             fused.weights
         );
     }

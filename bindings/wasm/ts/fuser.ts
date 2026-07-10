@@ -76,6 +76,8 @@ function fusedFromDto(dto: FusedDto): Fused {
     discrimination: dto.discrimination,
     confidence: dto.confidence,
     conflict: dto.conflict,
+    gDispersion: dto.gDispersion,
+    gated: dto.gated,
   });
 }
 

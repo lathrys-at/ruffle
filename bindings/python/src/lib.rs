@@ -124,6 +124,7 @@ struct CouplingArg {
 #[pyo3(from_item_all)]
 struct FusionArg {
     rrf_eta: f64,
+    min_g_dispersion: f64,
 }
 
 #[derive(FromPyObject)]
@@ -197,6 +198,7 @@ fn to_fuse_config(arg: ConfigArg) -> PyResult<rf::FuseConfig> {
     cfg.coupling.min_refreshes = c.min_refreshes;
     cfg.coupling.stratum_stability_max_var = c.stratum_stability_max_var;
     cfg.fusion.rrf_eta = arg.fusion.rrf_eta;
+    cfg.fusion.min_g_dispersion = arg.fusion.min_g_dispersion;
     cfg.decay.enabled = arg.decay.enabled;
     cfg.decay.factor = arg.decay.factor;
     cfg.baseline_mode = rf::BaselineMode::ZScore;
@@ -313,6 +315,8 @@ fn fused_to_py<'py>(py: Python<'py>, f: &rf::Fused<String>) -> PyResult<Bound<'p
     d.set_item("discrimination", disc)?;
     d.set_item("confidence", f.confidence)?;
     d.set_item("conflict", f.conflict)?;
+    d.set_item("g_dispersion", f.g_dispersion)?;
+    d.set_item("gated", f.gated)?;
     Ok(d)
 }
 
@@ -538,6 +542,7 @@ fn default_config(py: Python<'_>) -> PyResult<Bound<'_, PyDict>> {
 
     let f = PyDict::new(py);
     f.set_item("rrf_eta", cfg.fusion.rrf_eta)?;
+    f.set_item("min_g_dispersion", cfg.fusion.min_g_dispersion)?;
     out.set_item("fusion", f)?;
 
     let y = PyDict::new(py);

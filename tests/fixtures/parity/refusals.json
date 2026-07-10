@@ -48,7 +48,8 @@
           "winsor_z": 2.5
         },
         "fusion": {
-          "rrf_eta": 60.0
+          "min_g_dispersion": 0.45,
+          "rrf_eta": 20.0
         }
       },
       "error": "tag",
@@ -94,7 +95,8 @@
           "winsor_z": 2.5
         },
         "fusion": {
-          "rrf_eta": 60.0
+          "min_g_dispersion": 0.45,
+          "rrf_eta": 20.0
         }
       },
       "error": "direction_conflict",
@@ -173,7 +175,8 @@
           "winsor_z": 2.5
         },
         "fusion": {
-          "rrf_eta": 60.0
+          "min_g_dispersion": 0.45,
+          "rrf_eta": 20.0
         }
       },
       "error": "duplicate_channel_key",
@@ -222,7 +225,8 @@
           "winsor_z": 2.5
         },
         "fusion": {
-          "rrf_eta": 60.0
+          "min_g_dispersion": 0.45,
+          "rrf_eta": 20.0
         }
       },
       "error": "invalid_good_score",
@@ -267,7 +271,8 @@
           "winsor_z": 2.5
         },
         "fusion": {
-          "rrf_eta": 60.0
+          "min_g_dispersion": 0.45,
+          "rrf_eta": 20.0
         }
       },
       "error": "invalid_fuse_config",

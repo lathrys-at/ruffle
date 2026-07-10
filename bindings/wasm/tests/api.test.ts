@@ -66,7 +66,8 @@ describe("configuration", () => {
   test("defaults come from the engine and partials lay over them", () => {
     const defaults = defaultConfig();
     expect(defaults.coupling.enabled).toBe(false);
-    expect(defaults.fusion.rrfEta).toBe(60);
+    expect(defaults.fusion.rrfEta).toBe(20);
+    expect(defaults.fusion.minGDispersion).toBe(0.45);
 
     const fuser = Fuser.create([channel("s")], { coupling: { enabled: true } });
     try {

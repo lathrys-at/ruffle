@@ -60,7 +60,7 @@ def fixed_rrf(
     qids: Sequence[str],
     weights: dict[str, float],
     keys: Sequence[str],
-    eta: float = 60.0,
+    eta: float = 20.0,
 ) -> dict[str, list[tuple[str, float]]]:
     """Weighted RRF at fixed per-channel weights, under the oracle's rank and
     tie conventions so the fitted row is exactly the oracle procedure at a

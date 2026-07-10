@@ -155,6 +155,8 @@ export interface FusedJson {
   readonly discrimination: Readonly<Record<string, ChannelDiscrimination>>;
   readonly confidence: number;
   readonly conflict: number;
+  readonly gDispersion: number;
+  readonly gated: boolean;
 }
 
 /**
@@ -168,6 +170,10 @@ export interface FusedJson {
  * reasoning is readable from the result alone. `confidence` is the top-set
  * agreement of the discriminating channels, in `[0, 1]`; `conflict` is its
  * complement, high when confident channels disagree on which items are relevant.
+ * `gDispersion` is the within-query dispersion the gate read (the sample standard
+ * deviation of the channels' level-normalized weights; `0` with fewer than two
+ * channels), and `gated` reports whether it sat below the configured
+ * `minGDispersion`, in which case every adaptive weight was exactly neutral.
  *
  * The per-channel fields are `ReadonlyMap`s; `toJSON` converts them to plain
  * records, so `JSON.stringify(fused)` serializes the whole result rather than the
@@ -181,6 +187,8 @@ export class Fused {
     readonly discrimination: ReadonlyMap<string, ChannelDiscrimination>,
     readonly confidence: number,
     readonly conflict: number,
+    readonly gDispersion: number,
+    readonly gated: boolean,
   ) {}
 
   /** @internal */
@@ -191,6 +199,8 @@ export class Fused {
     discrimination: ReadonlyMap<string, ChannelDiscrimination>;
     confidence: number;
     conflict: number;
+    gDispersion: number;
+    gated: boolean;
   }): Fused {
     return new Fused(
       parts.ranking,
@@ -199,6 +209,8 @@ export class Fused {
       parts.discrimination,
       parts.confidence,
       parts.conflict,
+      parts.gDispersion,
+      parts.gated,
     );
   }
 
@@ -211,6 +223,8 @@ export class Fused {
       discrimination: Object.fromEntries(this.discrimination),
       confidence: this.confidence,
       conflict: this.conflict,
+      gDispersion: this.gDispersion,
+      gated: this.gated,
     };
   }
 }

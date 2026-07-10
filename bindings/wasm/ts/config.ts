@@ -85,12 +85,29 @@ export interface CouplingConfig {
 }
 
 /**
- * Weighted reciprocal-rank fusion knobs. `rrfEta` is the RRF rank constant; larger
- * values flatten the rank contribution, and 60 is the common RRF default from
- * Cormack et al. (2009).
+ * Weighted reciprocal-rank fusion knobs.
+ *
+ * `rrfEta` is the RRF rank constant; larger values flatten the rank contribution.
+ * `60` is the Cormack et al. (2009) value, calibrated on 1000-deep TREC pools; the
+ * default `20` is tuned on channel pools up to 100 items deep, where it improved
+ * every evaluation collection measured with Recall@100 unchanged (supported band
+ * 10 to 30). For pools much deeper than a few hundred items, where mid-list
+ * agreement carries more of the signal, prefer a larger value (`60` is the tested
+ * point).
+ *
+ * `minGDispersion` is the minimum within-query dispersion of the channels'
+ * level-normalized weights (a sample standard deviation) before the per-query
+ * weighting acts; `0` disables the gate. Below the threshold the channels' reads
+ * sit inside estimation noise of one another, so every adaptive weight becomes
+ * exactly `1` and, with coupling off and no base-weight tilt, the fusion is plain
+ * RRF. The default `0.45` is the conservative point of the supported 0.40 to 0.50
+ * band, tuned at two and three channels; a channel whose weight level baseline has
+ * not warmed yet contributes exact neutral, so a cold system fuses at the RRF
+ * floor and warms toward weighting.
  */
 export interface RrfConfig {
   readonly rrfEta: number;
+  readonly minGDispersion: number;
 }
 
 /**

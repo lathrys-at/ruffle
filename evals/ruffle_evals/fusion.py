@@ -122,7 +122,7 @@ def rrf(
     runs: dict[str, Run],
     qids: Iterable[str],
     keys: Sequence[str] = CHANNEL_KEYS,
-    eta: float = 60.0,
+    eta: float = 20.0,
 ) -> FusionOutcome:
     """Plain unweighted reciprocal-rank fusion, implemented independently of the
     engine so the cold condition has something external to agree with.

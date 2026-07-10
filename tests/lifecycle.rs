@@ -255,8 +255,12 @@ fn operator_prior_powers_d_abs_from_the_first_query() {
 
     // Once the separation baseline warms (so the per-channel shrinkage relaxes), the
     // good-score channel's D^abs tilts weight toward it on an identical pool. Feed both
-    // channels the SAME pool each query so only the reference distinguishes them.
-    let mut f = Fuser::new(&cfgs, FuseConfig::default()).unwrap();
+    // channels the SAME pool each query so only the reference distinguishes them. The
+    // dispersion gate would park this small differential at the floor; the test pins
+    // the D^abs mechanism underneath it, so the gate is off.
+    let mut gate_off = FuseConfig::default();
+    gate_off.fusion.min_g_dispersion = 0.0;
+    let mut f = Fuser::new(&cfgs, gate_off).unwrap();
     let mut rng = ChaCha8Rng::seed_from_u64(12);
     let mut last_weights = BTreeMap::new();
     for _ in 0..8 {

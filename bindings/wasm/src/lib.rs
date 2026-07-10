@@ -141,6 +141,7 @@ struct CouplingDto {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct FusionDto {
     rrf_eta: f64,
+    min_g_dispersion: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -204,6 +205,8 @@ struct FusedOut {
     discrimination: BTreeMap<String, DiscriminationOut>,
     confidence: f64,
     conflict: f64,
+    g_dispersion: f64,
+    gated: bool,
 }
 
 #[derive(Serialize)]
@@ -283,6 +286,7 @@ fn to_fuse_config(config: JsValue) -> Result<rf::FuseConfig, JsValue> {
     cfg.coupling.min_refreshes = c.min_refreshes;
     cfg.coupling.stratum_stability_max_var = c.stratum_stability_max_var;
     cfg.fusion.rrf_eta = dto.fusion.rrf_eta;
+    cfg.fusion.min_g_dispersion = dto.fusion.min_g_dispersion;
     cfg.decay.enabled = dto.decay.enabled;
     cfg.decay.factor = dto.decay.factor;
     cfg.baseline_mode = rf::BaselineMode::ZScore;
@@ -396,6 +400,8 @@ fn fused_out(f: &rf::Fused<String>) -> FusedOut {
             .collect(),
         confidence: f.confidence,
         conflict: f.conflict,
+        g_dispersion: f.g_dispersion,
+        gated: f.gated,
     }
 }
 
@@ -556,6 +562,7 @@ pub fn default_config() -> Result<JsValue, JsValue> {
         },
         fusion: FusionDto {
             rrf_eta: cfg.fusion.rrf_eta,
+            min_g_dispersion: cfg.fusion.min_g_dispersion,
         },
         decay: DecayDto {
             enabled: cfg.decay.enabled,

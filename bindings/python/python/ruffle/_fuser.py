@@ -81,7 +81,11 @@ class Fused:
     weights, so the reasoning is readable from the result alone. ``confidence`` is
     the top-set agreement of the discriminating channels, in ``[0, 1]``;
     ``conflict`` is its complement, high when confident channels disagree on which
-    items are relevant.
+    items are relevant. ``g_dispersion`` is the within-query dispersion the gate
+    read (the sample standard deviation of the channels' level-normalized
+    weights; ``0.0`` with fewer than two channels), and ``gated`` reports whether
+    it sat below :attr:`ruffle.RrfConfig.min_g_dispersion`, in which case every
+    adaptive weight was exactly neutral.
 
     The mappings are read-only; the whole result pickles and deep-copies.
     """
@@ -92,6 +96,8 @@ class Fused:
     discrimination: Mapping[str, ChannelDiscrimination]
     confidence: float
     conflict: float
+    g_dispersion: float
+    gated: bool
 
     @classmethod
     def _from_core(cls, raw: FusedDict) -> Fused:
@@ -113,6 +119,8 @@ class Fused:
             ),
             confidence=raw["confidence"],
             conflict=raw["conflict"],
+            g_dispersion=raw["g_dispersion"],
+            gated=raw["gated"],
         )
 
 

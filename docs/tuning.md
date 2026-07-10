@@ -212,14 +212,46 @@ but still supplies unique relevant items is exactly what the floor exists to pro
 If every channel's unique contribution at low readings is empty across your judgment
 set, a lower floor gains precision; that situation is rare.
 
-### `rrf_eta` (default 60)
+### `rrf_eta` (default 20)
 
 `rrf_eta` is the standard RRF sharpness constant, orthogonal to Ruffle's weighting:
-smaller values concentrate mass on the top ranks. 60 is the literature default and
-interacts mildly with everything else (a smaller η makes any weight difference matter
-more at the top). You can tune it the way you would tune plain RRF, on the labeled
-set; tuning it before the weighting knobs keeps them calibrated against the η you will
-actually run.
+smaller values concentrate mass on the top ranks. The literature value 60 comes from
+Cormack et al.'s 1000-deep TREC pools; at the pool depths most deployments run (tens
+to a few hundred candidates per channel), 60 discounts rank 1 against rank 100 by
+only a factor of 2.6, which dilutes a strong channel's top hits with weak channels'
+mid-list votes. The default 20 is tuned on pools up to 100 deep, where it improved
+every evaluation collection measured (macro nDCG@10 +0.012, the largest gains on
+collections where one channel dominates) with Recall@100 unchanged, and the plain-RRF
+optimum sat at 5 to 10 at every measured depth. The supported band is 10 to 30. The
+evidence stops at 100-deep pools: for pools much deeper than a few hundred items,
+where mid-list agreement carries more of the signal, prefer a larger η (60 is the
+tested point). A smaller η also makes any weight difference matter more at the top,
+which is why the dispersion gate below defaults on. Tune η before the weighting
+knobs, the way you would tune plain RRF on a labeled set, so they stay calibrated
+against the η you will actually run.
+
+### `min_g_dispersion` (default 0.45)
+
+The per-query weighting acts only when the channels' level-normalized discrimination
+reads disperse beyond estimation noise. `min_g_dispersion` is that threshold, on the
+sample standard deviation of the normalized reads across the channels scored on the
+query; below it every adaptive weight is exactly 1 and, with coupling off and no
+`base_weight` tilt, the fusion is plain RRF for that query. `0` disables the gate.
+
+The gate is a mean-for-tail trade: within-noise differences are coin-flip bets whose
+measured expected payoff is at best zero, so parking them at the floor removes most
+of the per-query loss tail (5th-percentile per-query loss at or near zero on most
+evaluation collections) and the regressions sharp η would otherwise admit, at a small
+mean cost on collections where the ungated bets were profitable. The default 0.45 is
+the conservative point of the supported 0.40 to 0.50 band, tuned at two and three
+channels; re-tune at four or more. Expect roughly half to three quarters of queries
+gated in a healthy deployment (the `Fused.gated` flag and `Fused.g_dispersion` read
+expose the rate). A channel whose weight level baseline has not warmed past
+`min_count_for_z` contributes exact neutral to the dispersion read, so a cold system
+fuses at the RRF floor and warms toward weighting; during staggered warmup a
+co-present cold channel keeps the dispersion low and the gate closed longer, which is
+intended. `g_deviation_keep = 0` reduces the weighting to plain RRF regardless of
+this gate.
 
 ## Coupling
 
@@ -281,7 +313,8 @@ becomes `1 / (1 - factor)` observations, so the default of `0.98` holds a window
 | `g_slope` | 1.0 | labeled win over RRF grows with slope | labeled comparison + recall check | noise amplification |
 | `g_upper_bound` | 4.0 | strong-read queries want more dominance | labeled eval on strong-read slice | single-channel capture |
 | `g_floor` | 0.25 | no unique relevant items at low readings | unique-contribution analysis | recall loss |
-| `rrf_eta` | 60 | standard RRF tuning | labeled eval | top-rank over/under-emphasis |
+| `rrf_eta` | 20 | pools much deeper than a few hundred, or labeled tuning | labeled eval | top-rank over/under-emphasis |
+| `min_g_dispersion` | 0.45 | gate rate far outside 50-75%, or four or more channels | `Fused.gated` telemetry + labeled eval | tail exposure (lower) / mean loss (higher) |
 | `coupling.enabled` | off | redundancy ≥ 0.3, stable, ≥ 2 refreshes | assumptions above | recall loss on independent queries |
 | `discount_cap` | 0.5 | measured redundancy ≫ effective ceiling | labeled eval per step | over-discounting |
 | `decay.enabled` | off | divergence trend between snapshots | divergence time series | forgetting real signal |

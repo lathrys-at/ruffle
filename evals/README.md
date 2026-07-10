@@ -29,7 +29,7 @@ from the ones the baselines were first formed on.
 The conditions:
 
 - `bm25`, `tfidf`, `dense`: each channel's own run, for context.
-- `rrf`: plain unweighted RRF (eta = 60), implemented in the harness independently
+- `rrf`: plain unweighted RRF (eta = 20, matching the engine default), implemented in the harness independently
   of the engine, with the engine's tie conventions (tied scores within a channel
   share their midrank; fused-score ties fall back to first-seen order) so
   agreement with the cold condition is checkable ranking for ranking.

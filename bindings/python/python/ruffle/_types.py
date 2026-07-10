@@ -63,6 +63,7 @@ class CouplingConfigDict(TypedDict):
 
 class RrfConfigDict(TypedDict):
     rrf_eta: float
+    min_g_dispersion: float
 
 
 class DecayConfigDict(TypedDict):
@@ -102,6 +103,8 @@ class FusedDict(TypedDict):
     discrimination: dict[str, DiscriminationReadDict]
     confidence: float
     conflict: float
+    g_dispersion: float
+    gated: bool
 
 
 class DivergenceDict(TypedDict):

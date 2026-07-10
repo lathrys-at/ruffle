@@ -66,6 +66,7 @@ export interface CouplingConfigDto {
 
 export interface RrfConfigDto {
   readonly rrfEta: number;
+  readonly minGDispersion: number;
 }
 
 export interface DecayConfigDto {
@@ -109,6 +110,8 @@ export interface FusedDto {
   readonly discrimination: ReadonlyMap<string, DiscriminationReadDto>;
   readonly confidence: number;
   readonly conflict: number;
+  readonly gDispersion: number;
+  readonly gated: boolean;
 }
 
 export interface DivergenceDto {

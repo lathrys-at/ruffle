@@ -140,10 +140,27 @@ class RrfConfig:
     """Weighted reciprocal-rank fusion knobs.
 
     - ``rrf_eta``: the RRF rank constant. Larger values flatten the rank
-      contribution; 60 is the common RRF default from Cormack et al. (2009).
+      contribution; ``60`` is the Cormack et al. (2009) value, calibrated on
+      1000-deep TREC pools. The default ``20.0`` is tuned on channel pools up
+      to 100 items deep, where it improved every evaluation collection
+      measured with Recall@100 unchanged; the supported band is 10 to 30. For
+      pools much deeper than a few hundred items, where mid-list agreement
+      carries more of the signal, prefer a larger value (``60.0`` is the
+      tested point).
+    - ``min_g_dispersion``: the minimum within-query dispersion of the
+      channels' level-normalized weights (a sample standard deviation) before
+      the per-query weighting acts; ``0.0`` disables the gate. Below the
+      threshold the channels' reads sit inside estimation noise of one
+      another, so every adaptive weight becomes exactly ``1.0`` and, with
+      coupling off and no base-weight tilt, the fusion is plain RRF. The
+      default ``0.45`` is the conservative point of the supported 0.40 to
+      0.50 band, tuned at two and three channels; a channel whose weight
+      level baseline has not warmed yet contributes exact neutral, so a cold
+      system fuses at the RRF floor and warms toward weighting.
     """
 
     rrf_eta: float = _F["rrf_eta"]
+    min_g_dispersion: float = _F["min_g_dispersion"]
 
 
 @dataclass(frozen=True)
@@ -218,7 +235,10 @@ class FuseConfig:
                 "min_refreshes": c.min_refreshes,
                 "stratum_stability_max_var": c.stratum_stability_max_var,
             },
-            "fusion": {"rrf_eta": self.fusion.rrf_eta},
+            "fusion": {
+                "rrf_eta": self.fusion.rrf_eta,
+                "min_g_dispersion": self.fusion.min_g_dispersion,
+            },
             "decay": {"enabled": self.decay.enabled, "factor": self.decay.factor},
             "baseline_mode": self.baseline_mode.value,
         }

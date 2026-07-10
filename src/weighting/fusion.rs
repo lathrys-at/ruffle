@@ -180,7 +180,10 @@ mod tests {
 
     /// An [`RrfConfig`] with a chosen rank constant `η`, for the fusion calls below.
     fn rrf(eta: f64) -> RrfConfig {
-        RrfConfig { rrf_eta: eta }
+        RrfConfig {
+            rrf_eta: eta,
+            ..Default::default()
+        }
     }
 
     fn score_of(out: &[(u32, f64)], id: u32) -> Option<f64> {

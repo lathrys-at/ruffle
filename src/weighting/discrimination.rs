@@ -350,6 +350,29 @@ pub(crate) fn level_shrunk(g: f64, level: &MeanVar, cfg: &DiscriminationConfig) 
     kept.min(cfg.g_upper_bound).max(cfg.g_floor)
 }
 
+/// The level-normalized read the dispersion gate compares across channels, before the
+/// deviation keep and the floor/cap: `g / mean(level)` for a warmed, well-posed level
+/// baseline, and exactly [`NEUTRAL_WEIGHT`] otherwise.
+///
+/// A cold channel's raw `g` still carries the score-shape level the normalization
+/// exists to remove, so letting it into a cross-channel dispersion read would open the
+/// gate on tilt rather than evidence. Contributing exact neutral instead means a fully
+/// cold query has zero dispersion and fuses at the RRF floor, and a partially cold
+/// query needs a warmed channel's own deviation to open the gate: warmup tends toward
+/// the floor, the recall-safe direction.
+pub(crate) fn level_normalized_or_neutral(
+    g: f64,
+    level: &MeanVar,
+    cfg: &DiscriminationConfig,
+) -> f64 {
+    let mean = level.mean();
+    if level.count() >= cfg.min_count_for_z && mean.is_finite() && mean > 0.0 {
+        g / mean
+    } else {
+        NEUTRAL_WEIGHT
+    }
+}
+
 /// Clamps a raw separation read to the baseline mean plus or minus `winsor_z` standard
 /// deviations before it is merged into the separation baseline.
 ///

@@ -9,6 +9,27 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Within-query dispersion gate: `RrfConfig.min_g_dispersion` (Python
+  `min_g_dispersion`, TypeScript `minGDispersion`), default `0.45`, validated
+  finite and non-negative, `0` disables. The per-query weighting now acts only
+  when the channels' level-normalized discrimination reads disperse beyond
+  estimation noise, measured as the sample standard deviation of the normalized
+  reads across the channels scored on the query. Below the threshold every
+  adaptive weight is exactly `1`, and with coupling off and no `base_weight`
+  tilt the fused ranking is byte-identical to plain RRF; an enabled redundancy
+  discount and declared base weights still apply. Within-noise weight
+  differences are coin-flip bets whose measured expected payoff is at best
+  zero: on nineteen evaluation collections the gate removes most of the
+  per-query loss tail (5th-percentile per-query loss at or near zero on
+  eleven of nineteen) and the regressions a sharp rank discount would
+  otherwise admit, at a small mean cost on collections where ungated bets were
+  profitable. A channel whose weight level baseline has not warmed past
+  `min_count_for_z` contributes exact neutral to the dispersion read, so a
+  cold system fuses at the RRF floor and warms toward weighting. The default
+  is the conservative point of the supported 0.40 to 0.50 band, tuned at two
+  and three channels. Configuration only, no state change; `Fused` gains
+  `g_dispersion` and `gated` so the firing rate is observable.
+
 - Per-channel `g` level normalization. Each channel's state gains a `level`
   baseline (a `MeanVar` of its raw per-query discrimination weight), and the
   weight the fusion uses is `g` divided by that running mean once it has enough
@@ -55,6 +76,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `RrfConfig.rrf_eta` default 60 → 20. The literature constant 60 is
+  calibrated on 1000-deep TREC pools; at the pool depths the harness measures
+  (up to 100 candidates per channel) it discounts rank 1 against rank 100 by
+  only a factor of 2.6, diluting a strong channel's top hits with weak
+  channels' mid-list votes. At 20, macro nDCG@10 over nineteen evaluation
+  collections rises by about 0.012 with every collection improved or flat and
+  Recall@100 unchanged; the plain-RRF optimum sat at 5 to 10 at every measured
+  depth (20, 50, and 100 by truncation), so the constant is not depth-linked
+  in the measured range. The gain is a fusion-rule constant, orthogonal to the
+  adaptive weighting, and the dispersion gate above is what keeps the
+  weighting from giving it back at the sharper discount. Evidence stops at
+  100-deep pools: deployments fusing pools much deeper than a few hundred
+  items should prefer a larger `rrf_eta` (60 is the tested point), as the
+  field documentation states. The supported band is 10 to 30.
 - Four discrimination defaults are retuned from a configuration search against the
   BEIR evaluation harness (`evals/`): `top_eps` 0.05 → 0.10, `top_m` 10 → 5,
   `winsor_z` 4.0 → 2.5, and `denom_floor_frac` 0.5 → 0.75. All four change how the

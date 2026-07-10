@@ -49,7 +49,7 @@ export interface FixtureConfig {
     readonly min_refreshes: number;
     readonly stratum_stability_max_var: number;
   };
-  readonly fusion: { readonly rrf_eta: number };
+  readonly fusion: { readonly rrf_eta: number; readonly min_g_dispersion: number };
   readonly decay: { readonly enabled: boolean; readonly factor: number };
   readonly baseline_mode: "z_score";
 }
@@ -161,7 +161,10 @@ export function makeConfig(d: FixtureConfig): FuseConfigInit {
       minRefreshes: d.coupling.min_refreshes,
       stratumStabilityMaxVar: d.coupling.stratum_stability_max_var,
     },
-    fusion: { rrfEta: d.fusion.rrf_eta },
+    fusion: {
+      rrfEta: d.fusion.rrf_eta,
+      minGDispersion: d.fusion.min_g_dispersion,
+    },
     decay: { enabled: d.decay.enabled, factor: d.decay.factor },
     baselineMode: d.baseline_mode,
   };

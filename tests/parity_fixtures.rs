@@ -146,7 +146,10 @@ fn config_json(cfg: &FuseConfig) -> Value {
             "min_refreshes": c.min_refreshes,
             "stratum_stability_max_var": c.stratum_stability_max_var,
         },
-        "fusion": { "rrf_eta": cfg.fusion.rrf_eta },
+        "fusion": {
+            "rrf_eta": cfg.fusion.rrf_eta,
+            "min_g_dispersion": cfg.fusion.min_g_dispersion,
+        },
         "decay": { "enabled": cfg.decay.enabled, "factor": cfg.decay.factor },
         "baseline_mode": baseline_mode,
     })

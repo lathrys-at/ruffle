@@ -132,14 +132,57 @@ impl Default for CouplingConfig {
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub struct RrfConfig {
-    /// The RRF rank constant `η`. Larger values flatten the rank contribution; 60 is the
-    /// common RRF default from Cormack et al. (2009).
+    /// The RRF rank constant `η`. Larger values flatten the rank contribution: at
+    /// `η = 60` (the Cormack et al. 2009 value, calibrated on 1000-deep TREC pools)
+    /// rank 1 outweighs rank 100 by only a factor of 2.6, which dilutes a strong
+    /// channel's top hits with weak channels' mid-list votes.
+    ///
+    /// The default is `20.0`, tuned on channel pools up to 100 items deep: across
+    /// nineteen evaluation collections it raised macro nDCG@10 by about 0.012 over
+    /// `60`, improved every collection measured, and left Recall@100 unchanged, with
+    /// the optimum for plain RRF sitting at 5 to 10 at every measured depth (20, 50,
+    /// and 100 items). The measured range stops at 100-deep pools: for pools much
+    /// deeper than a few hundred items, where mid-list agreement carries more of the
+    /// signal, prefer a larger `η` (the literature value `60.0` is the tested point).
+    /// The 10 to 30 band is supported by the evidence; `20.0` sits in its middle
+    /// because sharpness risk grows toward small `η` for unmeasured deployments.
     pub rrf_eta: f64,
+    /// Minimum within-query dispersion of the channels' level-normalized weights
+    /// before the per-query weighting acts at all, as a sample standard deviation
+    /// (`ddof = 1`); `0.0` disables the gate. Default `0.45`.
+    ///
+    /// Below the threshold the channels' per-query reads sit inside estimation noise
+    /// of one another: acting on them is a coin-flip bet whose measured expected
+    /// payoff is at best zero, so every channel's adaptive weight becomes exactly
+    /// `1.0` and the fusion is byte-identical to plain RRF (with coupling off and no
+    /// `base_weight` tilt; an enabled coupling discount and declared base weights
+    /// still apply). Above the threshold the deviation keep
+    /// ([`DiscriminationConfig::g_deviation_keep`]) applies unchanged. On the
+    /// evaluation harness the gate removes the per-query loss tail almost entirely
+    /// (5th-percentile per-query loss at or near zero on most collections) at a small
+    /// mean cost on collections where the ungated bets were profitable.
+    ///
+    /// The dispersion is the sample standard deviation so the noise floor it measures
+    /// is comparable across channel counts; the default is the conservative point of
+    /// the supported 0.40 to 0.50 band, tuned at two and three channels (untested at
+    /// four or more; a query with a single scored channel is always gated, which the
+    /// sum-to-N renormalization makes a no-op). A channel whose weight level baseline
+    /// has not yet warmed past [`DiscriminationConfig::min_count_for_z`] contributes
+    /// exactly `1.0` to the dispersion read, so a cold system fuses at the RRF floor
+    /// and warms toward weighting rather than betting on unnormalized reads; during
+    /// staggered warmup a co-present cold channel keeps the dispersion low, so the
+    /// gate stays closed longer, the recall-safe direction. Setting
+    /// `g_deviation_keep` to `0.0` reduces the weighting to plain RRF regardless of
+    /// this gate.
+    pub min_g_dispersion: f64,
 }
 
 impl Default for RrfConfig {
     fn default() -> Self {
-        Self { rrf_eta: 60.0 }
+        Self {
+            rrf_eta: 20.0,
+            min_g_dispersion: 0.45,
+        }
     }
 }
 
@@ -320,6 +363,11 @@ impl FuseConfig {
             "must be finite and non-negative",
         )?;
         check(
+            self.fusion.min_g_dispersion.is_finite() && self.fusion.min_g_dispersion >= 0.0,
+            "fusion.min_g_dispersion",
+            "must be finite and non-negative",
+        )?;
+        check(
             self.decay.factor.is_finite() && (0.0..=1.0).contains(&self.decay.factor),
             "decay.factor",
             "must be finite and in [0, 1]",
@@ -395,8 +443,10 @@ mod tests {
         // Coupling and decay both off: closest to plain RRF.
         assert!(!cfg.coupling.enabled);
         assert!(!cfg.decay.enabled);
-        // RRF's common rank constant.
-        assert_eq!(cfg.fusion.rrf_eta, 60.0);
+        // The rank constant tuned for pools up to ~100 deep, inside the 10..=30 band.
+        assert_eq!(cfg.fusion.rrf_eta, 20.0);
+        // The dispersion gate defaults on, at the conservative end of its band.
+        assert_eq!(cfg.fusion.min_g_dispersion, 0.45);
         assert_eq!(cfg.baseline_mode, BaselineMode::ZScore);
     }
 
@@ -430,6 +480,7 @@ mod tests {
         edge.coupling.min_refreshes = 0.0;
         edge.coupling.stratum_stability_max_var = 0.0;
         edge.fusion.rrf_eta = 0.0;
+        edge.fusion.min_g_dispersion = 0.0; // 0 disables the gate and is legal
         edge.decay.factor = 0.0;
         edge.validate().unwrap();
         // Equal floor and bound is legal (a pinned weight), including at zero decay=1.
@@ -546,6 +597,12 @@ mod tests {
         // Fusion and decay.
         rejects("fusion.rrf_eta", |c| c.fusion.rrf_eta = -1.0);
         rejects("fusion.rrf_eta", |c| c.fusion.rrf_eta = f64::NAN);
+        rejects("fusion.min_g_dispersion", |c| {
+            c.fusion.min_g_dispersion = -0.1;
+        });
+        rejects("fusion.min_g_dispersion", |c| {
+            c.fusion.min_g_dispersion = f64::NAN;
+        });
         rejects("decay.factor", |c| c.decay.factor = -0.1);
         rejects("decay.factor", |c| c.decay.factor = 1.1);
         rejects("decay.factor", |c| c.decay.factor = f64::NAN);
