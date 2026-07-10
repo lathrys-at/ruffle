@@ -40,6 +40,7 @@
     },
     "discrimination": {
       "denom_floor_frac": 0.75,
+      "g_deviation_keep": 0.6,
       "g_floor": 0.25,
       "g_slope": 1.0,
       "g_upper_bound": 4.0,
@@ -55,7 +56,7 @@
     }
   },
   "description": "Exact score ties sharing a midrank, an empty scored channel, an unregistered input skipped entirely, and a duplicate channel input of which only the first is fused.",
-  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"recency\":\"HigherIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":8.0,\"mean\":4.0,\"m2\":128.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"recency\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"recency-v1\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.306666666666666,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":1.8399999999999999,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+  "expected_state": "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"recency\":\"HigherIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":8.0,\"mean\":4.0,\"m2\":128.0},\"level\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"recency\":{\"separation\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"reference\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"level\":{\"count\":0.0,\"mean\":0.0,\"m2\":0.0},\"tag\":\"recency-v1\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.306666666666666,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":1.8399999999999999,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
   "kind": "session",
   "name": "ties_and_edge_inputs",
   "steps": [

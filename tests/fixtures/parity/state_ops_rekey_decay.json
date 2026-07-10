@@ -1,6 +1,6 @@
 {
   "description": "rekey moves a channel's summaries, its pair summaries, and its fingerprint orientation to the new key; decay halves every effective count while preserving means and variances.",
-  "expected_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"beta\":\"HigherIsBetter\",\"dense\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{},\"pairs\":[[[\"beta\",\"dense\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":0.5}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.021807997127892942,\"m2\":0.0},\"refreshes\":0.5}],[[\"dense\",\"gamma\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.021611536367273195,\"m2\":0.0},\"refreshes\":0.5}]]}",
+  "expected_state": "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"beta\":\"HigherIsBetter\",\"dense\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{},\"pairs\":[[[\"beta\",\"dense\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":0.5}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.021807997127892942,\"m2\":0.0},\"refreshes\":0.5}],[[\"dense\",\"gamma\"],{\"redundancy\":{\"count\":20.0,\"mean\":0.021611536367273195,\"m2\":0.0},\"refreshes\":0.5}]]}",
   "kind": "state_ops",
   "name": "state_ops_rekey_decay",
   "ops": [
@@ -14,5 +14,5 @@
       "op": "decay"
     }
   ],
-  "start_state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"alpha\":\"HigherIsBetter\",\"beta\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{},\"pairs\":[[[\"alpha\",\"beta\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":1.0}],[[\"alpha\",\"gamma\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.021611536367273195,\"m2\":0.0},\"refreshes\":1.0}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.021807997127892942,\"m2\":0.0},\"refreshes\":1.0}]]}"
+  "start_state": "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"alpha\":\"HigherIsBetter\",\"beta\":\"HigherIsBetter\",\"gamma\":\"LowerIsBetter\"}},\"channels\":{},\"pairs\":[[[\"alpha\",\"beta\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.9531950149128404,\"m2\":0.0},\"refreshes\":1.0}],[[\"alpha\",\"gamma\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.021611536367273195,\"m2\":0.0},\"refreshes\":1.0}],[[\"beta\",\"gamma\"],{\"redundancy\":{\"count\":40.0,\"mean\":0.021807997127892942,\"m2\":0.0},\"refreshes\":1.0}]]}"
 }

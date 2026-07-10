@@ -36,6 +36,7 @@
         },
         "discrimination": {
           "denom_floor_frac": 0.75,
+          "g_deviation_keep": 0.6,
           "g_floor": 0.25,
           "g_slope": 1.0,
           "g_upper_bound": 4.0,
@@ -53,7 +54,7 @@
       "error": "tag",
       "kind": "resume",
       "name": "resume_tag_bump",
-      "state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+      "state": "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
     },
     {
       "channels": [
@@ -81,6 +82,7 @@
         },
         "discrimination": {
           "denom_floor_frac": 0.75,
+          "g_deviation_keep": 0.6,
           "g_floor": 0.25,
           "g_slope": 1.0,
           "g_upper_bound": 4.0,
@@ -98,15 +100,15 @@
       "error": "direction_conflict",
       "kind": "resume",
       "name": "resume_direction_flip",
-      "state": "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+      "state": "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
     },
     {
       "error": "tag",
       "kind": "merge",
       "name": "merge_tag_mismatch",
       "parts": [
-        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
-        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.1520096649710565,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.188417334061388,\"m2\":130.55607860778565},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":2.7698017550555476,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.6063547399653275,\"m2\":0.0},\"tag\":\"text-embedding-v2\"}},\"pairs\":[]}"
+        "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.1520096649710565,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.188417334061388,\"m2\":130.55607860778565},\"level\":{\"count\":1.0,\"mean\":1.2088508661777386,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":2.7698017550555476,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.6063547399653275,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v2\"}},\"pairs\":[]}"
       ]
     },
     {
@@ -114,8 +116,8 @@
       "kind": "merge",
       "name": "merge_stale_stat_version",
       "parts": [
-        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
-        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.1520096649710565,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.188417334061388,\"m2\":130.55607860778565},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":2.7698017550555476,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.6063547399653275,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+        "{\"format_version\":3,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":3,\"fingerprint\":{\"stat_version\":1,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":7.1520096649710565,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.188417334061388,\"m2\":130.55607860778565},\"level\":{\"count\":1.0,\"mean\":1.2088508661777386,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":2.7698017550555476,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.6063547399653275,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
       ]
     },
     {
@@ -123,8 +125,8 @@
       "kind": "merge",
       "name": "merge_foreign_format_version",
       "parts": [
-        "{\"format_version\":99,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
-        "{\"format_version\":2,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
+        "{\"format_version\":99,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}",
+        "{\"format_version\":3,\"fingerprint\":{\"stat_version\":2,\"baseline_mode\":\"ZScore\",\"directions\":{\"lexical\":\"LowerIsBetter\",\"semantic\":\"HigherIsBetter\"}},\"channels\":{\"lexical\":{\"separation\":{\"count\":1.0,\"mean\":4.06385310946145,\"m2\":0.0},\"reference\":{\"count\":9.0,\"mean\":4.205669059422997,\"m2\":131.0455828642837},\"level\":{\"count\":1.0,\"mean\":1.2273352516920708,\"m2\":0.0},\"tag\":\"sqlite-fts5-trigram-bm25\"},\"semantic\":{\"separation\":{\"count\":1.0,\"mean\":3.3183210411279376,\"m2\":0.0},\"reference\":{\"count\":1.0,\"mean\":0.5975260014420833,\"m2\":0.0},\"level\":{\"count\":1.0,\"mean\":1.0,\"m2\":0.0},\"tag\":\"text-embedding-v1\"}},\"pairs\":[]}"
       ]
     },
     {
@@ -159,6 +161,7 @@
         },
         "discrimination": {
           "denom_floor_frac": 0.75,
+          "g_deviation_keep": 0.6,
           "g_floor": 0.25,
           "g_slope": 1.0,
           "g_upper_bound": 4.0,
@@ -207,6 +210,7 @@
         },
         "discrimination": {
           "denom_floor_frac": 0.75,
+          "g_deviation_keep": 0.6,
           "g_floor": 0.25,
           "g_slope": 1.0,
           "g_upper_bound": 4.0,
@@ -251,6 +255,7 @@
         },
         "discrimination": {
           "denom_floor_frac": 0.75,
+          "g_deviation_keep": 0.6,
           "g_floor": 5.0,
           "g_slope": 1.0,
           "g_upper_bound": 4.0,

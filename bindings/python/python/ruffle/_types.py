@@ -48,6 +48,7 @@ class DiscriminationConfigDict(TypedDict):
     g_upper_bound: float
     g_floor: float
     g_slope: float
+    g_deviation_keep: float
 
 
 class CouplingConfigDict(TypedDict):

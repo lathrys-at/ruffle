@@ -122,6 +122,7 @@ struct DiscriminationDto {
     g_upper_bound: f64,
     g_floor: f64,
     g_slope: f64,
+    g_deviation_keep: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -272,6 +273,7 @@ fn to_fuse_config(config: JsValue) -> Result<rf::FuseConfig, JsValue> {
     cfg.discrimination.g_upper_bound = d.g_upper_bound;
     cfg.discrimination.g_floor = d.g_floor;
     cfg.discrimination.g_slope = d.g_slope;
+    cfg.discrimination.g_deviation_keep = d.g_deviation_keep;
     let c = &dto.coupling;
     cfg.coupling.enabled = c.enabled;
     cfg.coupling.discount_cap = c.discount_cap;
@@ -541,6 +543,7 @@ pub fn default_config() -> Result<JsValue, JsValue> {
             g_upper_bound: d.g_upper_bound,
             g_floor: d.g_floor,
             g_slope: d.g_slope,
+            g_deviation_keep: d.g_deviation_keep,
         },
         coupling: CouplingDto {
             enabled: c.enabled,

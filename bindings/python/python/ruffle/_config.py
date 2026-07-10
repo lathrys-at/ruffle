@@ -77,6 +77,15 @@ class DiscriminationConfig:
     - ``g_slope``: slope of the logistic squash that maps each standardized statistic
       to a ``(0, 1)`` factor in ``g``. A larger slope makes the weight react more
       sharply to a departure from the channel's norm.
+    - ``g_deviation_keep``: fraction of the per-query weight deviation from neutral
+      kept after ``g`` is normalized by the channel's own running mean. The
+      normalization removes the persistent level a channel's score-distribution
+      shape leaks into its average ``g``; this factor then scales the remaining
+      per-query bet. ``1.0`` uses the normalized deviation as is; ``0.0`` reduces
+      the weighting to plain RRF. The default sits below ``1.0`` because the
+      per-query signal's informativeness varies by corpus and scorer family (tuned
+      on three-channel setups; a text-only deployment can justify up to ``1.0``, a
+      channel-dominated multimodal one as low as ``0.5``).
     """
 
     top_eps: float = _D["top_eps"]
@@ -89,6 +98,7 @@ class DiscriminationConfig:
     g_upper_bound: float = _D["g_upper_bound"]
     g_floor: float = _D["g_floor"]
     g_slope: float = _D["g_slope"]
+    g_deviation_keep: float = _D["g_deviation_keep"]
 
 
 @dataclass(frozen=True)
@@ -197,6 +207,7 @@ class FuseConfig:
                 "g_upper_bound": d.g_upper_bound,
                 "g_floor": d.g_floor,
                 "g_slope": d.g_slope,
+                "g_deviation_keep": d.g_deviation_keep,
             },
             "coupling": {
                 "enabled": c.enabled,

@@ -51,6 +51,7 @@ export interface DiscriminationConfigDto {
   readonly gUpperBound: number;
   readonly gFloor: number;
   readonly gSlope: number;
+  readonly gDeviationKeep: number;
 }
 
 export interface CouplingConfigDto {

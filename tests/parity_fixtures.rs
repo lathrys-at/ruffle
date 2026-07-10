@@ -135,6 +135,7 @@ fn config_json(cfg: &FuseConfig) -> Value {
             "g_upper_bound": d.g_upper_bound,
             "g_floor": d.g_floor,
             "g_slope": d.g_slope,
+            "g_deviation_keep": d.g_deviation_keep,
         },
         "coupling": {
             "enabled": c.enabled,

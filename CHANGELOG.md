@@ -9,6 +9,38 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Per-channel `g` level normalization. Each channel's state gains a `level`
+  baseline (a `MeanVar` of its raw per-query discrimination weight), and the
+  weight the fusion uses is `g` divided by that running mean once it has enough
+  observations. The map behind `g` is neutral at the norm but nonlinear, so the
+  shape of a channel's score distribution leaks a persistent level into its
+  average `g` independent of retrieval quality: on a visual-document benchmark a
+  peaky lexical scorer held mean weight 1.09 at nDCG 0.18 while the smooth
+  late-interaction channel held 0.94 at nDCG 0.60, and the sum-to-N
+  renormalization taxed the better channel for it. Both statistics behind `g`
+  are standardized against the channel's own baselines, so the level carries no
+  cross-channel information; removing it is another own-normalization, and
+  persistent cross-channel preference remains `base_weight`'s job. The baseline
+  accumulates raw `g` only (never the normalized value, which would self-cancel),
+  merges exactly, and decays in lockstep with the other baselines. State format
+  version 2 → 3; a version-2 state is accepted on load and upgraded in place, the
+  new baseline starting empty while the carried separation and reference
+  baselines stay intact.
+- `DiscriminationConfig.g_deviation_keep` (Python `g_deviation_keep`, TypeScript
+  `gDeviationKeep`): the fraction of the per-query weight deviation from neutral
+  kept after the level normalization, default `0.6`, validated in `[0, 1]`. `1.0`
+  uses the normalized deviation as is; `0.0` reduces the weighting to plain RRF,
+  so lower is strictly more conservative. The default sits below `1.0` because
+  the per-query signal's informativeness varies by corpus and scorer family: on
+  six evaluation datasets (four BEIR text, two ViDoRe visual-document) the
+  per-dataset optimum ranged from `0` (channel-dominated visual, where the
+  engine's unshrunk bets regressed nDCG@10 by 0.020 against plain RRF,
+  p = 0.0007) to `1` (text sets, where the bets were profitable), and `0.6`
+  neutralizes the regression while keeping the text gains within noise of their
+  unshrunk values and improving the 5th-percentile per-query loss tail on every
+  dataset. Tuned in-sample at three channels; the value is a configuration knob,
+  and deployment guidance lives with the field's documentation.
+
 - `ChannelConfig.base_weight` (Rust `with_base_weight`, Python `base_weight`,
   TypeScript `baseWeight`): an operator-declared static weight multiplier on the
   channel's adaptive per-query weight. The fused weight is `base_weight * g`,

@@ -35,6 +35,11 @@ import { BaselineMode } from "./types.js";
  *   contributes.
  * - `gSlope`: slope of the logistic squash mapping each standardized statistic to a
  *   `(0, 1)` factor in `g`.
+ * - `gDeviationKeep`: fraction of the per-query weight deviation from neutral kept
+ *   after `g` is normalized by the channel's own running mean. The normalization
+ *   removes the persistent level a channel's score-distribution shape leaks into
+ *   its average `g`; this factor then scales the remaining per-query bet. `1.0`
+ *   uses the normalized deviation as is; `0.0` reduces the weighting to plain RRF.
  */
 export interface DiscriminationConfig {
   readonly topEps: number;
@@ -47,6 +52,7 @@ export interface DiscriminationConfig {
   readonly gUpperBound: number;
   readonly gFloor: number;
   readonly gSlope: number;
+  readonly gDeviationKeep: number;
 }
 
 /**

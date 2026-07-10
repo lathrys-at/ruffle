@@ -105,6 +105,7 @@ struct DiscriminationArg {
     g_upper_bound: f64,
     g_floor: f64,
     g_slope: f64,
+    g_deviation_keep: f64,
 }
 
 #[derive(FromPyObject)]
@@ -186,6 +187,7 @@ fn to_fuse_config(arg: ConfigArg) -> PyResult<rf::FuseConfig> {
     cfg.discrimination.g_upper_bound = d.g_upper_bound;
     cfg.discrimination.g_floor = d.g_floor;
     cfg.discrimination.g_slope = d.g_slope;
+    cfg.discrimination.g_deviation_keep = d.g_deviation_keep;
     let c = &arg.coupling;
     cfg.coupling.enabled = c.enabled;
     cfg.coupling.discount_cap = c.discount_cap;
@@ -518,6 +520,7 @@ fn default_config(py: Python<'_>) -> PyResult<Bound<'_, PyDict>> {
     d.set_item("g_upper_bound", cfg.discrimination.g_upper_bound)?;
     d.set_item("g_floor", cfg.discrimination.g_floor)?;
     d.set_item("g_slope", cfg.discrimination.g_slope)?;
+    d.set_item("g_deviation_keep", cfg.discrimination.g_deviation_keep)?;
     out.set_item("discrimination", d)?;
 
     let c = PyDict::new(py);

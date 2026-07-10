@@ -38,6 +38,7 @@ export interface FixtureConfig {
     readonly g_upper_bound: number;
     readonly g_floor: number;
     readonly g_slope: number;
+    readonly g_deviation_keep: number;
   };
   readonly coupling: {
     readonly enabled: boolean;
@@ -149,6 +150,7 @@ export function makeConfig(d: FixtureConfig): FuseConfigInit {
       gUpperBound: d.discrimination.g_upper_bound,
       gFloor: d.discrimination.g_floor,
       gSlope: d.discrimination.g_slope,
+      gDeviationKeep: d.discrimination.g_deviation_keep,
     },
     coupling: {
       enabled: d.coupling.enabled,

@@ -47,6 +47,18 @@ pub struct DiscriminationConfig {
     /// sharply to a departure from the channel's norm; the default keeps the response
     /// gentle, so a single query moves a channel only slightly.
     pub g_slope: f64,
+    /// Fraction of a channel's per-query weight deviation from neutral that is kept after
+    /// its `g` is normalized by the channel's own running mean. The map behind `g` is
+    /// nonlinear, so the shape of a channel's score distribution leaks a persistent level
+    /// into its average `g` (a peaky scorer drifts above neutral, a smooth one below,
+    /// independent of quality); the mean normalization removes that level, and this factor
+    /// then scales the remaining per-query bet. At `1.0` the normalized deviation is used
+    /// as is; at `0.0` the weighting reduces to plain RRF. The default sits below `1.0`
+    /// because the per-query signal's informativeness varies by corpus and scorer family,
+    /// and the measured do-no-harm optimum across regimes keeps roughly this fraction
+    /// (tuned on three-channel setups; a text-only deployment can justify up to `1.0`, a
+    /// channel-dominated multimodal one as low as `0.5`).
+    pub g_deviation_keep: f64,
 }
 
 impl Default for DiscriminationConfig {
@@ -62,6 +74,7 @@ impl Default for DiscriminationConfig {
             g_upper_bound: 4.0,
             g_floor: 0.25,
             g_slope: 1.0,
+            g_deviation_keep: 0.6,
         }
     }
 }
@@ -210,7 +223,8 @@ impl FuseConfig {
     /// `top_eps` in `(0, 1]`; `top_m >= 1`; `min_distinct_values >= 2`;
     /// `denom_floor_frac >= 0`; `winsor_z > 0`; `min_count_for_z > 0`;
     /// `shrink_pool_size >= 1`; `0 <= g_floor <= g_upper_bound` with a positive upper
-    /// bound; `g_slope > 0`; `discount_cap` in `[0, 1]`; `shrink_to_identity` in
+    /// bound; `g_slope > 0`; `g_deviation_keep` in `[0, 1]`; `discount_cap` in `[0, 1]`;
+    /// `shrink_to_identity` in
     /// `[0, 1]`; `min_overlap >= 2`; `min_reliability >= 0`; `min_refreshes >= 0`;
     /// `stratum_stability_max_var >= 0`; `rrf_eta >= 0`; and the decay `factor` in
     /// `[0, 1]`.
@@ -261,6 +275,11 @@ impl FuseConfig {
             d.g_slope.is_finite() && d.g_slope > 0.0,
             "discrimination.g_slope",
             "must be finite and positive",
+        )?;
+        check(
+            d.g_deviation_keep.is_finite() && (0.0..=1.0).contains(&d.g_deviation_keep),
+            "discrimination.g_deviation_keep",
+            "must be finite and in [0, 1]",
         )?;
 
         let c = &self.coupling;
@@ -487,6 +506,15 @@ mod tests {
         rejects("discrimination.g_slope", |c| c.discrimination.g_slope = 0.0);
         rejects("discrimination.g_slope", |c| {
             c.discrimination.g_slope = -2.0;
+        });
+        rejects("discrimination.g_deviation_keep", |c| {
+            c.discrimination.g_deviation_keep = -0.1;
+        });
+        rejects("discrimination.g_deviation_keep", |c| {
+            c.discrimination.g_deviation_keep = 1.1;
+        });
+        rejects("discrimination.g_deviation_keep", |c| {
+            c.discrimination.g_deviation_keep = f64::NAN;
         });
 
         // Coupling.

@@ -308,6 +308,48 @@ fn combine(sep_factor: f64, abs_factor: f64, cfg: &DiscriminationConfig) -> f64 
         .max(cfg.g_floor)
 }
 
+/// Normalizes a discrimination weight by the channel's own running `g` level, shrinks
+/// the remaining deviation from neutral by `g_deviation_keep`, and re-applies the
+/// floor and cap.
+///
+/// The map behind `g` is neutral at the norm (both statistics at `z = 0` give exactly
+/// `1`) but nonlinear, so the expectation of `g` depends on the shape of the channel's
+/// read distribution: a right-skewed scorer's occasional large reads saturate toward
+/// the cap and drag its mean `g` above neutral while its median sits below,
+/// independent of retrieval quality. Under the sum-to-`N` weight normalization that
+/// surplus becomes a persistent tax on the other channels. Dividing by the channel's
+/// own running mean of raw `g` removes the level without importing any cross-channel
+/// fact: both statistics behind `g` are already standardized against the channel's own
+/// baselines, so the level is a property of the channel's score shape through the map
+/// and nothing else. Persistent cross-channel preference remains the operator's
+/// `base_weight`.
+///
+/// The remaining per-query deviation is then scaled by
+/// [`g_deviation_keep`](DiscriminationConfig::g_deviation_keep): how informative the
+/// deviation is varies by corpus and scorer family, and the measured do-no-harm
+/// optimum across regimes keeps less than all of it. At `0` the weighting reduces to
+/// plain RRF.
+///
+/// The level baseline accumulates RAW `g` reads, never this function's output:
+/// feeding the normalized value back would drive the baseline mean toward `1` and the
+/// normalization would cancel itself. A level baseline below
+/// [`min_count_for_z`](DiscriminationConfig::min_count_for_z) observations, or one
+/// whose mean is non-positive or non-finite (only reachable through a hand-authored
+/// state), is not trusted: the raw `g` passes through and only the deviation shrink
+/// applies, which is the conservative direction while the baseline warms.
+pub(crate) fn level_shrunk(g: f64, level: &MeanVar, cfg: &DiscriminationConfig) -> f64 {
+    let mean = level.mean();
+    let normalized = if level.count() >= cfg.min_count_for_z && mean.is_finite() && mean > 0.0 {
+        g / mean
+    } else {
+        g
+    };
+    let kept = NEUTRAL_WEIGHT + cfg.g_deviation_keep * (normalized - NEUTRAL_WEIGHT);
+    // min/max rather than clamp: even a NaN from a degenerate division resolves into
+    // the bounded range instead of panicking or leaking.
+    kept.min(cfg.g_upper_bound).max(cfg.g_floor)
+}
+
 /// Clamps a raw separation read to the baseline mean plus or minus `winsor_z` standard
 /// deviations before it is merged into the separation baseline.
 ///
@@ -1012,5 +1054,115 @@ mod tests {
         let clamped = winsorize_separation(100.0, &baseline, &cfg);
         assert_abs_diff_eq!(clamped, hi, epsilon = 1e-9);
         assert!(clamped < 100.0);
+    }
+
+    // --- level_shrunk: own-level normalization and deviation shrink ---
+
+    /// A level baseline seeded to a chosen mean with enough backing to pass the gate.
+    fn level_at(mean: f64) -> MeanVar {
+        MeanVar::from_prior(mean, 0.01, 10.0)
+    }
+
+    #[test]
+    fn level_shrunk_cold_baseline_shrinks_the_raw_deviation() {
+        // Below the evidence gate the raw g passes through unnormalized, and only the
+        // deviation shrink applies: the conservative direction while the level warms.
+        let cfg = DiscriminationConfig {
+            g_deviation_keep: 0.6,
+            ..DiscriminationConfig::default()
+        };
+        let cold = MeanVar::new();
+        assert_abs_diff_eq!(level_shrunk(1.5, &cold, &cfg), 1.3, epsilon = 1e-12);
+        assert_abs_diff_eq!(level_shrunk(1.0, &cold, &cfg), 1.0, epsilon = 1e-12);
+    }
+
+    #[test]
+    fn level_shrunk_warm_baseline_divides_then_shrinks() {
+        let cfg = DiscriminationConfig {
+            g_deviation_keep: 0.6,
+            ..DiscriminationConfig::default()
+        };
+        // 1.5 / 1.25 = 1.2, then 1 + 0.6 * 0.2 = 1.12.
+        assert_abs_diff_eq!(
+            level_shrunk(1.5, &level_at(1.25), &cfg),
+            1.12,
+            epsilon = 1e-12
+        );
+        // A channel reading exactly at its own level is exactly neutral: the persistent
+        // shape tilt is gone by construction.
+        assert_abs_diff_eq!(
+            level_shrunk(1.25, &level_at(1.25), &cfg),
+            1.0,
+            epsilon = 1e-12
+        );
+    }
+
+    #[test]
+    fn level_shrunk_keep_endpoints() {
+        // keep = 0 reduces the weighting to plain RRF; keep = 1 uses the normalized
+        // deviation as is.
+        let zero = DiscriminationConfig {
+            g_deviation_keep: 0.0,
+            ..DiscriminationConfig::default()
+        };
+        assert_abs_diff_eq!(
+            level_shrunk(3.7, &level_at(0.9), &zero),
+            1.0,
+            epsilon = 1e-12
+        );
+        let one = DiscriminationConfig {
+            g_deviation_keep: 1.0,
+            ..DiscriminationConfig::default()
+        };
+        assert_abs_diff_eq!(
+            level_shrunk(1.8, &level_at(1.2), &one),
+            1.5,
+            epsilon = 1e-12
+        );
+    }
+
+    #[test]
+    fn level_shrunk_reapplies_floor_and_cap() {
+        let cfg = DiscriminationConfig {
+            g_deviation_keep: 1.0,
+            ..DiscriminationConfig::default()
+        };
+        // A tiny hand-authored level blows the ratio up; the cap holds.
+        assert_abs_diff_eq!(
+            level_shrunk(4.0, &level_at(0.05), &cfg),
+            cfg.g_upper_bound,
+            epsilon = 1e-12
+        );
+        // A huge one collapses it; the floor holds.
+        assert_abs_diff_eq!(
+            level_shrunk(0.25, &level_at(100.0), &cfg),
+            cfg.g_floor,
+            epsilon = 1e-12
+        );
+    }
+
+    #[test]
+    fn level_shrunk_nonpositive_or_nonfinite_mean_passes_raw_through() {
+        // Only reachable through a hand-authored state; the read degrades to the cold
+        // path (raw g, deviation shrink) rather than dividing by a junk level.
+        let cfg = DiscriminationConfig {
+            g_deviation_keep: 0.5,
+            ..DiscriminationConfig::default()
+        };
+        assert_abs_diff_eq!(
+            level_shrunk(1.4, &level_at(0.0), &cfg),
+            1.2,
+            epsilon = 1e-12
+        );
+        assert_abs_diff_eq!(
+            level_shrunk(1.4, &level_at(-2.0), &cfg),
+            1.2,
+            epsilon = 1e-12
+        );
+        assert_abs_diff_eq!(
+            level_shrunk(1.4, &level_at(f64::NAN), &cfg),
+            1.2,
+            epsilon = 1e-12
+        );
     }
 }

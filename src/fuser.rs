@@ -14,7 +14,9 @@ use crate::weighting::NEUTRAL_WEIGHT;
 use crate::weighting::coupling::{
     Diagnostics, PairBaseline, anchor_correlations, coupled_weights, diagnostics,
 };
-use crate::weighting::discrimination::{ChannelDiscrimination, discriminate, winsorize_separation};
+use crate::weighting::discrimination::{
+    ChannelDiscrimination, discriminate, level_shrunk, winsorize_separation,
+};
 use crate::weighting::fusion::weighted_rrf;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -159,8 +161,12 @@ impl Fuser {
     /// Refuses everything [`Fuser::new`](Self::new) refuses, plus any incompatibility
     /// between the registrations and the state:
     ///
-    /// - a state written at another format or statistic version, or under a different
-    ///   baseline mode ([`Mismatch::FormatVersion`] / [`Mismatch::Fingerprint`]);
+    /// - a state written at an incompatible format or statistic version, or under a
+    ///   different baseline mode ([`Mismatch::FormatVersion`] /
+    ///   [`Mismatch::Fingerprint`]). A state in the compatible range (
+    ///   [`RuffleState::MIN_COMPAT_FORMAT_VERSION`] up to the current version) is
+    ///   accepted and upgraded in place: fields added since carry serde defaults, so
+    ///   the new baselines start empty while the carried ones stay intact;
     /// - a channel whose configured direction contradicts the state fingerprint
     ///   ([`Mismatch::DirectionConflict`]);
     /// - a channel whose configured tag differs from the tag its accumulated statistics
@@ -175,6 +181,10 @@ impl Fuser {
     ) -> Result<Self, ResumeError> {
         validate_registrations(configs, &cfg)?;
         validate_against_state(configs, &state, &cfg)?;
+        // A compatible older state is upgraded in place: fields added since were
+        // seeded by their serde defaults at parse time, so only the version moves.
+        let mut state = state;
+        state.upgrade();
         Ok(Self {
             configs: config_lookup(configs),
             state,
@@ -218,7 +228,8 @@ impl Fuser {
     /// 5. Any non-standard weighting is flagged.
     /// 6. The set-overlap diagnostics are read from the discriminating channels.
     /// 7. The baselines are updated: an optional decay, then a push of the winsorized
-    ///    separation read and the top-`m` reference read.
+    ///    separation read, the top-`m` reference read, and the raw `g` into the
+    ///    channel's level baseline.
     ///
     /// An input whose key is not a registered channel is skipped entirely: it is excluded
     /// from discrimination, weighting, fusion, flags, and diagnostics, and never seeds or
@@ -290,6 +301,7 @@ impl Fuser {
                 if self.cfg.decay.enabled {
                     summary.separation.decay(self.cfg.decay.factor);
                     summary.reference.decay(self.cfg.decay.factor);
+                    summary.level.decay(self.cfg.decay.factor);
                 }
                 if let Some(raw) = disc.raw_separation {
                     let winsorized =
@@ -298,6 +310,15 @@ impl Fuser {
                 }
                 if let Some(top) = disc.top_m_average {
                     summary.reference.push(top);
+                }
+                // The level baseline accumulates the RAW g of every scored, non-empty
+                // pool (a degenerate bulk still bets through its absolute factor, so
+                // its g belongs in the level). Ranks-only and empty pools read exactly
+                // neutral and push nothing, mirroring the other baselines. Raw rather
+                // than normalized, so the normalization cannot feed back into its own
+                // reference (§4).
+                if disc.raw_separation.is_some() || disc.degenerate_separation {
+                    summary.level.push(disc.g);
                 }
             }
         }
@@ -421,7 +442,9 @@ fn validate_against_state(
     state: &RuffleState,
     cfg: &FuseConfig,
 ) -> Result<(), Mismatch> {
-    if state.format_version() != RuffleState::FORMAT_VERSION {
+    if !(RuffleState::MIN_COMPAT_FORMAT_VERSION..=RuffleState::FORMAT_VERSION)
+        .contains(&state.format_version())
+    {
         return Err(Mismatch::FormatVersion {
             left: RuffleState::FORMAT_VERSION,
             right: state.format_version(),
@@ -594,7 +617,14 @@ fn fuse_core<Id: Hash + Eq + Clone>(
             top_sets.push((o.key.clone(), top_m_ids(&o.items, cfg.discrimination.top_m)));
         }
 
-        g_map.insert(o.key.clone(), disc.g);
+        // The weight the fusion uses is the raw read normalized by the channel's own
+        // running g level and deviation-shrunk (§4); the raw read itself is what the
+        // result reports and what folds into the level baseline, so the normalization
+        // never feeds back into its own reference.
+        g_map.insert(
+            o.key.clone(),
+            level_shrunk(disc.g, &summary.level, &cfg.discrimination),
+        );
         reads.insert(o.key.clone(), disc);
         registered.push(o);
     }
@@ -807,6 +837,7 @@ mod tests {
             state.channels.insert(
                 key(name),
                 ChannelSummary {
+                    level: MeanVar::new(),
                     separation: baseline(r - 1.0, 1.0, 6.0),
                     reference: MeanVar::new(),
                     tag: tag(),
@@ -843,6 +874,7 @@ mod tests {
         state.channels.insert(
             key("c"),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: baseline(2.0, 1.0, 6.0),
                 reference: MeanVar::new(),
                 tag: tag(),
@@ -886,6 +918,7 @@ mod tests {
             state.channels.insert(
                 key(name),
                 ChannelSummary {
+                    level: MeanVar::new(),
                     separation: baseline(r - 1.0, 1.0, 6.0),
                     reference: MeanVar::new(),
                     tag: tag(),
@@ -991,6 +1024,7 @@ mod tests {
         state.channels.insert(
             key("a"),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: baseline(r - 1.5, 1.0, 6.0), // z(r) = (r − (r−1.5)) / 1 = 1.5
                 reference: MeanVar::new(),
                 tag: tag(),
@@ -1050,6 +1084,7 @@ mod tests {
         state.channels.insert(
             key("a"),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: seed,
                 reference: MeanVar::new(),
                 tag: tag(),
@@ -1135,6 +1170,7 @@ mod tests {
         prior.channels.insert(
             key("x"),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: baseline(r - 1.5, 1.0, 8.0),
                 reference: MeanVar::new(),
                 tag: tag(),
@@ -1237,6 +1273,7 @@ mod tests {
         prior.channels.insert(
             key("a"),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: baseline(2.0, 1.0, 6.0),
                 reference: baseline(0.0, 0.25, 5.0),
                 tag: tag(),
@@ -1488,5 +1525,97 @@ mod tests {
         let r2 = f2.fuse(&obs);
         assert_eq!(r1.ranking, r2.ranking);
         assert_eq!(r1, r2); // weights, flags, and diagnostics all match
+    }
+
+    // --- 10. the g level baseline: raw accumulation, migration, no dilution -------------
+
+    /// A scored pool whose spike grows with `q`, so the raw separation trends upward
+    /// across queries and the standardized read (hence `g`) departs from neutral.
+    fn trending_obs(cfg: &ChannelConfig, base: u32, q: u32) -> ChannelInput<u32> {
+        let mut v: Vec<(u32, Val)> = (0..30).map(|i| (base + i, Val(i as f64 * 0.1))).collect();
+        v.push((base + 100, Val(5.0 + 0.4 * q as f64)));
+        ChannelInput::scored(cfg, v)
+    }
+
+    #[test]
+    fn level_baseline_accumulates_raw_g_not_normalized() {
+        // The level baseline must accumulate the RAW per-query g, never the
+        // level-normalized weight: feeding the corrected value back would drive the
+        // baseline mean toward 1 and the normalization would cancel itself. The raw g
+        // is what `fuse` reports, so the baseline mean must equal the mean of the
+        // reported reads exactly, and must not sit at the neutral 1.0 the feedback
+        // loop converges to.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let mut f = fuser(&[a.clone(), b.clone()], FuseConfig::default());
+        let mut gs = Vec::new();
+        for q in 0..40 {
+            let fused = f.fuse(&[trending_obs(&a, 0, q), scored_obs(&b, 300)]);
+            gs.push(fused.discrimination[&key("a")].g);
+        }
+        let mean_raw = gs.iter().sum::<f64>() / gs.len() as f64;
+        let lvl = &f.state().channels[&key("a")].level;
+        assert_abs_diff_eq!(lvl.count(), gs.len() as f64, epsilon = 1e-12);
+        assert_abs_diff_eq!(lvl.mean(), mean_raw, epsilon = 1e-12);
+        assert!(
+            (lvl.mean() - 1.0).abs() > 1e-3,
+            "trending pools must move raw g off neutral for this test to bite; got {}",
+            lvl.mean()
+        );
+    }
+
+    #[test]
+    fn resume_accepts_v2_state_and_upgrades_in_place() {
+        // A state persisted before the level baseline existed (format 2, no level
+        // fields) resumes: the carried baselines stay intact, the level cold-starts
+        // empty and warms from traffic, and the state reads at the current version.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let mut f = fuser(&[a.clone(), b.clone()], FuseConfig::default());
+        for _ in 0..6 {
+            f.fuse(&[scored_obs(&a, 0), scored_obs(&b, 300)]);
+        }
+        let mut v = serde_json::to_value(f.state()).unwrap();
+        v["format_version"] = serde_json::Value::from(2u32);
+        for (_, c) in v["channels"].as_object_mut().unwrap() {
+            c.as_object_mut().unwrap().remove("level");
+        }
+        let old: RuffleState = serde_json::from_value(v).unwrap();
+        let sep_before = old.channels[&key("a")].separation;
+
+        let mut resumed = Fuser::resume(&[a.clone(), b.clone()], old, FuseConfig::default())
+            .expect("a compatible older state must resume");
+        assert_eq!(
+            resumed.state().format_version(),
+            RuffleState::FORMAT_VERSION
+        );
+        assert_eq!(resumed.state().channels[&key("a")].separation, sep_before);
+        assert_eq!(resumed.state().channels[&key("a")].level, MeanVar::new());
+
+        resumed.fuse(&[scored_obs(&a, 0), scored_obs(&b, 300)]);
+        assert!(resumed.state().channels[&key("a")].level.count() > 0.0);
+    }
+
+    #[test]
+    fn ranks_only_and_empty_pools_push_no_level_read() {
+        // Ranks-only and empty pools read exactly neutral and must not dilute the
+        // level baseline, mirroring the other baselines.
+        let a = chan("a", None);
+        let b = chan("b", None);
+        let mut f = fuser(&[a.clone(), b.clone()], FuseConfig::default());
+        f.fuse(&[
+            ranks_obs(&a, &[1, 2, 3]),
+            ChannelInput::scored(&b, Vec::<(u32, Val)>::new()),
+        ]);
+        assert_abs_diff_eq!(
+            f.state().channels[&key("a")].level.count(),
+            0.0,
+            epsilon = 1e-12
+        );
+        assert_abs_diff_eq!(
+            f.state().channels[&key("b")].level.count(),
+            0.0,
+            epsilon = 1e-12
+        );
     }
 }

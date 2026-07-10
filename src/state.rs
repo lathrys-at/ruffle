@@ -39,6 +39,16 @@ pub struct ChannelSummary {
     /// [`MeanVar::from_prior`] or learned from observed top scores. A query's top score
     /// is graded against it with [`MeanVar::zscore`] to gauge absolute quality.
     pub reference: MeanVar,
+    /// The baseline for this channel's own discrimination weight `g`. The map behind `g`
+    /// is nonlinear, so the shape of the channel's score distribution leaks a persistent
+    /// level into its average `g` independent of quality; each query's raw `g` is folded
+    /// in here, and at read time the weight is divided by this running mean once it has
+    /// enough observations, restoring mean-neutrality. The raw `g` is what accumulates,
+    /// never the normalized value, so the normalization cannot feed back into its own
+    /// baseline. Defaults to empty when absent, which is the migration for states
+    /// persisted before the field existed.
+    #[serde(default)]
+    pub level: MeanVar,
     /// The model-version tag identifying which model produced this channel's scores.
     /// [`RuffleState::merge`] checks it for equality on any channel shared between two
     /// states and refuses on a mismatch, so accumulated statistics can never silently
@@ -55,6 +65,7 @@ impl ChannelSummary {
         Self {
             separation: MeanVar::new(),
             reference: MeanVar::new(),
+            level: MeanVar::new(),
             tag,
         }
     }
@@ -65,6 +76,7 @@ impl ChannelSummary {
         Self {
             separation: MeanVar::new(),
             reference,
+            level: MeanVar::new(),
             tag,
         }
     }
@@ -175,7 +187,33 @@ impl RuffleState {
     /// - `1`: initial schema.
     /// - `2`: [`PairSummary`] gains the `refreshes` count backing the coupling
     ///   stability gate.
-    pub const FORMAT_VERSION: u32 = 2;
+    /// - `3`: [`ChannelSummary`] gains the `level` baseline behind the `g`
+    ///   mean-normalization. A version-2 state is accepted and upgraded on load: the
+    ///   new baseline starts empty and warms from traffic while the carried
+    ///   separation and reference baselines stay intact.
+    pub const FORMAT_VERSION: u32 = 3;
+
+    /// The oldest persisted format this build still accepts.
+    ///
+    /// A state in `[MIN_COMPAT_FORMAT_VERSION, FORMAT_VERSION]` loads: every field
+    /// added since carries a serde default, so the missing summaries start empty and
+    /// the state is upgraded to the current version rather than refused. Anything
+    /// older or newer is refused; its summaries measure different statistics.
+    pub const MIN_COMPAT_FORMAT_VERSION: u32 = 2;
+
+    /// Whether a persisted format version is accepted by this build.
+    fn format_compatible(version: u32) -> bool {
+        (Self::MIN_COMPAT_FORMAT_VERSION..=Self::FORMAT_VERSION).contains(&version)
+    }
+
+    /// Upgrades a compatible older state to this build's format version in place.
+    /// The fields added since the older version were already seeded by their serde
+    /// defaults at parse time, so only the version marker moves.
+    pub(crate) fn upgrade(&mut self) {
+        if Self::format_compatible(self.format_version) {
+            self.format_version = Self::FORMAT_VERSION;
+        }
+    }
 
     /// An empty state at the current format version with the given fingerprint.
     pub fn new(fingerprint: StatFingerprint) -> Self {
@@ -271,10 +309,12 @@ impl RuffleState {
 
         let (first, rest) = parts.split_first().ok_or(Mismatch::Empty)?;
 
-        // Gate 1: this build's schema and statistic versions, then one schema version
-        // across all parts. A state at another version may still parse, but its
-        // summaries measure different statistics, so it is refused rather than blended.
-        if first.format_version != Self::FORMAT_VERSION {
+        // Gate 1: this build's schema and statistic versions, for every part. A state
+        // at an incompatible version may still parse, but its summaries measure
+        // different statistics, so it is refused rather than blended. A compatible
+        // older part is accepted (its added fields were seeded empty at parse time)
+        // and the merged result is written at the current version.
+        if !Self::format_compatible(first.format_version) {
             return Err(Mismatch::FormatVersion {
                 left: Self::FORMAT_VERSION,
                 right: first.format_version,
@@ -284,9 +324,9 @@ impl RuffleState {
             return Err(Mismatch::Fingerprint);
         }
         for p in rest {
-            if p.format_version != first.format_version {
+            if !Self::format_compatible(p.format_version) {
                 return Err(Mismatch::FormatVersion {
-                    left: first.format_version,
+                    left: Self::FORMAT_VERSION,
                     right: p.format_version,
                 });
             }
@@ -335,6 +375,7 @@ impl RuffleState {
                         }
                         existing.separation.merge_in(&summary.separation);
                         existing.reference.merge_in(&summary.reference);
+                        existing.level.merge_in(&summary.level);
                     }
                     None => {
                         channels.insert(key.clone(), summary.clone());
@@ -361,7 +402,7 @@ impl RuffleState {
         }
 
         let merged = RuffleState {
-            format_version: first.format_version,
+            format_version: Self::FORMAT_VERSION,
             fingerprint: StatFingerprint {
                 stat_version: first.fingerprint.stat_version,
                 baseline_mode: first.fingerprint.baseline_mode,
@@ -501,6 +542,7 @@ impl RuffleState {
         for summary in self.channels.values_mut() {
             summary.separation.decay(factor);
             summary.reference.decay(factor);
+            summary.level.decay(factor);
         }
         for summary in self.pairs.values_mut() {
             summary.redundancy.decay(factor);
@@ -1199,6 +1241,8 @@ mod tests {
     fn decay_halves_counts_and_preserves_means_and_variances() {
         let mut x = chan("m", &[1.0, 2.0, 3.0, 4.0]);
         x.reference = MeanVar::from_prior(0.5, 0.01, 6.0);
+        x.level.push(0.9);
+        x.level.push(1.3);
         let mut s = state(fp(&[("x", Direction::HigherIsBetter)]), &[]);
         s.channels.insert(key("x"), x);
         let mut pair = PairSummary::new();
@@ -1225,6 +1269,100 @@ mod tests {
         let red1 = &s.pairs[&UnorderedPair::new(key("x"), key("x"))].redundancy;
         assert_abs_diff_eq!(red1.count(), red0.count() * 0.5, epsilon = 1e-12);
         assert_abs_diff_eq!(red1.mean(), red0.mean(), epsilon = 1e-12);
+
+        let lvl1 = &s.channels[&key("x")].level;
+        assert_abs_diff_eq!(lvl1.count(), 1.0, epsilon = 1e-12);
+        assert_abs_diff_eq!(lvl1.mean(), 1.1, epsilon = 1e-12);
+    }
+
+    // --- Format migration: a version-2 state is accepted and upgraded ---
+
+    /// A version-2 serialization of the given state: the level fields dropped and the
+    /// version marker rewound, exactly what a state persisted before the level
+    /// baseline existed looks like on disk.
+    fn downgrade_to_v2(s: &RuffleState) -> String {
+        let mut v: serde_json::Value = serde_json::to_value(s).unwrap();
+        v["format_version"] = serde_json::Value::from(2u32);
+        for (_, c) in v["channels"].as_object_mut().unwrap() {
+            c.as_object_mut().unwrap().remove("level");
+        }
+        serde_json::to_string(&v).unwrap()
+    }
+
+    #[test]
+    fn v2_state_parses_with_empty_level_and_merges_upgraded() {
+        let dirs = &[("x", Direction::HigherIsBetter)];
+        let mut x = chan("m", &[1.0, 2.0, 3.0, 4.0, 5.0]);
+        x.level.push(1.2);
+        let s3 = state(fp(dirs), &[("x", x)]);
+
+        let old: RuffleState = serde_json::from_str(&downgrade_to_v2(&s3)).unwrap();
+        assert_eq!(old.format_version(), 2);
+        // The dropped level parses as its serde default: empty, nothing invented.
+        assert_eq!(old.channels[&key("x")].level, MeanVar::new());
+        // The carried baselines survive the round trip intact.
+        assert_eq!(
+            old.channels[&key("x")].separation,
+            s3.channels[&key("x")].separation
+        );
+
+        // A v2 part merges with a v3 part; the result is written at the current
+        // version and the level evidence present in either part is kept.
+        let (merged, _) = RuffleState::merge(&[&old, &s3], MergePolicy::Strict).unwrap();
+        assert_eq!(merged.format_version(), RuffleState::FORMAT_VERSION);
+        assert_abs_diff_eq!(
+            merged.channels[&key("x")].level.count(),
+            1.0,
+            epsilon = 1e-12
+        );
+        assert_abs_diff_eq!(
+            merged.channels[&key("x")].separation.count(),
+            2.0 * s3.channels[&key("x")].separation.count(),
+            epsilon = 1e-12
+        );
+    }
+
+    #[test]
+    fn v1_state_is_still_refused() {
+        let s = state(
+            fp(&[("x", Direction::HigherIsBetter)]),
+            &[("x", chan("m", &[1.0, 2.0]))],
+        );
+        let mut v: serde_json::Value = serde_json::to_value(&s).unwrap();
+        v["format_version"] = serde_json::Value::from(1u32);
+        let old: RuffleState = serde_json::from_value(v).unwrap();
+        let err = RuffleState::merge(&[&old, &s], MergePolicy::Strict).unwrap_err();
+        assert!(matches!(err, Mismatch::FormatVersion { right: 1, .. }));
+    }
+
+    #[test]
+    fn merge_is_exact_on_level_baselines() {
+        // update = prior = reconcile must hold for the level exactly as for the other
+        // baselines: pushing everything into one summary equals merging two halves.
+        let dirs = &[("x", Direction::HigherIsBetter)];
+        let mut whole = chan("m", &[]);
+        let mut left = chan("m", &[]);
+        let mut right = chan("m", &[]);
+        for (i, &g) in [0.8, 1.1, 1.4, 0.9, 1.05, 3.2].iter().enumerate() {
+            whole.level.push(g);
+            if i % 2 == 0 {
+                left.level.push(g)
+            } else {
+                right.level.push(g)
+            }
+        }
+        let (merged, _) = RuffleState::merge(
+            &[
+                &state(fp(dirs), &[("x", left)]),
+                &state(fp(dirs), &[("x", right)]),
+            ],
+            MergePolicy::Strict,
+        )
+        .unwrap();
+        let m = &merged.channels[&key("x")].level;
+        assert_abs_diff_eq!(m.count(), whole.level.count(), epsilon = 1e-12);
+        assert_abs_diff_eq!(m.mean(), whole.level.mean(), epsilon = 1e-12);
+        assert_abs_diff_eq!(m.variance(), whole.level.variance(), epsilon = 1e-9);
     }
 
     // --- Serialization: canonical, content-addressing ---

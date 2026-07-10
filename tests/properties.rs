@@ -681,6 +681,7 @@ type PairContent = (usize, usize, Vec<f64>);
 
 fn chan_summary(sep: &[f64], refs: &[f64], tagsel: u8) -> ChannelSummary {
     ChannelSummary {
+        level: MeanVar::new(),
         separation: mv_from(sep),
         reference: mv_from(refs),
         tag: format!("tag{tagsel}"),
@@ -855,6 +856,7 @@ fn build_state_with(spec: &StateSpec, fingerprint: StatFingerprint) -> RuffleSta
         s.channels.insert(
             key(*i),
             ChannelSummary {
+                level: MeanVar::new(),
                 separation: mv_from(sep),
                 reference: mv_from(refs),
                 tag: chan_tag(*i),
@@ -1045,7 +1047,7 @@ proptest! {
         let mut sa = RuffleState::new(StatFingerprint::new(BaselineMode::ZScore, dirs_a));
         sa.channels.insert(
             key(0),
-            ChannelSummary { separation: mv_from(&sep_a), reference: MeanVar::new(), tag: "model-a".to_string() },
+            ChannelSummary { level: MeanVar::new(), separation: mv_from(&sep_a), reference: MeanVar::new(), tag: "model-a".to_string() },
         );
 
         let mut dirs_b = BTreeMap::new();
@@ -1053,7 +1055,7 @@ proptest! {
         let mut sb = RuffleState::new(StatFingerprint::new(BaselineMode::ZScore, dirs_b));
         sb.channels.insert(
             key(0),
-            ChannelSummary { separation: mv_from(&sep_b), reference: MeanVar::new(), tag: "model-b".to_string() },
+            ChannelSummary { level: MeanVar::new(), separation: mv_from(&sep_b), reference: MeanVar::new(), tag: "model-b".to_string() },
         );
 
         let err = RuffleState::merge(&[&sa, &sb], MergePolicy::Strict).unwrap_err();
@@ -1074,7 +1076,7 @@ proptest! {
             let mut s = RuffleState::new(StatFingerprint::new(BaselineMode::ZScore, dirs));
             s.channels.insert(
                 key(0),
-                ChannelSummary { separation: mv_from(sep), reference: MeanVar::new(), tag: "same".to_string() },
+                ChannelSummary { level: MeanVar::new(), separation: mv_from(sep), reference: MeanVar::new(), tag: "same".to_string() },
             );
             s
         };
