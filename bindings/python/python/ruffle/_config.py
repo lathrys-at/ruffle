@@ -141,12 +141,12 @@ class RrfConfig:
 
     - ``rrf_eta``: the RRF rank constant. Larger values flatten the rank
       contribution; ``60`` is the Cormack et al. (2009) value, calibrated on
-      1000-deep TREC pools. The default ``20.0`` is tuned on channel pools up
-      to 100 items deep, where it improved every evaluation collection
-      measured with Recall@100 unchanged; the supported band is 10 to 30. For
-      pools much deeper than a few hundred items, where mid-list agreement
-      carries more of the signal, prefer a larger value (``60.0`` is the
-      tested point).
+      1000-deep TREC pools. The default ``20.0`` improved every evaluation
+      collection measured with Recall@100 unchanged; the supported band is 10
+      to 30, and the measurements cover pool depths from 20 to 1000 items
+      with the optimum unmoved by depth. For pools deeper than 1000 items, or
+      channel mixes very unlike the measured ones, ``60.0`` is the literature
+      reference point.
     - ``min_g_dispersion``: the minimum within-query dispersion of the
       channels' level-normalized weights (a sample standard deviation) before
       the per-query weighting acts; ``0.0`` disables the gate. Below the

@@ -219,13 +219,15 @@ smaller values concentrate mass on the top ranks. The literature value 60 comes 
 Cormack et al.'s 1000-deep TREC pools; at the pool depths most deployments run (tens
 to a few hundred candidates per channel), 60 discounts rank 1 against rank 100 by
 only a factor of 2.6, which dilutes a strong channel's top hits with weak channels'
-mid-list votes. The default 20 is tuned on pools up to 100 deep, where it improved
+mid-list votes. The default 20 improved
 every evaluation collection measured (macro nDCG@10 +0.012, the largest gains on
 collections where one channel dominates) with Recall@100 unchanged, and the plain-RRF
 optimum sat at 5 to 10 at every measured depth. The supported band is 10 to 30. The
-evidence stops at 100-deep pools: for pools much deeper than a few hundred items,
-where mid-list agreement carries more of the signal, prefer a larger η (60 is the
-tested point). A smaller η also makes any weight difference matter more at the top,
+measurements cover pool depths from 20 to 1000 items; 1000-deep native retrieval on
+three collections reproduces the 100-deep response curve with the optimum unmoved, so
+the constant is not depth-linked in the measured range. For pools deeper than 1000
+items, or channel mixes very unlike the measured ones, 60 is the literature reference
+point. A smaller η also makes any weight difference matter more at the top,
 which is why the dispersion gate below defaults on. Tune η before the weighting
 knobs, the way you would tune plain RRF on a labeled set, so they stay calibrated
 against the η you will actually run.

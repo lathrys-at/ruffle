@@ -89,11 +89,11 @@ export interface CouplingConfig {
  *
  * `rrfEta` is the RRF rank constant; larger values flatten the rank contribution.
  * `60` is the Cormack et al. (2009) value, calibrated on 1000-deep TREC pools; the
- * default `20` is tuned on channel pools up to 100 items deep, where it improved
- * every evaluation collection measured with Recall@100 unchanged (supported band
- * 10 to 30). For pools much deeper than a few hundred items, where mid-list
- * agreement carries more of the signal, prefer a larger value (`60` is the tested
- * point).
+ * default `20` improved every evaluation collection measured with Recall@100
+ * unchanged (supported band 10 to 30), with measurements covering pool depths from
+ * 20 to 1000 items and the optimum unmoved by depth. For pools deeper than 1000
+ * items, or channel mixes very unlike the measured ones, `60` is the literature
+ * reference point.
  *
  * `minGDispersion` is the minimum within-query dispersion of the channels'
  * level-normalized weights (a sample standard deviation) before the per-query

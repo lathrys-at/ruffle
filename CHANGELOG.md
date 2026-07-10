@@ -83,13 +83,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   channels' mid-list votes. At 20, macro nDCG@10 over nineteen evaluation
   collections rises by about 0.012 with every collection improved or flat and
   Recall@100 unchanged; the plain-RRF optimum sat at 5 to 10 at every measured
-  depth (20, 50, and 100 by truncation), so the constant is not depth-linked
-  in the measured range. The gain is a fusion-rule constant, orthogonal to the
-  adaptive weighting, and the dispersion gate above is what keeps the
-  weighting from giving it back at the sharper discount. Evidence stops at
-  100-deep pools: deployments fusing pools much deeper than a few hundred
-  items should prefer a larger `rrf_eta` (60 is the tested point), as the
-  field documentation states. The supported band is 10 to 30.
+  depth (20, 50, and 100 by truncation, and 1000 by native retrieval on three
+  collections, which reproduces the shallower response curve with the optimum
+  unmoved), so the constant is not depth-linked in the measured range. The
+  gain is a fusion-rule constant, orthogonal to the adaptive weighting, and
+  the dispersion gate above is what keeps the weighting from giving it back
+  at the sharper discount. For pools deeper than 1000 items, or channel mixes
+  very unlike the measured ones, 60 remains the literature reference point,
+  as the field documentation states. The supported band is 10 to 30.
 - Four discrimination defaults are retuned from a configuration search against the
   BEIR evaluation harness (`evals/`): `top_eps` 0.05 → 0.10, `top_m` 10 → 5,
   `winsor_z` 4.0 → 2.5, and `denom_floor_frac` 0.5 → 0.75. All four change how the

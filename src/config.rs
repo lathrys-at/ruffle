@@ -137,15 +137,16 @@ pub struct RrfConfig {
     /// rank 1 outweighs rank 100 by only a factor of 2.6, which dilutes a strong
     /// channel's top hits with weak channels' mid-list votes.
     ///
-    /// The default is `20.0`, tuned on channel pools up to 100 items deep: across
-    /// nineteen evaluation collections it raised macro nDCG@10 by about 0.012 over
-    /// `60`, improved every collection measured, and left Recall@100 unchanged, with
-    /// the optimum for plain RRF sitting at 5 to 10 at every measured depth (20, 50,
-    /// and 100 items). The measured range stops at 100-deep pools: for pools much
-    /// deeper than a few hundred items, where mid-list agreement carries more of the
-    /// signal, prefer a larger `η` (the literature value `60.0` is the tested point).
-    /// The 10 to 30 band is supported by the evidence; `20.0` sits in its middle
-    /// because sharpness risk grows toward small `η` for unmeasured deployments.
+    /// The default is `20.0`: across nineteen evaluation collections it raised macro
+    /// nDCG@10 by about 0.012 over `60`, improved every collection measured, and left
+    /// Recall@100 unchanged, with the optimum for plain RRF sitting at 5 to 10 at
+    /// every measured depth. The measurements cover pool depths from 20 to 1000 items
+    /// (1000-deep native retrieval on three collections reproduces the 100-deep
+    /// response curve, optimum unmoved), so the constant is not depth-linked in the
+    /// measured range; for pools deeper than 1000 items or channel mixes very unlike
+    /// the measured ones, the literature value `60.0` is the reference point. The
+    /// 10 to 30 band is supported by the evidence; `20.0` sits in its middle because
+    /// sharpness risk grows toward small `η` for unmeasured deployments.
     pub rrf_eta: f64,
     /// Minimum within-query dispersion of the channels' level-normalized weights
     /// before the per-query weighting acts at all, as a sample standard deviation
